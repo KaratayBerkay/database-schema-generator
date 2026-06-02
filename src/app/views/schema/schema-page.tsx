@@ -23,7 +23,7 @@ import { TemplateDropdown } from "@/components/schema/template-dropdown";
 import { RemovedFieldsSection } from "@/components/schema/removed-fields-section";
 
 export function SchemaPageContent() {
-  const { projectName, version, versions, hasProject, provider: projectProvider, projectId } = useProjectInfo();
+  const { projectName, version, versions, hasProject, provider: projectProvider } = useProjectInfo();
   const { diffByFieldKey, diffByTableKey } = useVersionDiffLookup(projectName, version);
   const versionIdx = versions.indexOf(version);
   const previousVersion = versionIdx > 0 ? versions[versionIdx - 1]! : "";
@@ -37,10 +37,10 @@ export function SchemaPageContent() {
 
   // ── Queries ────────────────────────────────────────────────────────────────
   const tablesQuery = useQuery(trpc.tables.list.queryOptions({ projectName, version }, { enabled: !!projectName && !!version }));
-  const models: PrismaModel[] = (tablesQuery.data ?? []) as PrismaModel[];
+  const models: PrismaModel[] = useMemo(() => (tablesQuery.data ?? []) as PrismaModel[], [tablesQuery.data]);
 
   const {
-    selectedModelName, setSelectedModelName,
+    selectedModelName,
     tableSearch, setTableSearch,
     isTableSelectorOpen, setIsTableSelectorOpen,
     selectModel,

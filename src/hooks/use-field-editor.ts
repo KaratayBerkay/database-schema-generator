@@ -62,7 +62,6 @@ export function useFieldEditor({
     setFieldDrafts(
       Object.fromEntries(fields.filter((f) => f.isEditable).map((f) => [f.key, fieldToInput(f)])),
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fields]);
 
   // Reset page/filter/new-cards when model changes

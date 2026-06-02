@@ -62,7 +62,10 @@ export function useFieldTemplates({
   // ── Query ─────────────────────────────────────────────────────────────────
 
   const templatesQuery = useFieldTemplatesQuery();
-  const templates: FieldTemplate[] = (templatesQuery.data ?? []) as FieldTemplate[];
+  const templates: FieldTemplate[] = useMemo(
+    () => (templatesQuery.data ?? []) as FieldTemplate[],
+    [templatesQuery.data],
+  );
   const { invalidate: invalidateTemplates, create: createTemplateMutation_, update: updateTemplateMutation_, delete: deleteTemplateMutation_ } =
     useFieldTemplateMutations();
   const { create: addTemplateToTableMutation_ } = useFieldMutations(projectName, version, selectedModelName, selectedModelKey);
@@ -72,11 +75,9 @@ export function useFieldTemplates({
     setTemplateOverrideNames((cur) =>
       Object.fromEntries(templates.map((t) => [t.id, cur[t.id] || t.name])),
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [templatesQuery.data]);
+  }, [templates]);
 
   useEffect(() => { setTemplatePage(1); }, [templateTypeFilter]);
-  useEffect(() => { setTemplatePage((p) => Math.min(p, templatePageCount)); }, []);
 
   const createTemplateMutation = createTemplateMutation_;
   const updateTemplateMutation = updateTemplateMutation_;
@@ -101,6 +102,10 @@ export function useFieldTemplates({
   );
 
   const templatePageCount = Math.max(1, Math.ceil(filteredTemplates.length / templatesPerPage));
+
+  // Clamp page when the filtered count shrinks (e.g. provider/type filter change)
+  useEffect(() => { setTemplatePage((p) => Math.min(p, templatePageCount)); }, [templatePageCount]);
+
   const paginatedTemplates = filteredTemplates.slice(
     (templatePage - 1) * templatesPerPage,
     templatePage * templatesPerPage,
