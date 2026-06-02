@@ -1,15 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useLayoutEffect, useRef } from "react";
 import { useProjectInfo } from "../shared/project-info-context";
-import { useDashboard } from "../shared/dashboard-context";
 import { useSchemaWarnings } from "@/hooks/use-schema-warnings";
+import { useVersionPair } from "@/hooks/use-version-pair";
+import { useMigrationPlan } from "@/hooks/use-migration-plan";
+import { useRestoreMigrationState } from "@/hooks/use-restore-migration-state";
 import { useMigrationConnections } from "@/hooks/use-migration-connections";
 import { useSyncCheck } from "@/hooks/use-sync-check";
 import { useDestroyDeploy } from "@/hooks/use-destroy-deploy";
 import { useMigrationWorkflow } from "@/hooks/use-migration-workflow";
-import type { MigrationPlan, MigrationSession } from "@/types/migrations";
+import type { MigrationSession } from "@/types/migrations";
 import { SessionHistory } from "@/components/migrations/session-history";
 import { MigrationTypeSelector } from "@/components/migrations/migration-type-selector";
 import { ConnectionManagementCard } from "@/components/migrations/connection-management-card";
@@ -22,214 +23,96 @@ import { FixRowsModal } from "@/components/migrations/fix-rows-modal";
 import { ConnectionStringModal } from "@/components/migrations/connection-string-modal";
 import { MigrationProgressBar } from "@/components/migrations/migration-progress-bar";
 import { MigrationPageHeader } from "@/components/migrations/migration-page-header";
+import { PREFLIGHT_PAGE_SIZE } from "@/constants/migrations";
+import {
+  useMigrationSessionsQuery,
+  useMigrationSavedStateQuery,
+  usePersistMigrationState,
+  useInvalidateMigrationSessions,
+} from "@/queries/migrations";
 
-const PREFLIGHT_PAGE_SIZE = 8;
+// ─── component ────────────────────────────────────────────────────────────────
 
 export function MigrationsPageContent() {
   const { projectId, projectName, provider, versions, hasProject } = useProjectInfo();
-  const { setSelectedVersion } = useDashboard();
-  const isSQLite = provider.toLowerCase() === "sqlite";
+  const isSQLite          = provider.toLowerCase() === "sqlite";
   const canDoAnyMigration = versions.length >= 1;
   const canVersionMigrate = versions.length >= 2;
 
-  // ── page-level coordination state ────────────────────────────────────────
-  const [migrationPlan, setMigrationPlan] = useState<MigrationPlan | null>(null);
-  const [dbTableCount, setDbTableCount] = useState<number | null>(null);
-  const [sessions, setSessions] = useState<MigrationSession[]>([]);
-  const [syncVersion, setSyncVersion] = useState("");
-  const [targetVersion, setTargetVersion] = useState("");
+  // ── server state ─────────────────────────────────────────────────────────
+  const { data: sessions = [] }  = useMigrationSessionsQuery(projectId, hasProject);
+  const { data: savedState }     = useMigrationSavedStateQuery(projectId, hasProject);
+  const persistMigrationState    = usePersistMigrationState(projectId);
+  const invalidateSessions       = useInvalidateMigrationSessions(projectId);
 
-  const dbIsEmpty  = dbTableCount !== null && dbTableCount === 0;
-  const isNewPlan  = migrationPlan === "new";
-  const isVersionPlan = migrationPlan === "version";
-
-  // ── best-effort persistence ───────────────────────────────────────────────
-  const persistMigrationState = useCallback(async (patch: Record<string, unknown>) => {
-    if (!hasProject) return;
-    await fetch("/api/migration-state", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ projectId, ...patch }),
-    }).catch(() => {/* best-effort */});
-  }, [hasProject, projectId]);
-
-  const queryClient = useQueryClient();
-
-  // ── ref trick: break the resetCollect ↔ useMigrationConnections cycle
+  // ── ref trick: break the resetCollect ↔ useMigrationConnections cycle ────
   const resetCollectRef = useRef<() => void>(() => {});
 
+  // ── plan state ────────────────────────────────────────────────────────────
+  const {
+    migrationPlan, setMigrationPlan,
+    dbTableCount,  setDbTableCount,
+    dbIsEmpty, isNewPlan, isVersionPlan,
+    changePlan,
+  } = useMigrationPlan({ onReset: () => { destroy.resetPush(); workflow.resetCollect(); } });
+
   // ── hooks ─────────────────────────────────────────────────────────────────
-  const { warnings, defaultsRequiredCount } = useSchemaWarnings(projectId, syncVersion, targetVersion);
-
-  const breakingPendingCount = warnings.filter(
-    (w) => !w.approvedAt && (
-      w.resolution === "data_deleted" ||
-      w.resolution === "lossy_convert" ||
-      w.resolution === "precision_loss" ||
-      w.resolution === "backfill_required"
-    ),
-  ).length;
-
   const conn = useMigrationConnections({
     onConnected: (tableCount) => {
       setDbTableCount(tableCount);
-      if (tableCount === 0) {
-        setMigrationPlan("new");
-        destroy.resetPush();
-      }
+      if (tableCount === 0) { setMigrationPlan("new"); destroy.resetPush(); }
     },
     onResetFromModelDiff: () => resetCollectRef.current(),
   });
 
-  const sync = useSyncCheck({
-    projectName, activeConnectionId: conn.activeConnectionId,
-    syncVersion, migrationPlan, connectState: conn.connectState,
+  const {
+    syncVersion, targetVersion,
+    setSyncVersion, setTargetVersion,
+    restoreSyncVersion, restoreTargetVersion,
+  } = useVersionPair({
+    projectId, projectName, hasProject,
+    onReset: () => resetCollectRef.current(),
+    onPersist: (patch) => persistMigrationState(patch),
   });
 
-  const destroy = useDestroyDeploy({
-    projectName, activeConnectionId: conn.activeConnectionId, versions,
-  });
+  const { warnings, breakingPendingCount, defaultsRequiredCount, trackingHref } =
+    useSchemaWarnings(projectId, syncVersion, targetVersion);
+
+  const sync    = useSyncCheck({ projectName, activeConnectionId: conn.activeConnectionId, syncVersion, migrationPlan, connectState: conn.connectState });
+  const destroy = useDestroyDeploy({ projectName, activeConnectionId: conn.activeConnectionId, versions });
 
   const workflow = useMigrationWorkflow({
     projectName, projectId,
     activeConnectionId: conn.activeConnectionId,
     syncVersion, targetVersion,
     breakingPendingCount, defaultsRequiredCount,
-    persistMigrationState,
-    onSessionsRefresh: setSessions,
+    persistMigrationState: (patch) => persistMigrationState(patch),
+    onSessionsRefresh: invalidateSessions,
   });
 
-  // Keep ref in sync after every render
   useLayoutEffect(() => { resetCollectRef.current = workflow.resetCollect; });
 
-  // ── auto-write warnings when version pair selected ────────────────────────
-  // Fires version-diff to ensure schema_warnings are written, then invalidates
-  // the warnings cache so useSchemaWarnings picks them up immediately.
-  const lastWarningPairRef = useRef("");
-  useEffect(() => {
-    if (!hasProject || !projectName || !syncVersion || !targetVersion || syncVersion === targetVersion) return;
-    const pair = `${projectName}|${syncVersion}|${targetVersion}`;
-    if (lastWarningPairRef.current === pair) return;
-    lastWarningPairRef.current = pair;
-    const params = new URLSearchParams({ projectName, fromVersion: syncVersion, toVersion: targetVersion });
-    fetch(`/api/version-diff?${params.toString()}`)
-      .then(() => queryClient.invalidateQueries({ queryKey: ["schema-warnings", projectId, syncVersion, targetVersion] }))
-      .catch(() => {/* best-effort */});
-  }, [hasProject, projectName, projectId, syncVersion, targetVersion, queryClient]);
-
-  // ── restore workflow state from server on mount / project switch ──────────
-  useEffect(() => {
-    if (!hasProject) return;
-    let cancelled = false;
-
-    async function loadAll() {
-      const [sessRes, res] = await Promise.all([
-        fetch(`/api/migration-state?list=true&projectId=${projectId}`).catch(() => null),
-        fetch(`/api/migration-state?projectId=${projectId}`).catch(() => null),
-      ]);
-
-      let sessionList: MigrationSession[] = [];
-      if (sessRes?.ok && !cancelled) {
-        sessionList = await sessRes.json() as MigrationSession[];
-        if (!cancelled) setSessions(sessionList);
+  useRestoreMigrationState({
+    savedState, sessions, hasProject, projectId,
+    onRestore: ({ connectionId, fromVersion, toVersion, snapshotId, saved }) => {
+      if (connectionId) { conn.setActiveConnectionId(connectionId); conn.setConnectState("success"); }
+      if (fromVersion)  restoreSyncVersion(fromVersion);
+      if (toVersion)    restoreTargetVersion(toVersion);
+      workflow.dispatch({ type: "RESTORE_PHASE_STATES", payload: { validate: saved.validationPassed, migrate: !!saved.runLogPath } });
+      if (snapshotId) void persistMigrationState({ snapshotId });
+      if (snapshotId && saved.snapshot) {
+        workflow.dispatch({ type: "RESTORE_COLLECT_STATE", payload: { snapshotId, timestamp: saved.snapshot.collectedAt, tables: saved.snapshot.tables, total: saved.snapshot.rowCount } });
+      } else if (snapshotId && saved.dataTimestamp) {
+        workflow.dispatch({ type: "RESTORE_COLLECT_STATE", payload: { snapshotId, timestamp: saved.dataTimestamp, tables: [], total: 0 } });
+      } else if (saved.dataTimestamp) {
+        workflow.dispatch({ type: "RESTORE_TIMESTAMP_ONLY", payload: saved.dataTimestamp });
       }
+      if (snapshotId || saved.dataTimestamp || saved.validationPassed || saved.runLogPath) setMigrationPlan("version");
+    },
+  });
 
-      if (!res?.ok || cancelled) return;
-      type SavedState = {
-        connectionId: string | null; syncVersion: string | null; targetVersion: string | null;
-        dataTimestamp: string | null; snapshotId: string | null;
-        snapshot: {
-          connectionId: string; fromVersion: string; toVersion: string;
-          tableCount: number; rowCount: number;
-          tables: { name: string; count: number }[]; collectedAt: string;
-        } | null;
-        validationPassed: boolean; runLogPath: string | null;
-      };
-      const state = await res.json() as SavedState | null;
-      if (!state || cancelled) return;
-
-      const connectionId  = state.connectionId  ?? state.snapshot?.connectionId  ?? null;
-      const syncVersion   = state.syncVersion   ?? state.snapshot?.fromVersion   ?? null;
-      const targetVersion = state.targetVersion ?? state.snapshot?.toVersion     ?? null;
-
-      if (connectionId)  { conn.setActiveConnectionId(connectionId);  conn.setConnectState("success"); }
-      if (syncVersion)   setSyncVersion(syncVersion);
-      if (targetVersion) setTargetVersion(targetVersion);
-
-      const hasSnapshot = !!state.snapshotId;
-      workflow.dispatch({ type: "RESTORE_PHASE_STATES", payload: {
-        validate: state.validationPassed,
-        migrate: !!state.runLogPath,
-      }});
-
-      let resolvedSnapshotId = state.snapshotId ?? null;
-      if (!resolvedSnapshotId && state.dataTimestamp) {
-        const match = sessionList.find((s) =>
-          s.connectionId === connectionId &&
-          s.fromVersion === syncVersion &&
-          s.toVersion === targetVersion &&
-          s.collectTimestamp === state.dataTimestamp &&
-          s.snapshotId,
-        );
-        if (match?.snapshotId) {
-          resolvedSnapshotId = match.snapshotId;
-          void persistMigrationState({ snapshotId: resolvedSnapshotId });
-        }
-      }
-
-      if (resolvedSnapshotId && state.snapshot) {
-        workflow.dispatch({ type: "RESTORE_COLLECT_STATE", payload: {
-          snapshotId: resolvedSnapshotId,
-          timestamp: state.snapshot.collectedAt,
-          tables: state.snapshot.tables,
-          total: state.snapshot.rowCount,
-        }});
-      } else if (resolvedSnapshotId && state.dataTimestamp) {
-        workflow.dispatch({ type: "RESTORE_COLLECT_STATE", payload: {
-          snapshotId: resolvedSnapshotId,
-          timestamp: state.dataTimestamp,
-          tables: [],
-          total: 0,
-        }});
-      } else if (state.dataTimestamp) {
-        workflow.dispatch({ type: "RESTORE_TIMESTAMP_ONLY", payload: state.dataTimestamp });
-      }
-      if (hasSnapshot || state.dataTimestamp || state.validationPassed || state.runLogPath) {
-        setMigrationPlan("version");
-      }
-    }
-
-    void loadAll();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId]);
-
-  // ── tracking deep-link ────────────────────────────────────────────────────
-  const BLOCKING_RESOLUTIONS = new Set(["data_deleted", "lossy_convert", "precision_loss", "backfill_required"]);
-  const trackingHref = (() => {
-    const to = targetVersion ? `&to=${targetVersion}` : "";
-    if (breakingPendingCount > 0) {
-      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "table")) return `/tracking?resolve=tables${to}`;
-      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "enum"))  return `/tracking?resolve=enums${to}`;
-      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "field")) return `/tracking?resolve=schema${to}`;
-      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "relation")) return `/tracking?resolve=relations${to}`;
-      return `/tracking?resolve=all${to}`;
-    }
-    if (defaultsRequiredCount > 0) return `/tracking?resolve=schema${to}`;
-    return to ? `/tracking?${to.slice(1)}` : "/tracking";
-  })();
-
-  // ── canCollect: allow collecting whenever connected ───────────────────────
   const canCollect = conn.connectState === "success";
 
-  function changePlan(plan: MigrationPlan) {
-    if (plan === migrationPlan) return;
-    setMigrationPlan(plan);
-    destroy.resetPush();
-    workflow.resetCollect();
-  }
-
-  // ── early return ─────────────────────────────────────────────────────────
   if (!hasProject) {
     return (
       <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
@@ -238,7 +121,6 @@ export function MigrationsPageContent() {
     );
   }
 
-  // ── render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
       <MigrationProgressBar
@@ -260,19 +142,16 @@ export function MigrationsPageContent() {
 
       <SessionHistory
         sessions={sessions}
+        knownConnectionIds={new Set(conn.connections.map((c) => c.uuid))}
         onResume={(s) => {
+          if (!conn.connections.find((c) => c.uuid === s.connectionId)) return;
           setMigrationPlan("version");
-          setSyncVersion(s.fromVersion);
-          setTargetVersion(s.toVersion);
+          restoreSyncVersion(s.fromVersion);
+          restoreTargetVersion(s.toVersion);
           conn.setActiveConnectionId(s.connectionId);
           conn.setConnectState("success");
           if (s.snapshotId && s.collectTimestamp) {
-            workflow.dispatch({ type: "RESTORE_COLLECT_STATE", payload: {
-              snapshotId: s.snapshotId,
-              timestamp: s.collectTimestamp,
-              tables: s.collectTables ?? [],
-              total: s.collectRowCount ?? 0,
-            }});
+            workflow.dispatch({ type: "RESTORE_COLLECT_STATE", payload: { snapshotId: s.snapshotId, timestamp: s.collectTimestamp, tables: s.collectTables ?? [], total: s.collectRowCount ?? 0 } });
           }
           void persistMigrationState({ connectionId: s.connectionId, syncVersion: s.fromVersion, targetVersion: s.toVersion, snapshotId: s.snapshotId ?? null, dataTimestamp: s.collectTimestamp });
         }}
@@ -311,7 +190,7 @@ export function MigrationsPageContent() {
         onDbUserChange={conn.setDbUser}
         onPasswordChange={conn.setPassword}
         onDatabaseChange={conn.setDatabase}
-        onConnect={() => void conn.handleConnect(persistMigrationState)}
+        onConnect={() => void conn.handleConnect((patch) => persistMigrationState(patch))}
       />
 
       <MigrationTypeSelector
@@ -327,17 +206,8 @@ export function MigrationsPageContent() {
         syncCheckState={sync.syncCheckState}
         syncCheckResult={sync.syncCheckResult}
         onChangePlan={changePlan}
-        onSyncVersionChange={(v) => {
-          setSyncVersion(v);
-          setTargetVersion("");
-          workflow.resetCollect();
-          void persistMigrationState({ syncVersion: v, targetVersion: null, dataTimestamp: null, snapshotId: null, validationPassed: false, runLogPath: null });
-        }}
-        onTargetVersionChange={(v) => {
-          setTargetVersion(v);
-          workflow.resetCollect();
-          void persistMigrationState({ targetVersion: v, dataTimestamp: null, snapshotId: null, validationPassed: false, runLogPath: null });
-        }}
+        onSyncVersionChange={setSyncVersion}
+        onTargetVersionChange={setTargetVersion}
       />
 
       {isNewPlan && (
@@ -390,6 +260,7 @@ export function MigrationsPageContent() {
         activeConnection={conn.activeConnection}
         validateBtnDisabled={workflow.validateBtnDisabled}
         migrateBtnDisabled={workflow.migrateBtnDisabled}
+        migrateDisabledReason={workflow.migrateDisabledReason}
         onValidate={() => void workflow.handleValidate()}
         onShowPreflight={() => workflow.dispatch({ type: "SHOW_PREFLIGHT", payload: true })}
       />
@@ -410,8 +281,7 @@ export function MigrationsPageContent() {
         onProceed={() => {
           workflow.dispatch({ type: "COLLECT_CONFIRMED" });
           void persistMigrationState({ dataTimestamp: workflow.collectTimestamp });
-          fetch(`/api/migration-state?list=true&projectId=${projectId}`)
-            .then((r) => r.json()).then((list) => setSessions(list as MigrationSession[])).catch(() => {});
+          invalidateSessions();
         }}
       />
 

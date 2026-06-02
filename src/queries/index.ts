@@ -40,3 +40,14 @@ export { useHierarchyQuery } from "./hierarchy";
 
 // Field templates
 export { useFieldTemplatesQuery, useFieldTemplateMutations } from "./field-templates";
+
+// Imports
+export { useImportMutations } from "./imports";
+
+// Migrations
+export {
+  useMigrationSessionsQuery,
+  useMigrationSavedStateQuery,
+  usePersistMigrationState,
+  useInvalidateMigrationSessions,
+} from "./migrations";

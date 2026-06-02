@@ -1,52 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { useTRPC } from "@/trpc/client";
 import { classNames } from "@/lib/utils";
-import type { ImportMode, ParsedPreview } from "@/types/imports";
+import { useImportMutations } from "@/queries/imports";
+import { useImportsPageState } from "@/hooks/use-imports-page-state";
 import { todayVersionName, parsePicklePreview } from "@/constants/imports";
 import { VersionImportTab } from "@/components/imports/version-import-tab";
 import { ProjectImportTab } from "@/components/imports/project-import-tab";
 
 export function ImportsPageContent() {
-  const trpc = useTRPC();
+  const {
+    mode, setMode,
+    vFile, setVFile, vPreview, setVPreview, vParseError, setVParseError,
+    vProjectName, setVProjectName, vVersionName, setVVersionName,
+    pFile, setPFile, pPreview, setPPreview, pParseError, setPParseError,
+    pProjectName, setPProjectName,
+    result, setResult, error, setError,
+    resetVersion, resetProject,
+  } = useImportsPageState();
 
-  const [mode, setMode] = useState<ImportMode>("version");
-
-  const [vFile, setVFile] = useState<{ name: string; content: string } | null>(null);
-  const [vPreview, setVPreview] = useState<ParsedPreview | null>(null);
-  const [vParseError, setVParseError] = useState("");
-  const [vProjectName, setVProjectName] = useState("");
-  const [vVersionName, setVVersionName] = useState("");
-
-  const [pFile, setPFile] = useState<{ name: string; content: string } | null>(null);
-  const [pPreview, setPPreview] = useState<ParsedPreview | null>(null);
-  const [pParseError, setPParseError] = useState("");
-  const [pProjectName, setPProjectName] = useState("");
-
-  const [result, setResult] = useState("");
-  const [error, setError] = useState("");
-
-  const importVersionMutation = useMutation({
-    ...trpc.imports.importVersion.mutationOptions(),
-    onSuccess: (data) => {
-      const s = data?.stats;
-      setResult(`Imported version "${data?.versionName ?? ""}" — ${s?.tableCount ?? 0} tables, ${s?.fieldCount ?? 0} fields, ${s?.relationCount ?? 0} relations, ${s?.enumCount ?? 0} enums.`);
-      setVFile(null); setVPreview(null); setError("");
-    },
-    onError: (err) => { setError(err.message); setResult(""); },
-  });
-
-  const importProjectMutation = useMutation({
-    ...trpc.imports.importProject.mutationOptions(),
-    onSuccess: (data) => {
-      const totalTables = data?.stats?.reduce((n, s) => n + s.tableCount, 0) ?? 0;
-      setResult(`Imported project "${data?.projectName ?? ""}" — ${data?.versionCount ?? 0} versions, ${totalTables} total tables.`);
-      setPFile(null); setPPreview(null); setError("");
-    },
-    onError: (err) => { setError(err.message); setResult(""); },
-  });
+  const { importVersion: importVersionMutation, importProject: importProjectMutation } = useImportMutations();
 
   const handleVersionFile = (name: string, content: string) => {
     setError(""); setResult(""); setVParseError("");
@@ -65,6 +37,28 @@ export function ImportsPageContent() {
       if (preview.type !== "project") { setPParseError("This is a Version pickle. Switch to the 'Import Version' tab."); return; }
       setPFile({ name, content }); setPPreview(preview); setPProjectName(preview.sourceProjectName);
     } catch (err) { setPParseError(err instanceof Error ? err.message : "Could not parse file."); }
+  };
+
+  const handleImportVersion = async () => {
+    if (!vFile) return;
+    setError(""); setResult("");
+    try {
+      const data = await importVersionMutation.mutateAsync({ content: vFile.content, projectName: vProjectName || undefined, versionName: vVersionName || undefined });
+      const s = data?.stats;
+      setResult(`Imported version "${data?.versionName ?? ""}" — ${s?.tableCount ?? 0} tables, ${s?.fieldCount ?? 0} fields, ${s?.relationCount ?? 0} relations, ${s?.enumCount ?? 0} enums.`);
+      resetVersion();
+    } catch (err) { setError(err instanceof Error ? err.message : "Import failed."); }
+  };
+
+  const handleImportProject = async () => {
+    if (!pFile) return;
+    setError(""); setResult("");
+    try {
+      const data = await importProjectMutation.mutateAsync({ content: pFile.content, projectName: pProjectName || undefined });
+      const totalTables = data?.stats?.reduce((n, s) => n + s.tableCount, 0) ?? 0;
+      setResult(`Imported project "${data?.projectName ?? ""}" — ${data?.versionCount ?? 0} versions, ${totalTables} total tables.`);
+      resetProject();
+    } catch (err) { setError(err instanceof Error ? err.message : "Import failed."); }
   };
 
   return (
@@ -109,7 +103,7 @@ export function ImportsPageContent() {
               onProjectNameChange={setVProjectName}
               onVersionNameChange={setVVersionName}
               onChangeFile={() => { setVFile(null); setVPreview(null); setVParseError(""); }}
-              onImport={() => { if (vFile) { setError(""); setResult(""); importVersionMutation.mutate({ content: vFile.content, projectName: vProjectName || undefined, versionName: vVersionName || undefined }); } }}
+              onImport={() => void handleImportVersion()}
             />
           )}
 
@@ -124,7 +118,7 @@ export function ImportsPageContent() {
               onFileSelect={handleProjectFile}
               onProjectNameChange={setPProjectName}
               onChangeFile={() => { setPFile(null); setPPreview(null); setPParseError(""); }}
-              onImport={() => { if (pFile) { setError(""); setResult(""); importProjectMutation.mutate({ content: pFile.content, projectName: pProjectName || undefined }); } }}
+              onImport={() => void handleImportProject()}
             />
           )}
         </div>

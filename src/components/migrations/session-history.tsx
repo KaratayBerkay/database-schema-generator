@@ -22,10 +22,11 @@ type MigrationSession = {
 
 type SessionHistoryProps = {
   sessions: MigrationSession[];
+  knownConnectionIds: Set<string>;
   onResume: (session: MigrationSession) => void;
 };
 
-export function SessionHistory({ sessions, onResume }: SessionHistoryProps) {
+export function SessionHistory({ sessions, knownConnectionIds, onResume }: SessionHistoryProps) {
   const [open, setOpen] = useState(false);
 
   if (sessions.length === 0) return null;
@@ -139,13 +140,22 @@ export function SessionHistory({ sessions, onResume }: SessionHistoryProps) {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => onResume(s)}
-                        className="rounded-md border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 opacity-0 transition hover:border-slate-300 hover:bg-slate-50 group-hover:opacity-100"
-                      >
-                        Resume
-                      </button>
+                      {knownConnectionIds.has(s.connectionId) ? (
+                        <button
+                          type="button"
+                          onClick={() => onResume(s)}
+                          className="rounded-md border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 opacity-0 transition hover:border-slate-300 hover:bg-slate-50 group-hover:opacity-100"
+                        >
+                          Resume
+                        </button>
+                      ) : (
+                        <span
+                          title="Connection was deleted — cannot resume this session"
+                          className="rounded-md border border-slate-100 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-300 opacity-0 group-hover:opacity-100 cursor-not-allowed"
+                        >
+                          No connection
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

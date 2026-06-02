@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
+import { useTableSelector } from "@/hooks/use-table-selector";
 import { useProjectInfo } from "../shared/project-info-context";
 import { useVersionDiffLookup } from "@/hooks/use-version-diff";
 import { useFieldEditor } from "@/hooks/use-field-editor";
@@ -30,19 +30,21 @@ export function SchemaPageContent() {
   const activeProject = hasProject;
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
-  // ── URL-synced + UI toggle state ───────────────────────────────────────────
-  const [selectedModelName, setSelectedModelName] = useState(() => searchParams.get("table") ?? "");
-  const [tableSearch, setTableSearch] = useState("");
+  // ── UI toggle state ────────────────────────────────────────────────────────
   const [isFieldLegendOpen, setIsFieldLegendOpen] = useState(true);
-  const [isTableSelectorOpen, setIsTableSelectorOpen] = useState(false);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
 
   // ── Queries ────────────────────────────────────────────────────────────────
   const tablesQuery = useQuery(trpc.tables.list.queryOptions({ projectName, version }, { enabled: !!projectName && !!version }));
   const models: PrismaModel[] = (tablesQuery.data ?? []) as PrismaModel[];
+
+  const {
+    selectedModelName, setSelectedModelName,
+    tableSearch, setTableSearch,
+    isTableSelectorOpen, setIsTableSelectorOpen,
+    selectModel,
+  } = useTableSelector({ models });
 
   const selectedModel = useMemo(() => models.find((m) => m.name === selectedModelName) ?? null, [models, selectedModelName]);
   const selectedModelKey = selectedModel?.key ?? "";
@@ -85,23 +87,6 @@ export function SchemaPageContent() {
     [templateState.templates, projectProvider, templateState.usedTemplateNames],
   );
 
-  // ── Effects ────────────────────────────────────────────────────────────────
-
-  // Deselect model if it disappears from the list
-  useEffect(() => {
-    if (selectedModelName && models.length > 0 && !models.some((m) => m.name === selectedModelName)) {
-      setSelectedModelName("");
-    }
-  }, [models, selectedModelName]);
-
-  // Sync selected model name to URL
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (selectedModelName) { params.set("table", selectedModelName); } else { params.delete("table"); }
-    if (params.toString() !== searchParams.toString()) router.replace(`?${params.toString()}`, { scroll: false });
-  }, [selectedModelName]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const selectModel = (modelName: string) => { setSelectedModelName(modelName); setIsTableSelectorOpen(false); };
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (

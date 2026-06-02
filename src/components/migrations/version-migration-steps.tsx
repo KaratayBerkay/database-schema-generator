@@ -56,6 +56,7 @@ type VersionMigrationStepsProps = {
   activeConnection: ConnectionRecord | null;
   validateBtnDisabled: boolean | undefined;
   migrateBtnDisabled: boolean | undefined;
+  migrateDisabledReason: string | null;
   onValidate: () => void;
   onShowPreflight: () => void;
 };
@@ -70,7 +71,7 @@ export function VersionMigrationSteps({
   collectBtnDisabled, onCollect, onRestore,
   canMigrate, migrateState, migrateError, validateState, validateError,
   stage1Issues, stage2Issues, errorCount, migrateTables, migrateVersion,
-  activeConnection, validateBtnDisabled, migrateBtnDisabled, onValidate, onShowPreflight,
+  activeConnection, validateBtnDisabled, migrateBtnDisabled, migrateDisabledReason, onValidate, onShowPreflight,
 }: VersionMigrationStepsProps) {
   if (!isVersionPlan) return null;
 
@@ -241,6 +242,7 @@ export function VersionMigrationSteps({
                 <p className="text-[11px] text-slate-500">Review the migration plan and begin. The target schema will be reset and all validated records re-inserted.</p>
               </div>
               <button type="button" onClick={onShowPreflight} disabled={migrateBtnDisabled}
+                title={migrateDisabledReason ?? undefined}
                 className="h-8 min-w-36 rounded-md bg-slate-800 px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300">
                 {migrateState === "loading" ? "Migrating…" : "Review & Run"}
               </button>

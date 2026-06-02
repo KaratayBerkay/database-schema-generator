@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useExportsPageState } from "@/hooks/use-exports-page-state";
 import { IconCopy, IconCheck, IconX, IconDownload } from "@tabler/icons-react";
 import { InlineError, Pagination } from "@/components/built";
 import { useExportHistoryQuery, useExportMutations } from "@/queries/exports";
@@ -14,12 +15,15 @@ import { PickleConfirmDialog } from "@/components/exports/pickle-confirm-dialog"
 
 export function ExportsPageContent() {
   const { projectName, version, hasProject } = useProjectInfo();
-  const [exportError, setExportError] = useState("");
-  const [dialog, setDialog] = useState<ExportDialogState | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [activeExportType, setActiveExportType] = useState<ExportType | null>(null);
-  const [pendingPickle, setPendingPickle] = useState<ExportType | null>(null);
-  const [resetConfirm, setResetConfirm] = useState(false);
+  const {
+    exportError, setExportError,
+    dialog, setDialog,
+    copied, setCopied,
+    activeExportType, setActiveExportType,
+    pendingPickle, setPendingPickle,
+    resetConfirm, setResetConfirm,
+    closeDialog,
+  } = useExportsPageState();
 
   const historyQuery = useExportHistoryQuery(projectName ?? "");
   const { invalidate: invalidateExports, generate: exportMutation, reset: resetMutation, markDownloaded: markDownloadedMutation } =
@@ -100,11 +104,6 @@ export function ExportsPageContent() {
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const closeDialog = () => {
-    setDialog(null);
-    setCopied(false);
   };
 
   const handleDownload = () => {

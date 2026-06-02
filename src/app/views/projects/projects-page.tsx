@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback } from "react";
+import { useProjectsPageState } from "@/hooks/use-projects-page-state";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -108,15 +109,18 @@ export function ProjectsPageContent() {
   const forkingVersion = forkMutation.isPending;
   const isCreating = createMutation.isPending;
   const isDeleting = deleteMutation.isPending;
-  const [showForkConfirm, setShowForkConfirm] = useState(false);
-  const [forkError, setForkError] = useState("");
-  const [deleteConfirmation, setDeleteConfirmation] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
-  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
-  const [savingProjectId, setSavingProjectId] = useState<string | null>(null);
   const reset = useProjectReset();
-  const [versionScroll, setVersionScroll] = useState({ canScrollDown: false, canScrollUp: false });
-  const versionListRef = useRef<HTMLDivElement>(null);
+  const {
+    showForkConfirm, setShowForkConfirm,
+    forkError, setForkError,
+    deleteConfirmation, setDeleteConfirmation,
+    deleteTarget, setDeleteTarget,
+    editingProjectId, setEditingProjectId,
+    savingProjectId, setSavingProjectId,
+    versionScroll, setVersionScroll,
+    versionListRef,
+    openDeleteConfirm, closeDeleteConfirm,
+  } = useProjectsPageState();
 
   // ── Create handler ─────────────────────────────────────────────────────────
 
