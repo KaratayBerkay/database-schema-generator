@@ -33,7 +33,7 @@ export function ValidationPageContent() {
   const TABLE_PAGE_SIZE = 9;
 
   const tablesQuery = useTablesQuery(projectName, version);
-  const models: PrismaModel[] = (tablesQuery.data ?? []) as PrismaModel[];
+  const models: PrismaModel[] = useMemo(() => (tablesQuery.data ?? []) as PrismaModel[], [tablesQuery.data]);
 
   const [selectedFieldKeys, setSelectedFieldKeys] = useState<Set<string>>(new Set());
   const [fieldSearch, setFieldSearch] = useState("");
@@ -48,7 +48,7 @@ export function ValidationPageContent() {
   const selectedModelKey = selectedModel?.key ?? "";
 
   const fieldsQuery = useFieldsQuery(projectName, version, selectedModelName, selectedModelKey);
-  const fields: PrismaField[] = fieldsQuery.data?.fields ?? [];
+  const fields: PrismaField[] = useMemo(() => fieldsQuery.data?.fields ?? [], [fieldsQuery.data]);
   const enumTypes: string[] = fieldsQuery.data?.enumTypes ?? [];
 
   const [selectionHash, setSelectionHash] = useState<string | null>(null);
@@ -78,7 +78,7 @@ export function ValidationPageContent() {
   );
 
   const listZodQuery = useZodSchemasQuery(projectName, version);
-  const zodSchemas = listZodQuery.data ?? [];
+  const zodSchemas = useMemo(() => listZodQuery.data ?? [], [listZodQuery.data]);
 
   // Respects dismiss — used for banner + row blink
   const duplicateSchema = useMemo(
