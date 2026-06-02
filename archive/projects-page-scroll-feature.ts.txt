@@ -1,0 +1,64 @@
+// Removed on 2026-06-02 — an orphaned "version list scroll" affordance plus unused
+// delete-confirm helpers. The scroll machinery was never wired to any element's
+// `ref=` in projects-page.tsx (setVersionListNode was never used; versionScroll was
+// never read in render). openDeleteConfirm/closeDeleteConfirm were superseded by
+// setDeleteTarget + a local closeDeleteDialog. `Controller` was imported but unused.
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// from src/hooks/use-projects-page-state.ts
+// ─────────────────────────────────────────────────────────────────────────────
+
+  // import: `useRef` (only versionListRef used it)
+  // import type { Project } stays (deleteTarget still uses it)
+
+  const [versionScroll,      setVersionScroll]      = useState({ canScrollDown: false, canScrollUp: false });
+  const versionListRef = useRef<HTMLDivElement>(null);
+
+  function openDeleteConfirm(project: Project) {
+    setDeleteTarget(project);
+    setDeleteConfirmation("");
+  }
+
+  function closeDeleteConfirm() {
+    setDeleteTarget(null);
+    setDeleteConfirmation("");
+  }
+
+  // ...and from the returned object:
+  //   versionScroll, setVersionScroll,
+  //   versionListRef,
+  //   openDeleteConfirm, closeDeleteConfirm,
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// from src/app/views/projects/projects-page.tsx
+// ─────────────────────────────────────────────────────────────────────────────
+
+  // import: `useCallback` (only the two callbacks below used it)
+  // import: `Controller` from "react-hook-form" (unused; every field uses FormField)
+
+  // ...destructured from useProjectsPageState():
+  //   versionScroll, setVersionScroll,
+  //   versionListRef,
+  //   openDeleteConfirm, closeDeleteConfirm,
+
+  // ── Scroll helpers ─────────────────────────────────────────────────────────
+
+  const updateVersionScrollControls = useCallback(
+    (node: HTMLDivElement | null = versionListRef.current) => {
+      if (!node) { setVersionScroll({ canScrollDown: false, canScrollUp: false }); return; }
+      const max = node.scrollHeight - node.clientHeight;
+      setVersionScroll({ canScrollDown: node.scrollTop < max - 1, canScrollUp: node.scrollTop > 1 });
+    },
+    [],
+  );
+
+  const setVersionListNode = useCallback(
+    (node: HTMLDivElement | null) => {
+      versionListRef.current = node;
+      if (!node) { setVersionScroll({ canScrollDown: false, canScrollUp: false }); return; }
+      requestAnimationFrame(() => updateVersionScrollControls(node));
+    },
+    [updateVersionScrollControls],
+  );

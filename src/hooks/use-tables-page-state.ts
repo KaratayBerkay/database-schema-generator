@@ -28,8 +28,8 @@ export function useTablesPageState() {
   function openEdit(model: PrismaModel) {
     setSelectedModel(model);
     setEditModelName(model.name);
-    setEditPkName(model.pkName ?? "id");
-    setEditPkType(model.pkType ?? "");
+    setEditPkName(model.pkName || "id");
+    setEditPkType(model.pkType || "Int");
     setIsEditing(true);
     setUpdateError("");
   }
@@ -37,12 +37,10 @@ export function useTablesPageState() {
   function closeEdit() {
     setIsEditing(false);
     setSelectedModel(null);
+    setEditModelName("");
+    setEditPkName("");
+    setEditPkType("");
     setUpdateError("");
-  }
-
-  function resetCreate() {
-    setModelName("");
-    setCreateError("");
   }
 
   return {
@@ -60,6 +58,6 @@ export function useTablesPageState() {
     searchTerm, setSearchTerm,
     helpDialog, setHelpDialog,
     diffDetail, setDiffDetail,
-    openEdit, closeEdit, resetCreate,
+    openEdit, closeEdit,
   };
 }

@@ -23,11 +23,10 @@ import { TemplateDropdown } from "@/components/schema/template-dropdown";
 import { RemovedFieldsSection } from "@/components/schema/removed-fields-section";
 
 export function SchemaPageContent() {
-  const { projectName, version, versions, hasProject, provider: projectProvider, projectId } = useProjectInfo();
+  const { projectName, version, versions, hasProject, provider: projectProvider } = useProjectInfo();
   const { diffByFieldKey, diffByTableKey } = useVersionDiffLookup(projectName, version);
   const versionIdx = versions.indexOf(version);
   const previousVersion = versionIdx > 0 ? versions[versionIdx - 1]! : "";
-  const activeProject = hasProject;
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -37,10 +36,10 @@ export function SchemaPageContent() {
 
   // ── Queries ────────────────────────────────────────────────────────────────
   const tablesQuery = useQuery(trpc.tables.list.queryOptions({ projectName, version }, { enabled: !!projectName && !!version }));
-  const models: PrismaModel[] = (tablesQuery.data ?? []) as PrismaModel[];
+  const models: PrismaModel[] = useMemo(() => (tablesQuery.data ?? []) as PrismaModel[], [tablesQuery.data]);
 
   const {
-    selectedModelName, setSelectedModelName,
+    selectedModelName,
     tableSearch, setTableSearch,
     isTableSelectorOpen, setIsTableSelectorOpen,
     selectModel,
@@ -91,7 +90,7 @@ export function SchemaPageContent() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
-      {!activeProject ? (
+      {!hasProject ? (
         <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
           <p className="text-slate-600">Select a project to manage schema fields.</p>
           <button type="button" onClick={() => setIsTemplatesOpen(true)}

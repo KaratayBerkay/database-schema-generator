@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useHierarchyQuery } from "@/queries/hierarchy";
 import { classNames } from "@/lib/utils";
 import { useProjectInfo } from "../shared/project-info-context";
+import { EmptyState } from "@/components/built";
 
 type HierarchyResponse = {
   order: {
@@ -23,14 +24,6 @@ type HierarchyResponse = {
   tableCount: number;
   relationCount: number;
 };
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
-      <p className="text-sm text-slate-600">{message}</p>
-    </div>
-  );
-}
 
 export function HierarchyPageContent() {
   const { projectName, version, hasProject } = useProjectInfo();

@@ -53,14 +53,14 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   }, [selectedVersion]);
 
   const { data: statsData } = useSchemaStatsQuery(activeProject?.name ?? "", selectedVersion);
-  const schemaStats = {
+  const schemaStats = useMemo(() => ({
     tableCount: statsData?.tableCount ?? 0,
     fieldCount: statsData?.fieldCount ?? 0,
     relationCount: statsData?.relationCount ?? 0,
     restrictionCount: statsData?.restrictionCount ?? 0,
     importQueuedCount: statsData?.imports ?? 0,
     enumCount: statsData?.enumCount ?? 0,
-  };
+  }), [statsData]);
 
   const schemaTestMutation = useSchemaTestMutation();
 

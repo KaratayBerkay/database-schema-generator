@@ -9,7 +9,6 @@ import { useProjectInfo } from "../shared/project-info-context";
 import { useVersionDiffLookup } from "@/hooks/use-version-diff";
 import { useSchemaWarnings } from "@/hooks/use-schema-warnings";
 import { TableDiffDetailModal } from "@/components/tables/table-diff-detail-modal";
-import type { TableDiff } from "@/lib/version-diff/detect-changes";
 import type { PrismaModel } from "@/lib/schema-store";
 import {
   pkTypeDetails,
@@ -22,7 +21,6 @@ import {
   type ProviderKey,
   type PkTypeValue,
 } from "@/constants/tables";
-import type { HelpDialog } from "@/types/tables";
 import { AddTableForm } from "@/components/tables/add-table-form";
 import { EditTablePanel } from "@/components/tables/edit-table-panel";
 import { TablesGrid } from "@/components/tables/tables-grid";
@@ -45,17 +43,17 @@ export function TablesPageContent() {
     pkName, setPkName,
     pkType, setPkType,
     createError, setCreateError,
-    selectedModel, setSelectedModel,
+    selectedModel,
     editModelName, setEditModelName,
     editPkName, setEditPkName,
     editPkType, setEditPkType,
-    isEditing, setIsEditing,
+    isEditing,
     updateError, setUpdateError,
     currentPage, setCurrentPage,
     searchTerm, setSearchTerm,
     helpDialog, setHelpDialog,
     diffDetail, setDiffDetail,
-    openEdit, closeEdit, resetCreate,
+    openEdit, closeEdit,
   } = useTablesPageState();
 
   const activeProvider = providerKey(provider);
@@ -90,17 +88,6 @@ export function TablesPageContent() {
     );
   };
 
-  const startEdit = (model: PrismaModel) => {
-    setSelectedModel(model); setEditModelName(model.name);
-    setEditPkName(model.pkName || "id"); setEditPkType(model.pkType || "Int");
-    setIsEditing(true); setUpdateError("");
-  };
-
-  const cancelEdit = () => {
-    setSelectedModel(null); setEditModelName(""); setEditPkName("");
-    setEditPkType(""); setIsEditing(false); setUpdateError("");
-  };
-
   const saveEdit = () => {
     if (!selectedModel) return;
     const name = editModelName.trim();
@@ -115,7 +102,7 @@ export function TablesPageContent() {
     updateMutation.mutate(
       { projectName, version, modelKey: selectedModel.key, oldModelName: selectedModel.name, newModelName: name, pkName: editPkName.trim(), pkType: editPkType as "String" | "Int" | "BigInt" | "DateTime" | "Uuid" },
       {
-        onSuccess: () => { void invalidateTables(); cancelEdit(); },
+        onSuccess: () => { void invalidateTables(); closeEdit(); },
         onError: (err) => setUpdateError(err.message),
       },
     );
@@ -128,7 +115,7 @@ export function TablesPageContent() {
     deleteMutation.mutate(
       { projectName, version, modelName: selectedModel.name, modelKey: selectedModel.key },
       {
-        onSuccess: () => { void invalidateTables(); setCurrentPage(1); cancelEdit(); },
+        onSuccess: () => { void invalidateTables(); setCurrentPage(1); closeEdit(); },
         onError: (err) => setUpdateError(err.message),
       },
     );
@@ -200,7 +187,7 @@ export function TablesPageContent() {
                 onPkNameChange={(v) => { setEditPkName(v); setUpdateError(""); }}
                 onPkTypeChange={(v) => { setEditPkType(v); setUpdateError(""); }}
                 onSave={saveEdit}
-                onCancel={cancelEdit}
+                onCancel={closeEdit}
                 onDelete={deleteSelectedModel}
               />
             ) : (
@@ -213,7 +200,7 @@ export function TablesPageContent() {
                 fieldTypeBadgeClass={fieldTypeBadgeClass}
                 onSearchChange={setSearchTerm}
                 onPageChange={setCurrentPage}
-                onEdit={startEdit}
+                onEdit={openEdit}
                 onShowDiff={setDiffDetail}
               />
             )}

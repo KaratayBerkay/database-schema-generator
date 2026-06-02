@@ -2,13 +2,11 @@
 
 import { useState } from "react";
 import { useExportsPageState } from "@/hooks/use-exports-page-state";
-import { IconCopy, IconCheck, IconX, IconDownload } from "@tabler/icons-react";
 import { InlineError, Pagination } from "@/components/built";
 import { useExportHistoryQuery, useExportMutations } from "@/queries/exports";
 import { classNames } from "@/lib/utils";
 import { useProjectInfo } from "../shared/project-info-context";
 import { EXPORT_OPTIONS, type ExportType } from "@/constants/exports";
-import type { ExportResponse, ExportDialogState } from "@/types/exports";
 import { ExportedCodeDialog } from "@/components/exports/exported-code-dialog";
 import { PickleConfirmDialog } from "@/components/exports/pickle-confirm-dialog";
 
@@ -29,12 +27,8 @@ export function ExportsPageContent() {
   const { invalidate: invalidateExports, generate: exportMutation, reset: resetMutation, markDownloaded: markDownloadedMutation } =
     useExportMutations(projectName ?? "");
 
-  const handleExport = (type: ExportType) => {
+  const runExport = (type: ExportType) => {
     if (!projectName || !version) return;
-    if (type === "pickle-version" || type === "pickle-project") {
-      setPendingPickle(type);
-      return;
-    }
     setActiveExportType(type);
     setExportError("");
     exportMutation.mutate({ projectName, version, type }, {
@@ -60,33 +54,17 @@ export function ExportsPageContent() {
     });
   };
 
+  // Pickle exports confirm first via a dialog; everything else runs immediately.
+  const handleExport = (type: ExportType) => {
+    if (type === "pickle-version" || type === "pickle-project") { setPendingPickle(type); return; }
+    runExport(type);
+  };
+
   const confirmPickle = () => {
-    if (!pendingPickle || !projectName || !version) return;
+    if (!pendingPickle) return;
     const type = pendingPickle;
     setPendingPickle(null);
-    setActiveExportType(type);
-    setExportError("");
-    exportMutation.mutate({ projectName, version, type }, {
-      onSuccess: (data, vars) => {
-        const t = vars.type;
-        if (t === "pickle-version" || t === "pickle-project") {
-          const blob = new Blob([(data as { code?: string } | undefined)?.code ?? ""], { type: "application/json" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a"); a.href = url;
-          a.download = (data as { fileName?: string } | undefined)?.fileName ?? "export.pickle.json";
-          a.click(); URL.revokeObjectURL(url);
-          setActiveExportType(null); return;
-        }
-        setDialog({ exportId: (data as { id?: string } | undefined)?.id ?? "", code: (data as { code?: string } | undefined)?.code ?? "",
-          fileName: (data as { fileName?: string } | undefined)?.fileName ?? (t === "prisma" ? `${version}.prisma` : "schema.ts"),
-          lang: t === "prisma" ? "prisma" : "ts",
-          tableCount: (data as { tableCount?: number } | undefined)?.tableCount ?? 0,
-          enumCount: (data as { enumCount?: number } | undefined)?.enumCount ?? 0,
-        });
-        setActiveExportType(null);
-      },
-      onError: (err) => { setExportError(err.message); setActiveExportType(null); },
-    });
+    runExport(type);
   };
 
   const handleCopy = async () => {

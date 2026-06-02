@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRelationFilters } from "@/hooks/use-relation-filters";
 import { useTableSelector } from "@/hooks/use-table-selector";
-import { IconChevronDown } from "@tabler/icons-react";
 import { EmptyState, LoadingCard, Pagination } from "@/components/built";
 import { useRelationsQuery } from "@/queries/relations";
 import { useTablesQuery } from "@/queries/tables";
@@ -14,43 +13,30 @@ import { fieldTypeBadgeClass } from "@/lib/badge-utils";
 import { useProjectInfo } from "../shared/project-info-context";
 import { useVersionDiffLookup } from "@/hooks/use-version-diff";
 import Link from "next/link";
-import { VersionDiffBadge } from "@/components/shared/version-diff-badge";
 import { FkTypeDetailModal } from "@/components/relations/fk-type-detail-modal";
 import type { FkTypeMismatch } from "@/components/relations/fk-type-detail-modal";
-import { useSchemaWarnings } from "@/hooks/use-schema-warnings";
 import { MODAL_TABLES_PER_PAGE } from "@/constants/relations";
 import type {
   PrismaField,
   PrismaModel,
-  PrismaModelRelations,
   PrismaRelation,
 } from "@/lib/schema-store";
-import type {
-  RelationCardinality,
-  RelationDraft,
-  RelationTab,
-} from "@/types/relation";
-import { relationKindLabel, relationKindClass } from "@/constants/relations";
+import type { RelationTab } from "@/types/relation";
+import { relationKindLabel } from "@/constants/relations";
 import { RelationCard } from "@/components/relations/relation-card";
 import { useRelationForm } from "@/hooks/use-relation-form";
 import { RelationFormModal } from "@/components/relations/relation-form-modal";
 import { TableSelectorModal } from "@/features/table-selector";
 
-type RelationsResponse = Partial<PrismaModelRelations> & {
-  error?: string;
-}
-
-
 export function RelationsPageContent() {
-  const { projectName, version, hasProject, projectId, versions } = useProjectInfo();
+  const { projectName, version, hasProject, versions } = useProjectInfo();
   const previousVersion = versions[versions.indexOf(version) - 1] ?? "";
-  const { getWarning, approve, unapprove } = useSchemaWarnings(projectId, previousVersion, version);
 
   const tablesQuery    = useTablesQuery(projectName, version);
-  const models: PrismaModel[] = (tablesQuery.data ?? []) as PrismaModel[];
+  const models: PrismaModel[] = useMemo(() => (tablesQuery.data ?? []) as PrismaModel[], [tablesQuery.data]);
 
   const {
-    selectedModelName, setSelectedModelName,
+    selectedModelName,
     tableSearch, setTableSearch,
     isTableSelectorOpen, setIsTableSelectorOpen,
     selectModel,
@@ -70,10 +56,10 @@ export function RelationsPageContent() {
   const selectedModelKey = selectedModel?.key ?? "";
 
   const relationsQuery  = useRelationsQuery(projectName, version, selectedModelName, selectedModelKey);
-  const relations: PrismaRelation[] = relationsQuery.data?.relations ?? [];
+  const relations: PrismaRelation[] = useMemo(() => relationsQuery.data?.relations ?? [], [relationsQuery.data]);
 
   const sourceFieldsQuery = useFieldsQuery(projectName, version, selectedModelName, selectedModelKey);
-  const sourceFields: PrismaField[] = sourceFieldsQuery.data?.fields ?? [];
+  const sourceFields: PrismaField[] = useMemo(() => sourceFieldsQuery.data?.fields ?? [], [sourceFieldsQuery.data]);
   const sourceFieldNames = useMemo(
     () => new Set(sourceFields.filter((f) => !f.isRelation).map((f) => f.name)),
     [sourceFields],
@@ -85,13 +71,13 @@ export function RelationsPageContent() {
     draft, editingRelationKey, isRelationFormOpen, modalTableSearch, modalTablePage,
     fkFieldType, fkFieldDbName, deletingRelationKey, error, savingRelation,
     setFkFieldType, setFkFieldDbName, setModalTableSearch, setModalTablePage,
-    setIsRelationFormOpen, setError,
+    setIsRelationFormOpen,
     updateDraft, resetDraft, editRelation, saveRelation, deleteRelation,
   } = useRelationForm({ selectedModelName, selectedModelKey, models });
 
   const targetModel      = models.find((m) => m.name === draft.targetModel);
   const targetFieldsQuery = useFieldsQuery(projectName, version, draft.targetModel, targetModel?.key ?? "");
-  const targetFields: PrismaField[] = targetFieldsQuery.data?.fields ?? [];
+  const targetFields: PrismaField[] = useMemo(() => targetFieldsQuery.data?.fields ?? [], [targetFieldsQuery.data]);
   const selectableTargetFields = useMemo(
     () => targetFields.filter((field) => !field.isRelation && (field.isId || field.unique)),
     [targetFields],
@@ -127,7 +113,7 @@ export function RelationsPageContent() {
   useEffect(() => {
     const refField = selectableTargetFields.find((f) => f.name === draft.references);
     if (refField) setFkFieldType(refField.type);
-  }, [draft.references, selectableTargetFields]);
+  }, [draft.references, selectableTargetFields, setFkFieldType]);
 
   if (!hasProject) {
     return (

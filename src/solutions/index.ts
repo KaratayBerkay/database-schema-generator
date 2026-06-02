@@ -2,7 +2,6 @@ import * as FromString   from "./from-string";
 import * as FromNumber   from "./from-number";
 import * as FromDateTime from "./from-datetime";
 import { enumTypeDeleted } from "./from-enum";
-import { backfillRequired, backfillNullRow } from "./backfill";
 import type { FieldContext, FieldDecision, FieldResolution, EnumDecision } from "./types";
 
 export type { FieldContext, FieldDecision, FieldResolution, EnumDecision };

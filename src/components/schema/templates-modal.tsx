@@ -4,7 +4,7 @@ import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { classNames } from "@/lib/utils";
 import { providers as allProviders } from "@/constants/projects";
 import { typeBadgeClass, typeSelectClass } from "@/constants/schema";
-import type { FieldTemplate, FieldTemplateInput } from "@/lib/field-template-store";
+import type { FieldTemplate } from "@/lib/field-template-store";
 import type { useFieldTemplates } from "@/hooks/use-field-templates";
 
 type TemplateState = ReturnType<typeof useFieldTemplates>;

@@ -18,10 +18,10 @@ export function CommentaryPageContent() {
   const { projectName, version, hasProject } = useProjectInfo();
 
   const tablesQuery = useTablesQuery(projectName, version);
-  const models: PrismaModel[] = (tablesQuery.data ?? []) as PrismaModel[];
+  const models: PrismaModel[] = useMemo(() => (tablesQuery.data ?? []) as PrismaModel[], [tablesQuery.data]);
 
   const {
-    selectedModelName, setSelectedModelName,
+    selectedModelName,
     tableSearch, setTableSearch,
     isTableSelectorOpen, setIsTableSelectorOpen,
     selectModel,
@@ -36,7 +36,7 @@ export function CommentaryPageContent() {
   const selectedModelKey = selectedModel?.key ?? "";
 
   const fieldsQuery = useCommentaryFieldsQuery(projectName, version, selectedModelName, selectedModelKey);
-  const fields: PrismaField[] = fieldsQuery.data?.fields ?? [];
+  const fields: PrismaField[] = useMemo(() => fieldsQuery.data?.fields ?? [], [fieldsQuery.data]);
   const enumTypes: string[] = fieldsQuery.data?.enumTypes ?? [];
 
   const {

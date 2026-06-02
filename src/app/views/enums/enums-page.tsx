@@ -13,10 +13,8 @@ import { validateEnumName } from "@/constants/enums";
 import { EmptyState, LoadingCard } from "@/components/built";
 
 export function EnumsPageContent() {
-  const { projectName, version, versions, provider, hasProject, projectId } = useProjectInfo();
+  const { projectName, version, provider, hasProject } = useProjectInfo();
   const isSQLite = provider === "SQLite";
-  const versionIdx = versions.indexOf(version);
-  const previousVersion = versionIdx > 0 ? versions[versionIdx - 1]! : "";
 
   const [enumName, setEnumName] = useState("");
   const [createError, setCreateError] = useState("");
