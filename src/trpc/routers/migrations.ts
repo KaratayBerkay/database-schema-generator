@@ -1,4 +1,3 @@
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import path from "node:path";
 import { rm } from "node:fs/promises";
@@ -13,13 +12,6 @@ function toSlug(value: string) {
   return (
     value.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "untitled"
   );
-}
-
-function trpcError(err: unknown, fallback = "Operation failed."): never {
-  throw new TRPCError({
-    code: "BAD_REQUEST",
-    message: err instanceof Error ? err.message : fallback,
-  });
 }
 
 export const migrationsRouter = createTRPCRouter({
