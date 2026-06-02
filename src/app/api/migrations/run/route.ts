@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { execFile, spawn } from "node:child_process";
 import { mkdir, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import { randomUUID } from "node:crypto";
@@ -22,7 +21,7 @@ import { resolveFieldMigration, warningToDecision } from "@/solutions";
 
 const execFileAsync = promisify(execFile);
 const migrationsDir = path.join(/*turbopackIgnore: true*/ process.cwd(), "src/database/migrations");
-const tmpDir = path.join(tmpdir(), "database-schema-generator", "migration-runtime");
+const tmpDir = path.join(/*turbopackIgnore: true*/ process.cwd(), "src/database/migration-runtime");
 
 // ─── canonical types ──────────────────────────────────────────────────────────
 
@@ -94,7 +93,7 @@ function loadApprovedLossyFields(
     FROM schema_warnings sw
     WHERE sw.project_id = ? AND sw.from_version = ? AND sw.to_version = ?
       AND sw.entity_kind = 'field'
-      AND sw.resolution IN ('lossy_convert', 'data_deleted')
+      AND sw.resolution IN ('lossy_convert', 'data_deleted', 'precision_loss', 'backfill_required')
       AND sw.approved_at IS NOT NULL
   `).all(projectRow.id, syncVersion, targetVersion) as { entity_name: string; change_kind: string; resolution: string; replacement_value: string | null; target_unique: number }[];
   const result = new Map<string, Map<string, ApprovedLossyEntry>>();
@@ -335,12 +334,13 @@ function buildFieldTransforms(
         if (!schemaField) continue;
 
         if (sf) {
-          const lossyEntry = lossyForModel.get(targetName);
+          const lossyEntry = lossyForModel.get(targetName.toLowerCase());
           const isInLossy = lossyEntry !== undefined;
           if (isInLossy) {
-            const isPkChange = lossyEntry!.changeKind === "pk_type_changed";
-            const conversion = checkTypeConversion(sf.type ?? "", tf.type ?? "");
-            if (isPkChange || !conversion.compatible) {
+            const isPkChange    = lossyEntry!.changeKind === "pk_type_changed";
+            const isBackfill    = lossyEntry!.resolution === "backfill_required";
+            const conversion    = checkTypeConversion(sf.type ?? "", tf.type ?? "");
+            if (isPkChange || isBackfill || !conversion.compatible) {
               lossy.push({
                 name: targetName,
                 syncName: sf.dbName || sf.name,
@@ -366,7 +366,27 @@ function buildFieldTransforms(
             else renames[syncName] = targetName;
           }
         } else {
-          added.push({ name: targetName, type: schemaField.type, optional: schemaField.optional, hasDefault: schemaField.hasDefault });
+          // Field is new in target. If it has an approved backfill_required entry with a
+          // replacementValue, route it through the lossy pipeline so the replacement is applied
+          // instead of typeAppropriateDefault.
+          const lossyEntry = lossyForModel.get(targetName.toLowerCase());
+          if (lossyEntry?.resolution === "backfill_required" && lossyEntry.replacementValue !== null) {
+            lossy.push({
+              name: targetName,
+              syncName: targetName,
+              syncType: schemaField.type,
+              type: schemaField.type,
+              optional: schemaField.optional,
+              hasDefault: schemaField.hasDefault,
+              changeKind: lossyEntry.changeKind,
+              resolution: lossyEntry.resolution,
+              replacementValue: lossyEntry.replacementValue,
+              targetNullable: schemaField.optional,
+              targetUnique: lossyEntry.targetUnique,
+            });
+          } else {
+            added.push({ name: targetName, type: schemaField.type, optional: schemaField.optional, hasDefault: schemaField.hasDefault });
+          }
         }
       }
       // Fields in sync but not in target → removed
@@ -389,6 +409,108 @@ function buildFieldTransforms(
   }
 
   return result;
+}
+
+// ─── pk-type-change UUID remapping ───────────────────────────────────────────
+//
+// When a PK field changes type (e.g. Int → UUID), the old integer values in the
+// snapshot cannot be inserted into the target uuid column.  We must:
+//   1. Generate new UUIDs for each PK row and build an old→new map.
+//   2. Update FK fields in other tables that reference the changed PK.
+//
+// The table-level pk_type_changed warnings (entity_kind='table') and FK-cascade
+// relation warnings (entity_kind='relation', change_kind='type_changed') tell us
+// exactly which fields to remap.
+
+type PkRemapEntry = { pkFieldDbName: string; oldToNew: Map<string, string> };
+
+type ExtCanonicalField = CanonicalField & {
+  constraints?: { type: string }[];
+  relation?: { fields?: string[]; references?: string[] };
+};
+
+function applyPkUuidRemapping(
+  projectName: string,
+  syncVersion: string,
+  targetVersion: string,
+  targetStore: CanonicalStore | null,
+  transformedByModel: Map<string, Record<string, unknown>[]>,
+): void {
+  if (!targetStore) return;
+  const projectRow = appDb.prepare("SELECT id FROM projects WHERE name = ?").get(projectName) as { id: string } | undefined;
+  if (!projectRow) return;
+
+  // 1. Find tables whose PK type changed and build old-int → new-uuid mappings.
+  const pkRemaps = new Map<string, PkRemapEntry>();  // tableName → remap info
+
+  const pkRows = appDb.prepare(`
+    SELECT entity_name FROM schema_warnings
+    WHERE project_id = ? AND from_version = ? AND to_version = ?
+      AND entity_kind = 'table' AND change_kind = 'pk_type_changed'
+      AND approved_at IS NOT NULL
+  `).all(projectRow.id, syncVersion, targetVersion) as { entity_name: string }[];
+
+  for (const { entity_name: tableName } of pkRows) {
+    const model = targetStore.models.find((m) => m.name === tableName);
+    if (!model) continue;
+    const pkField = (model.fields as ExtCanonicalField[]).find(
+      (f) => f.constraints?.some((c) => c.type === "PK"),
+    );
+    if (!pkField) continue;
+
+    const pkDbName = (pkField.dbName || pkField.name).toLowerCase();
+    const records = transformedByModel.get(tableName) ?? [];
+    const oldToNew = new Map<string, string>();
+
+    for (const rec of records) {
+      const oldPk = String(rec[pkDbName] ?? rec[pkField.name] ?? "");
+      if (oldPk && !oldToNew.has(oldPk)) oldToNew.set(oldPk, randomUUID());
+      const newUuid = oldToNew.get(oldPk);
+      if (newUuid) {
+        if (pkDbName in rec) rec[pkDbName] = newUuid;
+        else if (pkField.name in rec) rec[pkField.name] = newUuid;
+      }
+    }
+    pkRemaps.set(tableName, { pkFieldDbName: pkDbName, oldToNew });
+  }
+
+  if (pkRemaps.size === 0) return;
+
+  // 2. Remap FK fields in tables that reference a pk_type_changed table.
+  //    Approved relation/type_changed warnings tell us exactly which FK fields need remapping.
+  const fkRows = appDb.prepare(`
+    SELECT entity_name FROM schema_warnings
+    WHERE project_id = ? AND from_version = ? AND to_version = ?
+      AND entity_kind = 'relation' AND change_kind = 'type_changed'
+      AND approved_at IS NOT NULL
+  `).all(projectRow.id, syncVersion, targetVersion) as { entity_name: string }[];
+
+  for (const { entity_name } of fkRows) {
+    const dotIdx = entity_name.indexOf(".");
+    const arrowIdx = entity_name.indexOf(" → ");
+    if (dotIdx === -1 || arrowIdx === -1) continue;
+    const fkTableName = entity_name.slice(0, dotIdx);
+    const fkFieldName = entity_name.slice(dotIdx + 1, arrowIdx);
+    const referencedTableName = entity_name.slice(arrowIdx + 3);
+    if (!referencedTableName) continue;
+
+    // Prefer exact table name match; fall back to scanning all pkRemaps for old-format
+    // warnings that stored "→ (PK changed)" instead of "→ TableName".
+    const exactRemap = pkRemaps.get(referencedTableName);
+    const isOldFormat = !exactRemap && referencedTableName.startsWith("(");
+
+    const fkDbName = fkFieldName.toLowerCase();
+    const records = transformedByModel.get(fkTableName) ?? [];
+    for (const rec of records) {
+      const oldVal = String(rec[fkDbName] ?? rec[fkFieldName] ?? "");
+      const remap = exactRemap ?? (isOldFormat ? [...pkRemaps.values()].find(r => r.oldToNew.has(oldVal)) : undefined);
+      const newUuid = remap?.oldToNew.get(oldVal);
+      if (newUuid) {
+        if (fkDbName in rec) rec[fkDbName] = newUuid;
+        else if (fkFieldName in rec) rec[fkFieldName] = newUuid;
+      }
+    }
+  }
 }
 
 // ─── type coercion ────────────────────────────────────────────────────────────
@@ -572,6 +694,7 @@ function runStage1(
 function runStage2(
   targetModels: SchemaModel[],
   transformedByModel: Map<string, Record<string, unknown>[]>,
+  approvedLossy: ApprovedLossySet,
 ): { issues: ValidationIssue[]; invalidRows: InvalidRow[] } {
   const issues: ValidationIssue[] = [];
   const invalidRows: InvalidRow[] = [];
@@ -580,10 +703,12 @@ function runStage2(
     const records = transformedByModel.get(model.name) ?? [];
     if (records.length === 0) continue;
 
+    const lossyForModel = approvedLossy.get(model.name) ?? new Map<string, ApprovedLossyEntry>();
     const shape: Record<string, z.ZodTypeAny> = {};
     for (const field of model.fields) {
       if (!SCALAR_TYPES.has(field.type)) continue;
-      shape[field.name] = prismaTypeToZodStrict(field.type, field.optional || field.hasDefault);
+      const isBackfill = lossyForModel.get(field.name.toLowerCase())?.resolution === "backfill_required";
+      shape[field.name] = prismaTypeToZodStrict(field.type, field.optional || field.hasDefault || isBackfill);
     }
     const schema = z.object(shape).passthrough();
 
@@ -930,9 +1055,13 @@ export async function POST(request: Request) {
     }
   }
 
+  // ── Remap pk_type_changed PKs to new UUIDs and update FK references ──────────
+
+  applyPkUuidRemapping(projectName, syncVersion ?? "", targetVersion, targetStore, transformedByModel);
+
   // ── Stage 2: validate transformed+patched records against target Zod ─────────
 
-  const { issues: stage2Issues, invalidRows } = runStage2(targetModels, transformedByModel);
+  const { issues: stage2Issues, invalidRows } = runStage2(targetModels, transformedByModel, approvedLossy);
 
   // needsFix: stream a single event so the client opens the fix modal
   if (invalidRows.length > 0) {
@@ -988,7 +1117,8 @@ export async function POST(request: Request) {
         );
 
         // Phase 2: bulk insert
-        send({ type: "phase", phase: "inserting", total: tablesPayload.length });
+        const totalRows = tablesPayload.reduce((s, t) => s + (t?.records.length ?? 0), 0);
+        send({ type: "phase", phase: "inserting", total: tablesPayload.length, totalRows });
         await mkdir(logsDir, { recursive: true });
         await mkdir(tmpDir, { recursive: true });
         // For MySQL, pre-convert all datetime values to 'YYYY-MM-DD HH:MM:SS' format before

@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePendingCountsQuery } from "@/queries/tracking";
 import { useProjectInfo } from "../shared/project-info-context";
+import { useDashboard } from "../shared/dashboard-context";
 import { useSchemaWarnings } from "@/hooks/use-schema-warnings";
 import { Tabs, TabsList, TabsContent } from "@/components/ui/tabs";
 import { TabTrigger } from "@/components/tracking/tab-trigger";
@@ -12,8 +14,20 @@ import { VALID_TABS, type TrackingTab } from "@/constants/tracking";
 
 export function TrackingPageContent() {
   const { projectId, projectName, versions, version, hasProject } = useProjectInfo();
+  const { setSelectedVersion } = useDashboard();
   const router  = useRouter();
   const searchParams = useSearchParams();
+
+  // When arriving from Migrations via "Go To Tracking Workflow", switch the sidebar
+  // version to the migration target so warnings for the right pair are shown.
+  const toParam = searchParams.get("to");
+  useEffect(() => {
+    if (toParam && versions.includes(toParam) && toParam !== version) {
+      setSelectedVersion(toParam);
+    }
+  // Only fire when the param changes, not on every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toParam]);
 
   const resolveParam = searchParams.get("resolve") as TrackingTab | null;
   const activeTab: TrackingTab = VALID_TABS.includes(resolveParam as TrackingTab)
@@ -33,8 +47,13 @@ export function TrackingPageContent() {
   const hasPair     = versionIdx > 0;
 
   const { data: countsData } = usePendingCountsQuery(hasPair ? projectId : "", fromVersion, toVersion);
-  const pending = countsData ?? { table: 0, field: 0, enum: 0, relation: 0, total: 0 };
+  const pending = countsData ?? { table: 0, field: 0, enum: 0, relation: 0, restriction: 0, total: 0 };
   const { warnings, defaultsRequiredCount } = useSchemaWarnings(projectId, fromVersion, toVersion);
+  // FK cascade warnings (relation/type_changed) passed to the Tables panel so pk_type_changed rows
+  // can display which FK fields will be remapped automatically via the _referance technique.
+  const fkCascadeWarnings = warnings.filter(
+    (w) => w.entityKind === "relation" && w.changeKind === "type_changed",
+  );
 
   const incompleteByKind = {
     field: warnings.filter(
@@ -139,7 +158,7 @@ export function TrackingPageContent() {
               <TabTrigger value="enums"        count={pending.enum}     incompleteCount={incompleteByKind.enum}     allClear={hasPair && !!countsData && pending.enum     === 0 && incompleteByKind.enum     === 0} />
               <TabTrigger value="schema"       count={pending.field}    incompleteCount={incompleteByKind.field}    allClear={hasPair && !!countsData && pending.field    === 0 && incompleteByKind.field    === 0} />
               <TabTrigger value="relations"    count={pending.relation} incompleteCount={incompleteByKind.relation} allClear={hasPair && !!countsData && pending.relation === 0 && incompleteByKind.relation === 0} />
-              <TabTrigger value="restrictions" allClear={hasPair && !!countsData} />
+              <TabTrigger value="restrictions" count={pending.restriction} allClear={hasPair && !!countsData && pending.restriction === 0} />
             </TabsList>
           </div>
 
@@ -153,7 +172,8 @@ export function TrackingPageContent() {
               <WarningsPanel projectId={projectId} fromVersion={fromVersion} toVersion={toVersion} entityKind="table"
                 color="bg-cyan-500" title="Table Resolver"
                 description="Approve table removals and PK type changes. Removed tables will have all their rows permanently dropped on migration."
-                pendingCount={pending.table} incompleteCount={incompleteByKind.table} />
+                pendingCount={pending.table} incompleteCount={incompleteByKind.table}
+                relatedWarnings={fkCascadeWarnings} />
             </TabsContent>
             <TabsContent value="enums">
               <WarningsPanel projectId={projectId} fromVersion={fromVersion} toVersion={toVersion} entityKind="enum"

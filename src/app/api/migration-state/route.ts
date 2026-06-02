@@ -23,6 +23,7 @@ export async function PATCH(request: Request) {
     syncVersion?: string | null;
     targetVersion?: string | null;
     dataTimestamp?: string | null;
+    snapshotId?: string | null;
     zodGenerated?: boolean;
     schemaCheckPassed?: boolean;
     validationPassed?: boolean;
@@ -34,6 +35,7 @@ export async function PATCH(request: Request) {
     syncVersion: body.syncVersion,
     targetVersion: body.targetVersion,
     dataTimestamp: body.dataTimestamp,
+    snapshotId: body.snapshotId,
     zodGenerated: body.zodGenerated,
     schemaCheckPassed: body.schemaCheckPassed,
     validationPassed: body.validationPassed,

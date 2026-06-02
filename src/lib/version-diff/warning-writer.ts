@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import { db } from "@/lib/db/client";
 import { upsertWarnings, type NewSchemaWarning } from "@/lib/schema-warnings-store";
 import { getTypeResolution, getPkTypeResolution, worstResolution, type Resolution } from "@/solutions/type-conversion-matrix";
-import type { VersionDiff, FieldDiff, TableDiff, EnumDiff, RelationDiff, RestrictionDiff } from "@/lib/version-diff/detect-changes";
+import type { VersionDiff, FieldDiff, TableDiff, EnumDiff, RelationDiff, RestrictionDiff, CascadeHint, FkRelationHint } from "@/lib/version-diff/detect-changes";
 
 function projectIdFromName(projectName: string): string | null {
   const row = db
@@ -65,6 +65,12 @@ function tableWarning(projectId: string, fromVersion: string, toVersion: string,
 function fieldWarnings(projectId: string, fromVersion: string, toVersion: string, tableName: string, fds: FieldDiff[]): NewSchemaWarning[] {
   const results: NewSchemaWarning[] = [];
   for (const fd of fds) {
+    // pk_type_changed is emitted as a table-level warning (with the table's ID) directly in
+    // writeWarningsForDiff where tableId is available — skip it here to avoid a duplicate field warning.
+    if (fd.changeKind === "pk_type_changed") continue;
+    // cascade-driven FK type change — the Relations tab fkCascadeWarning is the gate.
+    // Emitting a field-level warning too creates a duplicate unapproved blocker in the Schema tab.
+    if (fd.isCascadeFk) continue;
     const resolution = fieldResolution(fd);
     if (!resolution) continue;
     results.push({
@@ -81,6 +87,14 @@ function fieldWarnings(projectId: string, fromVersion: string, toVersion: string
       toValue: fd.to || null,
       message: fd.message,
     });
+
+    // If this FK field changed TYPE, emit a relation-tab warning (type mismatch needs user awareness).
+    // Pure renames are safe — the FK value is unchanged, so no warning row is needed.
+    for (const hint of fd.fkHints) {
+      if (fd.from !== fd.to) {
+        results.push(fkFieldChangedWarning(projectId, fromVersion, toVersion, tableName, fd, hint));
+      }
+    }
   }
   return results;
 }
@@ -146,6 +160,83 @@ function relationWarning(projectId: string, fromVersion: string, toVersion: stri
   };
 }
 
+function fkFieldChangedWarning(
+  projectId: string,
+  fromVersion: string,
+  toVersion: string,
+  tableName: string,
+  fd: FieldDiff,
+  hint: FkRelationHint,
+): NewSchemaWarning {
+  const isTypeChange = fd.from !== fd.to;
+  const changeDesc = isTypeChange
+    ? `type changed from ${fd.from} to ${fd.to} (references ${hint.targetTableName}.id which is ${hint.targetPkType})`
+    : `renamed to "${fd.fieldName}"`;
+  return {
+    id: randomUUID(),
+    projectId,
+    fromVersion,
+    toVersion,
+    entityKind: "relation",
+    entityId: fd.fieldId,
+    entityName: `${tableName}.${fd.fieldName} → ${hint.targetTableName}`,
+    changeKind: fd.changeKind,
+    resolution: isTypeChange ? "lossy_convert" : "data_deleted",
+    fromValue: fd.from || null,
+    toValue: fd.to || null,
+    message: `FK field "${tableName}.${fd.fieldName}" ${changeDesc}. Verify the relation to "${hint.targetTableName}" is still consistent.`,
+  };
+}
+
+function pkTypeWarning(
+  projectId: string,
+  fromVersion: string,
+  toVersion: string,
+  tableId: string,
+  tableName: string,
+  fd: FieldDiff,
+): NewSchemaWarning {
+  const resolution = getPkTypeResolution(fd.from, fd.to);
+  return {
+    id: randomUUID(),
+    projectId,
+    fromVersion,
+    toVersion,
+    entityKind: "table",
+    entityId: tableId,
+    entityName: tableName,
+    changeKind: "pk_type_changed",
+    resolution: resolution === "safe" ? "data_deleted" : resolution,
+    fromValue: fd.from || null,
+    toValue: fd.to || null,
+    message: `PK field "${tableName}.${fd.fieldName}" type changed from ${fd.from} to ${fd.to}. All existing rows receive new PK values on migration — FK fields in child tables are remapped automatically via the _referance technique. See cascade impact below.`,
+  };
+}
+
+function fkCascadeWarning(
+  projectId: string,
+  fromVersion: string,
+  toVersion: string,
+  pkDiff: FieldDiff,
+  hint: CascadeHint,
+  pkTableName: string,
+): NewSchemaWarning {
+  return {
+    id: randomUUID(),
+    projectId,
+    fromVersion,
+    toVersion,
+    entityKind: "relation",
+    entityId: hint.fieldId,
+    entityName: `${hint.tableName}.${hint.fieldName} → ${pkTableName}`,
+    changeKind: "type_changed",
+    resolution: "lossy_convert",
+    fromValue: pkDiff.from || null,
+    toValue: pkDiff.to || null,
+    message: `Schema type must match the new PK (${pkDiff.from} → ${pkDiff.to}). Click "Apply & Approve" to update the field type in the schema. Data FK values are remapped automatically during migration via _referance — no manual data action needed.`,
+  };
+}
+
 export function writeWarningsForDiff(
   projectName: string,
   fromVersion: string,
@@ -162,6 +253,15 @@ export function writeWarningsForDiff(
     if (tw) warnings.push(tw);
     const fws = fieldWarnings(projectId, fromVersion, toVersion, td.tableName, td.fieldDiffs);
     warnings.push(...fws);
+
+    // pk_type_changed → table-level warning (Tables tab) + cascade FK warnings (Relations tab)
+    for (const fd of td.fieldDiffs) {
+      if (fd.changeKind !== "pk_type_changed") continue;
+      warnings.push(pkTypeWarning(projectId, fromVersion, toVersion, td.tableId, td.tableName, fd));
+      for (const hint of fd.cascade) {
+        warnings.push(fkCascadeWarning(projectId, fromVersion, toVersion, fd, hint, td.tableName));
+      }
+    }
   }
 
   for (const ed of diff.enumDiffs) {

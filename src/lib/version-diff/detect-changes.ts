@@ -12,6 +12,14 @@ export type CascadeHint = {
   fieldName: string;
 };
 
+// Populated on a FK field diff when the FK field itself changes name or type.
+// Points to the table whose PK this FK references, so warning-writer can emit a relation warning.
+export type FkRelationHint = {
+  targetTableId: string;
+  targetTableName: string;
+  targetPkType: string;
+};
+
 export type FieldDiff = {
   fieldId: string;
   fieldKey: string;
@@ -29,8 +37,10 @@ export type FieldDiff = {
   from: string;
   to: string;
   message: string;
-  cascade: CascadeHint[];
+  cascade: CascadeHint[];    // populated on pk_type_changed: FK fields in other tables that must follow
+  fkHints: FkRelationHint[]; // populated when this field IS a FK and changes name/type INDEPENDENTLY
   isPk: boolean;
+  isCascadeFk: boolean;      // true when this field's type change is explained by a PK cascade on the referenced table
 };
 
 export type TableDiff = {
@@ -134,6 +144,8 @@ function compareFields(
   fromTable: SchemaGraphTable,
   toTable: SchemaGraphTable,
   cascadeByStableTableId: Map<string, CascadeHint[]>,
+  fkFieldByStableId: Map<string, FkRelationHint>,
+  pkTypeChangedStableIds: Set<string>,
 ): FieldDiff[] {
   const diffs: FieldDiff[] = [];
 
@@ -176,7 +188,9 @@ function compareFields(
           ? `Required field "${toField.name}" added with no default — existing rows will need backfill.`
           : `Field "${toField.name}" added.`,
         cascade: [],
+        fkHints: [],
         isPk: false,
+        isCascadeFk: false,
       });
       continue;
     }
@@ -192,7 +206,9 @@ function compareFields(
         to: "",
         message: `Field "${fromField.name}" was removed.`,
         cascade: [],
+        fkHints: [],
         isPk: stableFieldId === pkStableFieldId,
+        isCascadeFk: false,
       });
       continue;
     }
@@ -247,6 +263,30 @@ function compareFields(
 
     if (changes.length === 0) continue;
     if (changes.length > 1) changeKind = "multiple";
+    // pk_type_changed must survive even when the PK has multiple simultaneous changes
+    // (e.g. type + name changed together). "multiple" would hide it from warning-writer's
+    // cascade emission logic and silently break FK remapping on migration.
+    if (pkTypeChanged && stableFieldId === pkStableFieldId) changeKind = "pk_type_changed";
+
+    // If this field is a FK and its name or type changed INDEPENDENTLY (not because the
+    // referenced table's PK changed), attach a relation hint so warning-writer emits an
+    // independent relation warning. Skip when the change is cascade-driven — fkCascadeWarning
+    // already covers it and adding a field-level warning too creates a duplicate blocker.
+    const fkHints: FkRelationHint[] = [];
+    const isNameOrTypeChange = changeKind === "type_changed" || changeKind === "renamed" || changeKind === "multiple";
+    let isCascadeFk = false;
+    if (isNameOrTypeChange && !pkTypeChanged) {
+      const hint = fkFieldByStableId.get(stableFieldId);
+      if (hint) {
+        if (pkTypeChangedStableIds.has(hint.targetTableId)) {
+          // Type changed because the referenced PK changed — cascade path covers this field.
+          // Do NOT attach fkHints; the fkCascadeWarning in the Relations tab is the gate.
+          isCascadeFk = true;
+        } else {
+          fkHints.push(hint);
+        }
+      }
+    }
 
     diffs.push({
       fieldId: stableFieldId,
@@ -258,7 +298,9 @@ function compareFields(
       to: toDisplayType(toType),
       message: changes.join("; "),
       cascade,
+      fkHints,
       isPk: stableFieldId === pkStableFieldId,
+      isCascadeFk,
     });
   }
 
@@ -285,6 +327,26 @@ export function detectVersionChanges(
     if (pkField) toPkEffectiveTypeByStableId.set(table.tableId, effectiveType(pkField));
   }
 
+  // Build the same map for fromGraph so we can detect which tables actually had a PK type change.
+  const fromPkEffectiveTypeByStableId = new Map<string, string>();
+  for (const table of fromGraph.tables) {
+    const pkFieldId = getPkFieldId(fromGraph, table.id);
+    const pkField = pkFieldId ? fromGraph.fields.find((f) => f.id === pkFieldId) : null;
+    if (pkField) fromPkEffectiveTypeByStableId.set(table.tableId, effectiveType(pkField));
+  }
+
+  // Tables whose PK effective type actually changed between versions.
+  // This drives cascade-hint inclusion and correctly handles self-referential FKs:
+  // schema-store already updates the self-referential FK type to match the new PK, so a
+  // type-mismatch check alone would silently drop the cascade hint — leaving old integer
+  // parentId values unremapped against new UUID PKs.
+  const pkTypeChangedStableIds = new Set<string>();
+  for (const toTable of toGraph.tables) {
+    const fromType = fromPkEffectiveTypeByStableId.get(toTable.tableId);
+    const toType   = toPkEffectiveTypeByStableId.get(toTable.tableId);
+    if (fromType && toType && fromType !== toType) pkTypeChangedStableIds.add(toTable.tableId);
+  }
+
   const cascadeByStableTableId = new Map<string, CascadeHint[]>();
   for (const relation of toGraph.relations) {
     const targetTable = toTableByRowId.get(relation.targetTableId);
@@ -297,8 +359,13 @@ export function detectVersionChanges(
     for (const pair of relation.fieldPairs) {
       const sourceField = toFieldByRowId.get(pair.sourceFieldId);
       if (!sourceField) continue;
-      // Only flag as cascade if the FK type doesn't match the target PK type.
-      if (effectiveType(sourceField) === targetPkType) continue;
+      // Include cascade hint when:
+      //   (a) FK type still mismatches the new PK type (schema not yet updated), OR
+      //   (b) PK type actually changed (catches self-referential FKs where schema-store
+      //       already cascaded the FK type — types match in toGraph but data still holds old values)
+      const typesMismatch   = effectiveType(sourceField) !== targetPkType;
+      const pkActuallyChanged = pkTypeChangedStableIds.has(targetTable.tableId);
+      if (!typesMismatch && !pkActuallyChanged) continue;
       const existing = cascadeByStableTableId.get(targetTable.tableId) ?? [];
       existing.push({
         tableId: sourceTable.tableId,
@@ -307,6 +374,25 @@ export function detectVersionChanges(
         fieldName: sourceField.name,
       });
       cascadeByStableTableId.set(targetTable.tableId, existing);
+    }
+  }
+
+  // Build FK-field map: stableFieldId → FkRelationHint.
+  // For any FK field that changes name/type, this lets compareFields attach a hint
+  // so warning-writer can emit a relation warning.
+  const fkFieldByStableId = new Map<string, FkRelationHint>();
+  for (const relation of toGraph.relations) {
+    const targetTable = toTableByRowId.get(relation.targetTableId);
+    if (!targetTable) continue;
+    const targetPkType = toPkEffectiveTypeByStableId.get(targetTable.tableId) ?? "";
+    for (const pair of relation.fieldPairs) {
+      const sourceField = toFieldByRowId.get(pair.sourceFieldId);
+      if (!sourceField) continue;
+      fkFieldByStableId.set(sourceField.fieldId, {
+        targetTableId: targetTable.tableId,
+        targetTableName: targetTable.name,
+        targetPkType,
+      });
     }
   }
 
@@ -352,7 +438,7 @@ export function detectVersionChanges(
     if (!fromTable || !toTable) continue;
 
     const fieldDiffs = compareFields(
-      fromGraph, toGraph, fromTable, toTable, cascadeByStableTableId,
+      fromGraph, toGraph, fromTable, toTable, cascadeByStableTableId, fkFieldByStableId, pkTypeChangedStableIds,
     );
     const renamed = fromTable.name !== toTable.name;
 

@@ -1,6 +1,14 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@keyframes breathe {
+  0%, 100% { transform: scale(1);   }
+  50%       { transform: scale(1.2); }
+}
+.animate-breathe {
+  animation: breathe 1.4s ease-in-out infinite;
+}
+
 /* ─── Custom variants required by @base-ui/react components ───────────────── */
 /* Presence/state attributes that @base-ui sets without values                 */
 @custom-variant data-open (&[data-open]);

@@ -71,4 +71,45 @@ All 14 workflows are fully implemented (no placeholders).
 | Seed          | `diff-exhaustive/seed-db.ts`, `mocks/diff-exhaustive/`                         |
 | Docs          | `docs/version3/changes.md`                                                     |
 
-Do all pages are in accordance with next js SSR & CSR rules if not give me a plan to fix it
+## Do all pages are in accordance with next js SSR & CSR rules if not give me a plan to fix it
+
+● You're not wrong — that WAS the original design intent. The flow you're describing:
+
+1. Collect walks tables in FK dependency order (fewest parents first — Account before Invoice, Invoice before InvoiceItem)
+2. Each collected row carries \_referance: { old_pk: 1 } (the original integer ID)
+3. On INSERT of the parent (Invoice): let Postgres generate gen_random_uuid(), then RETURNING id captures the new UUID
+4. Store the mapping: Invoice.\_referance[1] = "uuid-xxx"
+5. On INSERT of InvoiceItem: invoiceId = lookup Invoice.\_referance where old_pk = row.invoiceId
+
+My applyPkUuidRemapping does the same thing but server-side before the INSERT instead of via RETURNING after. It:
+
+1. Generates the UUIDs upfront in Node before writing the payload
+2. Sets Invoice.id = "uuid-xxx" explicitly (Postgres accepts explicit values even when there's a gen_random_uuid() default)
+3. Patches InvoiceItem.invoiceId = "uuid-xxx" using the same mapping
+
+The two approaches are equivalent in result. The difference is where UUID generation happens — in Node (my approach) vs in Postgres then captured via RETURNING (original \_referance design).
+
+My approach is simpler because it avoids RETURNING clauses and round-trip DB queries in the child script. But both are correct.
+
+✻ Sautéed for 39s
+
+❯ so we call \_referance: [id] to get new fresh UUID isn it ?
+
+● Let me check what \_referance actually stores in the snapshot and how the collect step sets it up:
+
+Searched for 3 patterns, read 2 files (ctrl+o to expand)
+
+● Close, but reversed. \_referance stores the old ID (e.g. "1"), not the new UUID. The flow is:
+
+1. INSERT Invoice row — omit id, let Postgres generate gen_random_uuid() — but include \_referance = "1" (the old integer PK stored as string)
+2. After INSERT — query SELECT id, \_referance FROM "Invoice" → build mapping "1" → "uuid-xxx"
+3. INSERT InvoiceItem — \_referances = {"invoiceId": "1"} was stored in the snapshot (child row "my invoiceId points to Invoice where \_referance = '1'")
+4. Resolve FKs — UPDATE "InvoiceItem" SET invoiceid = inv.id FROM "Invoice" inv WHERE inv.\_referance = ii.\_referances->>'invoiceId'
+
+So \_referance = [old_id] is the lookup key you use to retrieve the Postgres-generated UUID — not the UUID itself.
+
+The migration Prisma schema already has the \_referance String? @unique column added to every table via migrationReferenceLine(). And withMigrationReference in rules.ts attaches \_referance and \_referances to snapshot records.
+
+Right now \_referance is stripped before INSERT in the child script (filter([k]) => k !== REF_FIELD). My applyPkUuidRemapping sidesteps this by pre-generating UUIDs in Node before writing the payload — which achieves the same result but doesn't use the DB as the intermediary.
+
+Both approaches work. The \_referance DB-round-trip approach is more correct for the case where you truly want Postgres to own UUID generation. Should I rewire the child script to use the \_referance column properly instead?

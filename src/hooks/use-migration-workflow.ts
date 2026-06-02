@@ -7,10 +7,8 @@ import type {
   MigrateProgressEvent,
   MigrationOrderItem,
   MigrationSession,
-  ModelComparisonResult,
   PhaseState,
   RunResponse,
-  SchemaCheckResponse,
   ValidateResponse,
   ValidationIssue,
 } from "@/types/migrations";
@@ -20,18 +18,11 @@ import type {
 type RestoreTable = { name: string; created: number; updated: number; errors: number };
 
 type WorkflowState = {
-  // step 2: model diff
-  modelDiffState: PhaseState;
-  showModelDiffModal: boolean;
-  comparison: ModelComparisonResult | null;
   // preflight modal
   showPreflightModal: boolean;
   preflightTab: "crucial" | "warning";
   preflightPage: number;
-  // step 3: schema check
-  schemaCheckState: PhaseState;
-  schemaCheckResult: SchemaCheckResponse | null;
-  // step 4: collect
+  // collect
   collectState: PhaseState;
   collectError: string;
   collectTimestamp: string;
@@ -43,7 +34,7 @@ type WorkflowState = {
   migrationOrder: MigrationOrderItem[];
   showEmptyModal: boolean;
   collectModalPage: number;
-  // step 5: validate + migrate
+  // validate + migrate
   validateState: PhaseState;
   validateError: string;
   stage1Issues: ValidationIssue[];
@@ -59,6 +50,7 @@ type WorkflowState = {
   // SSE progress
   migratePhase: "idle" | "schema_push" | "inserting";
   migrateProgressTotal: number;
+  migrateProgressTotalRows: number;
   migrateProgressTables: MigrateProgressEvent[];
   // fix-rows modal
   showFixModal: boolean;
@@ -69,9 +61,7 @@ type WorkflowState = {
 };
 
 const initialState: WorkflowState = {
-  modelDiffState: "idle", showModelDiffModal: false, comparison: null,
   showPreflightModal: false, preflightTab: "crucial", preflightPage: 0,
-  schemaCheckState: "idle", schemaCheckResult: null,
   collectState: "idle", collectError: "", collectTimestamp: "",
   collectSnapshotId: null, collectTables: [], collectTotal: 0,
   collectQueryError: "", collectMismatches: [], migrationOrder: [],
@@ -79,20 +69,15 @@ const initialState: WorkflowState = {
   validateState: "idle", validateError: "", stage1Issues: [], stage2Issues: [],
   migrateState: "idle", migrateError: "", migrateTables: [], migrateVersion: "",
   restoreState: "idle", restoreError: "", restoreTables: [],
-  migratePhase: "idle", migrateProgressTotal: 0, migrateProgressTables: [],
+  migratePhase: "idle", migrateProgressTotal: 0, migrateProgressTotalRows: 0, migrateProgressTables: [],
   showFixModal: false, invalidRows: [], rowPatches: {}, fixModalLoading: false, fixModalError: "",
 };
 
 // ─── actions ─────────────────────────────────────────────────────────────────
 
 type WorkflowAction =
-  | { type: "RESET_FROM_MODEL_DIFF" }
+  | { type: "RESET_COLLECT" }
   | { type: "RESET_FROM_VALIDATE" }
-  | { type: "MODEL_DIFF_SUCCESS" }
-  | { type: "SET_COMPARISON"; payload: ModelComparisonResult }
-  | { type: "SHOW_MODEL_DIFF_MODAL"; payload: boolean }
-  | { type: "SCHEMA_CHECK_LOADING" }
-  | { type: "SCHEMA_CHECK_DONE"; payload: SchemaCheckResponse }
   | { type: "COLLECT_LOADING" }
   | { type: "COLLECT_SUCCESS"; payload: {
       timestamp: string; snapshotId: string | null; tables: { name: string; count: number }[];
@@ -117,7 +102,7 @@ type WorkflowAction =
   | { type: "RESTORE_LOADING" }
   | { type: "RESTORE_SUCCESS"; payload: RestoreTable[] }
   | { type: "RESTORE_ERROR"; payload: string }
-  | { type: "SET_MIGRATE_PHASE"; payload: { phase: "idle" | "schema_push" | "inserting"; total?: number } }
+  | { type: "SET_MIGRATE_PHASE"; payload: { phase: "idle" | "schema_push" | "inserting"; total?: number; totalRows?: number } }
   | { type: "ADD_PROGRESS_EVENT"; payload: MigrateProgressEvent }
   | { type: "RESET_PROGRESS" }
   | { type: "SHOW_PREFLIGHT"; payload: boolean }
@@ -125,7 +110,7 @@ type WorkflowAction =
   | { type: "SET_PREFLIGHT_PAGE"; payload: number }
   | { type: "RESTORE_COLLECT_STATE"; payload: { snapshotId: string; timestamp: string; tables: { name: string; count: number }[]; total: number } }
   | { type: "RESTORE_TIMESTAMP_ONLY"; payload: string }
-  | { type: "RESTORE_PHASE_STATES"; payload: { modelDiff?: boolean; schemaCheck?: boolean; validate?: boolean; migrate?: boolean } };
+  | { type: "RESTORE_PHASE_STATES"; payload: { validate?: boolean; migrate?: boolean } };
 
 // ─── reducer ─────────────────────────────────────────────────────────────────
 
@@ -139,30 +124,14 @@ function reducer(state: WorkflowState, action: WorkflowAction): WorkflowState {
   switch (action.type) {
     case "RESET_FROM_VALIDATE":
       return { ...state, ...resetFromValidateSlice };
-    case "RESET_FROM_MODEL_DIFF":
+    case "RESET_COLLECT":
       return {
         ...state,
-        modelDiffState: "idle", comparison: null,
-        schemaCheckState: "idle", schemaCheckResult: null,
         collectState: "idle", collectError: "", collectTimestamp: "",
         collectSnapshotId: null, collectTables: [], collectTotal: 0,
         collectQueryError: "", collectMismatches: [], migrationOrder: [],
         showEmptyModal: false,
         ...resetFromValidateSlice,
-      };
-    case "MODEL_DIFF_SUCCESS":
-      return { ...state, modelDiffState: "success" };
-    case "SET_COMPARISON":
-      return { ...state, comparison: action.payload };
-    case "SHOW_MODEL_DIFF_MODAL":
-      return { ...state, showModelDiffModal: action.payload };
-    case "SCHEMA_CHECK_LOADING":
-      return { ...state, schemaCheckState: "loading", schemaCheckResult: null };
-    case "SCHEMA_CHECK_DONE":
-      return {
-        ...state,
-        schemaCheckResult: action.payload,
-        schemaCheckState: action.payload.bothValid ? "success" : "error",
       };
     case "COLLECT_LOADING":
       return {
@@ -250,6 +219,7 @@ function reducer(state: WorkflowState, action: WorkflowAction): WorkflowState {
         ...state,
         migratePhase: action.payload.phase,
         migrateProgressTotal: action.payload.total ?? state.migrateProgressTotal,
+        migrateProgressTotalRows: action.payload.totalRows ?? state.migrateProgressTotalRows,
       };
     case "ADD_PROGRESS_EVENT":
       return { ...state, migrateProgressTables: [...state.migrateProgressTables, action.payload] };
@@ -275,8 +245,6 @@ function reducer(state: WorkflowState, action: WorkflowAction): WorkflowState {
     case "RESTORE_PHASE_STATES":
       return {
         ...state,
-        modelDiffState: action.payload.modelDiff ? "success" : state.modelDiffState,
-        schemaCheckState: action.payload.schemaCheck ? "success" : state.schemaCheckState,
         validateState: action.payload.validate ? "success" : state.validateState,
         migrateState: action.payload.migrate ? "success" : state.migrateState,
       };
@@ -310,7 +278,7 @@ export function useMigrationWorkflow({
 }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const resetFromModelDiff = useCallback(() => dispatch({ type: "RESET_FROM_MODEL_DIFF" }), []);
+  const resetCollect       = useCallback(() => dispatch({ type: "RESET_COLLECT" }), []);
   const resetFromValidate  = useCallback(() => dispatch({ type: "RESET_FROM_VALIDATE" }), []);
 
   // ─── SSE reader ────────────────────────────────────────────────────────────
@@ -318,7 +286,7 @@ export function useMigrationWorkflow({
   const readSSE = useCallback(async (
     response: Response,
     handlers: {
-      onPhase?: (phase: "schema_push" | "inserting", total?: number) => void;
+      onPhase?: (phase: "schema_push" | "inserting", total?: number, totalRows?: number) => void;
       onProgress?: (event: MigrateProgressEvent) => void;
       onNeedsFix?: (data: RunResponse) => void;
       onDone: (data: RunResponse) => void;
@@ -340,7 +308,7 @@ export function useMigrationWorkflow({
         try {
           const event = JSON.parse(line.slice(6)) as { type: string; [k: string]: unknown };
           if (event.type === "phase" && handlers.onPhase) {
-            handlers.onPhase(event.phase as "schema_push" | "inserting", typeof event.total === "number" ? event.total : undefined);
+            handlers.onPhase(event.phase as "schema_push" | "inserting", typeof event.total === "number" ? event.total : undefined, typeof event.totalRows === "number" ? event.totalRows : undefined);
           } else if (event.type === "progress" && handlers.onProgress) {
             handlers.onProgress(event as unknown as MigrateProgressEvent);
           } else if (event.type === "needsFix" && handlers.onNeedsFix) {
@@ -361,8 +329,8 @@ export function useMigrationWorkflow({
   // ─── shared SSE progress handlers ─────────────────────────────────────────
 
   const sseProgressHandlers = {
-    onPhase: (phase: "schema_push" | "inserting", total?: number) =>
-      dispatch({ type: "SET_MIGRATE_PHASE", payload: { phase, total } }),
+    onPhase: (phase: "schema_push" | "inserting", total?: number, totalRows?: number) =>
+      dispatch({ type: "SET_MIGRATE_PHASE", payload: { phase, total, totalRows } }),
     onProgress: (event: MigrateProgressEvent) =>
       dispatch({ type: "ADD_PROGRESS_EVENT", payload: event }),
   };
@@ -385,25 +353,6 @@ export function useMigrationWorkflow({
       .then((list) => onSessionsRefresh(list as MigrationSession[]))
       .catch(() => {/* best-effort */});
   }, [projectId, targetVersion, persistMigrationState, onSessionsRefresh]);
-
-  // ─── schema check ──────────────────────────────────────────────────────────
-
-  const handleSchemaCheck = useCallback(async () => {
-    dispatch({ type: "SCHEMA_CHECK_LOADING" });
-    try {
-      const res = await fetch("/api/migrations/schema-check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectName, syncVersion, targetVersion }),
-      });
-      const data: SchemaCheckResponse = await res.json();
-      if (!data.success) throw new Error(data.error ?? "Schema check failed.");
-      dispatch({ type: "SCHEMA_CHECK_DONE", payload: data });
-      void persistMigrationState({ schemaCheckPassed: Boolean(data.bothValid) });
-    } catch (err) {
-      dispatch({ type: "SCHEMA_CHECK_DONE", payload: { success: false, error: err instanceof Error ? err.message : "Schema check failed." } });
-    }
-  }, [projectName, syncVersion, targetVersion, persistMigrationState]);
 
   // ─── collect ───────────────────────────────────────────────────────────────
 
@@ -471,6 +420,7 @@ export function useMigrationWorkflow({
 
   const handleMigrate = useCallback(async () => {
     dispatch({ type: "MIGRATE_LOADING" });
+    dispatch({ type: "SET_MIGRATE_PHASE", payload: { phase: "schema_push" } });
     try {
       await consumeMigrateStream(
         JSON.stringify({ projectName, connectionId: activeConnectionId, syncVersion, targetVersion, snapshotId: state.collectSnapshotId }),
@@ -487,6 +437,7 @@ export function useMigrationWorkflow({
     dispatch({ type: "FIX_MODAL_LOADING", payload: true });
     dispatch({ type: "SET_FIX_MODAL_ERROR", payload: "" });
     dispatch({ type: "RESET_PROGRESS" });
+    dispatch({ type: "SET_MIGRATE_PHASE", payload: { phase: "schema_push" } });
     try {
       await consumeMigrateStream(
         JSON.stringify({ projectName, connectionId: activeConnectionId, syncVersion, targetVersion, snapshotId: state.collectSnapshotId, rowPatches: state.rowPatches }),
@@ -531,37 +482,39 @@ export function useMigrationWorkflow({
   const allIssues = [...state.stage1Issues, ...state.stage2Issues];
   const errorCount = allIssues.filter((i) => i.severity === "error").length;
 
-  const canSchemaCheck = state.modelDiffState === "success" && breakingPendingCount === 0 && defaultsRequiredCount === 0;
-  const canCollect     = state.schemaCheckState === "success" && (state.schemaCheckResult?.bothValid ?? false);
-  const canMigrate     = state.collectState === "success";
+  const canMigrate = state.collectState === "success";
+
+  const missingContext = !activeConnectionId || !syncVersion || !targetVersion;
 
   const collectBtnDisabled  = state.collectState === "loading" || undefined;
-  const validateBtnDisabled = state.validateState === "loading" || undefined;
+  const validateBtnDisabled = state.validateState === "loading" || missingContext || undefined;
   const migrateBtnDisabled  =
     state.migrateState === "loading" ||
+    missingContext ||
     (state.validateState === "success" && errorCount > 0) ||
     breakingPendingCount > 0 ||
+    defaultsRequiredCount > 0 ||
     undefined;
 
+  const rowsInserted = state.migrateProgressTables.reduce((s, t) => s + t.created + t.updated, 0);
   const progressPct = state.migratePhase === "schema_push"
     ? 5
-    : state.migratePhase === "inserting" && state.migrateProgressTotal > 0
-      ? Math.round(5 + (state.migrateProgressTables.length / state.migrateProgressTotal) * 90)
+    : state.migratePhase === "inserting" && state.migrateProgressTotalRows > 0
+      ? Math.round(5 + (rowsInserted / state.migrateProgressTotalRows) * 90)
       : 0;
 
   return {
     // state (spread for ergonomic access in page)
     ...state,
     allIssues, errorCount,
-    canSchemaCheck, canCollect, canMigrate,
+    canMigrate,
     collectBtnDisabled, validateBtnDisabled, migrateBtnDisabled,
     progressPct,
     // actions
     dispatch,
-    resetFromModelDiff,
+    resetCollect,
     resetFromValidate,
     // handlers
-    handleSchemaCheck,
     handleCollect,
     handleValidate,
     handleMigrate,

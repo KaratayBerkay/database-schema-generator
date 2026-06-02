@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { db } from "@/lib/db/client";
-import { getWarnings } from "@/lib/schema-warnings-store";
+import { getWarnings, type SchemaWarning } from "@/lib/schema-warnings-store";
 import { baseProcedure, createTRPCRouter } from "../init";
 import {
   formatDefault,
@@ -8,16 +8,30 @@ import {
   type DefaultChangeKind,
   type TrackingEntry,
 } from "@/lib/tracking-utils";
+import { readModelFields, updateModelField, type PrismaFieldInput, type PrismaNativeAttribute } from "@/lib/schema-store";
 
 export type { DefaultChange, DefaultChangeKind, TrackingEntry };
 export { formatDefault };
 
-// resolution → severity order for sorting (lower = higher priority)
-function resolutionOrder(resolution: string, approvedAt: string | null): number {
-  if (approvedAt) return 4;
-  if (resolution === "data_deleted") return 0;
-  if (resolution === "lossy_convert" || resolution === "precision_loss" || resolution === "backfill_required") return 1;
-  return 2; // safe / info
+// Sort order for warning rows (lower = higher priority):
+//   0 — needs explicit resolution before it can be approved (Resolve button)
+//   1 — breaking / data_deleted (approve-only, no value needed)
+//   2 — backfill / lossy / precision (non-blocking approve)
+//   3 — safe / info
+//   4 — already approved (always last)
+function resolutionOrder(w: SchemaWarning): number {
+  if (w.approvedAt) return 4;
+
+  const needsResolve =
+    (w.entityKind === "enum" && w.changeKind === "value_removed") ||
+    (w.entityKind === "field" && w.targetNullable === false &&
+      (w.resolution === "backfill_required" || w.resolution === "lossy_convert" || w.resolution === "precision_loss")) ||
+    (w.entityKind === "relation" && w.changeKind === "type_changed");
+  if (needsResolve) return 0;
+
+  if (w.resolution === "data_deleted") return 1;
+  if (w.resolution === "lossy_convert" || w.resolution === "precision_loss" || w.resolution === "backfill_required") return 2;
+  return 3;
 }
 
 type VersionRow = { id: number; name: string };
@@ -218,10 +232,7 @@ export const trackingRouter = createTRPCRouter({
       const all = getWarnings(input.projectId, input.fromVersion, input.toVersion);
       const filtered = all
         .filter((w) => w.entityKind === input.entityKind)
-        .sort((a, b) =>
-          resolutionOrder(a.resolution, a.approvedAt) -
-          resolutionOrder(b.resolution, b.approvedAt),
-        );
+        .sort((a, b) => resolutionOrder(a) - resolutionOrder(b));
 
       // Build enumValuesMap from target version for replacement pickers
       const enumValuesMap: Record<string, string[]> = {};
@@ -267,11 +278,12 @@ export const trackingRouter = createTRPCRouter({
       const counts: Record<string, number> = {};
       for (const r of rows) counts[r.entity_kind] = r.n;
       return {
-        table:    counts["table"]    ?? 0,
-        field:    counts["field"]    ?? 0,
-        enum:     counts["enum"]     ?? 0,
-        relation: counts["relation"] ?? 0,
-        total:    Object.values(counts).reduce((s, n) => s + n, 0),
+        table:       counts["table"]       ?? 0,
+        field:       counts["field"]       ?? 0,
+        enum:        counts["enum"]        ?? 0,
+        relation:    counts["relation"]    ?? 0,
+        restriction: counts["restriction"] ?? 0,
+        total:       Object.values(counts).reduce((s, n) => s + n, 0),
       };
     }),
 
@@ -297,5 +309,54 @@ export const trackingRouter = createTRPCRouter({
       }
 
       return { entries };
+    }),
+
+  // Apply a FK cascade type fix: updates the FK field type in the schema to match the new PK,
+  // then approves the warning. Both happen atomically so the schema is always valid after approval.
+  applyFkTypeChange: baseProcedure
+    .input(z.object({ warningId: z.string() }))
+    .mutation(async ({ input: { warningId } }) => {
+      type WarningRow = { project_id: string; entity_id: string; entity_name: string; to_version: string; to_value: string };
+      const row = db
+        .prepare("SELECT project_id, entity_id, entity_name, to_version, to_value FROM schema_warnings WHERE id = ?")
+        .get(warningId) as WarningRow | undefined;
+      if (!row) throw new Error("Warning not found");
+
+      const project = db
+        .prepare("SELECT name FROM projects WHERE id = ?")
+        .get(row.project_id) as { name: string } | undefined;
+      if (!project) throw new Error("Project not found");
+
+      const tableName = row.entity_name.split(".")[0] ?? "";
+      const fieldKey = row.entity_id;
+
+      // Read the current field so we can preserve all other properties.
+      const modelData = await readModelFields(project.name, row.to_version, tableName, "");
+      const currentField = modelData.fields.find((f) => f.key === fieldKey);
+      if (!currentField) throw new Error(`Field "${fieldKey}" not found in ${tableName}`);
+
+      // Map the PK's new type to the Prisma field input for the FK column.
+      // "Uuid" → String @db.Uuid  |  anything else passes through directly.
+      const nativeAttr: PrismaNativeAttribute | undefined =
+        row.to_value === "Uuid" ? { name: "Uuid" } : undefined;
+      const prismaType = row.to_value === "Uuid" ? "String" : row.to_value;
+
+      const updatedInput: PrismaFieldInput = {
+        name: currentField.name,
+        dbName: currentField.dbName || undefined,
+        type: prismaType,
+        nullable: currentField.nullable,
+        unique: currentField.unique,
+        defaultValue: "",  // FK fields never carry a default
+        comment: currentField.comment || "",
+        nativeAttribute: nativeAttr,
+        updatedAtAttribute: currentField.updatedAtAttribute,
+        isId: false,
+      };
+
+      await updateModelField(project.name, row.to_version, tableName, currentField.name, updatedInput, "", fieldKey);
+
+      db.prepare("UPDATE schema_warnings SET approved_at = ? WHERE id = ?")
+        .run(new Date().toISOString(), warningId);
     }),
 });

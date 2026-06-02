@@ -2640,7 +2640,7 @@ export async function updateModel(
 
           if (typeChanged) {
             for (const fkFieldName of field.relation.fields) {
-              const fkField = otherModel.fields.find((f) => f.name === fkFieldName);
+              const fkField = otherModel.fields.find((f) => f.key === fkFieldName || f.name === fkFieldName);
               if (!fkField || fkField.type !== oldPkType) continue;
               fkField.type = newPkType;
               // Swap NATIVE constraints (e.g. @db.Uuid) to match the new PK;

@@ -62,16 +62,22 @@ Rows = **from** type. Columns = **to** type. Each cell is the resolution strateg
 
 PK type changes cascade to every FK field in the project. The allowed conversions for a PK are more conservative because the FK fields must also be migrated in sync.
 
-| From PK | Safe to migrate | Precision-loss (warn) | Not possible (data deleted) |
-|---|---|---|---|
-| `Int` | `BigInt`, `String`, `Decimal` | `Float` | `Uuid`, `Boolean`, `DateTime`, `Bytes`, `Json` |
-| `BigInt` | `String`, `Decimal` | `Int` (overflow), `Float` | `Uuid`, `Boolean`, `DateTime`, `Bytes`, `Json` |
-| `Uuid` | `String` | — | `Int`, `BigInt`, `Float`, `Decimal`, `Boolean`, `DateTime`, `Bytes`, `Json` |
-| `String` | `Uuid`¹, `Json` | — | `Int`, `BigInt`, `Float`, `Decimal`, `Boolean`, `DateTime`, `Bytes` |
+| From PK | Safe to migrate | Precision-loss (warn) | Remapped via `_referance`¹ | Not possible (data deleted) |
+|---|---|---|---|---|
+| `Int` | `BigInt`, `String`, `Decimal` | `Float` | `Uuid` | `Boolean`, `DateTime`, `Bytes`, `Json` |
+| `BigInt` | `String`, `Decimal` | `Int` (overflow), `Float` | `Uuid` | `Boolean`, `DateTime`, `Bytes`, `Json` |
+| `Uuid` | `String` | — | — | `Int`, `BigInt`, `Float`, `Decimal`, `Boolean`, `DateTime`, `Bytes`, `Json` |
+| `String` | `Uuid`², `Json` | — | — | `Int`, `BigInt`, `Float`, `Decimal`, `Boolean`, `DateTime`, `Bytes` |
 
-1. String → Uuid only if all existing values are valid UUID format. Otherwise `lossy_convert` (non-UUID rows → NULL or rejected).
+1. **`_referance` technique** — Old PK values cannot be cast to the new type (e.g. Int `1` is not a valid UUID). Instead, during migration data is collected in FK hierarchy order. Each parent row stores its original PK value in a temporary `_referance` column. After INSERT (Postgres generates a new UUID via `gen_random_uuid()`), child FK fields are resolved by joining on `_referance`. Old values are effectively replaced — not preserved — but no rows are deleted. Resolution shown to user: `data_deleted` (old PK values are gone) but with cascade impact messaging explaining the automatic FK remapping.
 
-When a PK change is `data_deleted`, **every FK field pointing to that table is also `data_deleted`** — the warning must list all cascade targets (already provided in `FieldDiff.cascade[]`).
+2. String → Uuid only if all existing values are valid UUID format. Otherwise `lossy_convert` (non-UUID rows → NULL or rejected).
+
+When a PK change is `data_deleted`, **every FK field pointing to that table is also affected** — the warning must list all cascade targets (provided in `FieldDiff.cascade[]`). The cascade warnings appear in the Relations tab and require "Apply & Approve" to update the FK field's schema type to match the new PK type.
+
+**Self-referential FKs** (e.g. `Category.parentId → Category.id`): when `Category.id` changes type, `schema-store.ts` cascades the type to `parentId` immediately, so both fields have the new type in the target schema. The cascade hint is still emitted (keyed on whether the PK *actually changed* between versions, not whether types currently mismatch) so that `applyPkUuidRemapping` correctly remaps old integer `parentId` values to the new UUIDs.
+
+**Composite PKs**: not supported for type changes. The validate route returns HTTP 422 if a `pk_type_changed` warning exists for a table with more than one PK field. Single-field PKs only.
 
 ---
 

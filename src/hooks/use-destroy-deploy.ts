@@ -12,7 +12,7 @@ export function useDestroyDeploy({
   activeConnectionId: string;
   versions: string[];
 }) {
-  const [newTargetVersion, setNewTargetVersion] = useState(versions[versions.length - 1] ?? "");
+  const [newTargetVersion, setNewTargetVersion] = useState(versions[0] ?? "");
   const [pushState, setPushState] = useState<PhaseState>("idle");
   const [pushError, setPushError] = useState("");
   const [lastPushMode, setLastPushMode] = useState<"safe" | "destroy" | null>(null);

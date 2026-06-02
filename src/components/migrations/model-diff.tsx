@@ -200,46 +200,38 @@ function ModelRow({
   );
 }
 
+function StatBadge({ value, label, color }: { value: string; label: string; color: "slate" | "blue" | "emerald" | "rose" | "indigo" }) {
+  const chip: Record<string, string> = {
+    slate:   "bg-slate-100 text-slate-700",
+    blue:    "bg-blue-100 text-blue-700",
+    emerald: "bg-emerald-100 text-emerald-700",
+    rose:    "bg-rose-100 text-rose-700",
+    indigo:  "bg-indigo-100 text-indigo-700",
+  };
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className={cn("rounded-md px-1.5 py-0.5 text-[11px] font-bold tabular-nums", chip[color])}>
+        {value}
+      </span>
+      <span className="text-[11px] text-slate-500">{label}</span>
+    </div>
+  );
+}
+
 function SummaryBar({ c }: { c: ModelComparisonResult }) {
   const changedCount = c.matchedModels.filter((m) => m.hasChanges).length;
-  const sameCount = c.matchedModels.length - changedCount;
+  const sameCount    = c.matchedModels.length - changedCount;
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[12px]">
-      <span>
-        <span className="font-semibold text-slate-800">{c.matchedModels.length}</span>
-        <span className="ml-1 text-slate-500">matched</span>
-      </span>
-      {changedCount > 0 && (
-        <span>
-          <span className="font-semibold text-blue-700">{changedCount}</span>
-          <span className="ml-1 text-slate-500">modified</span>
-        </span>
-      )}
-      {sameCount > 0 && (
-        <span>
-          <span className="font-semibold text-slate-500">{sameCount}</span>
-          <span className="ml-1 text-slate-500">unchanged</span>
-        </span>
-      )}
-      {c.addedModels.length > 0 && (
-        <span>
-          <span className="font-semibold text-emerald-700">+{c.addedModels.length}</span>
-          <span className="ml-1 text-slate-500">added</span>
-        </span>
-      )}
-      {c.removedModels.length > 0 && (
-        <span>
-          <span className="font-semibold text-rose-700">−{c.removedModels.length}</span>
-          <span className="ml-1 text-slate-500">removed</span>
-        </span>
-      )}
-      {c.totalFieldChanges > 0 && (
+    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+      <StatBadge value={String(c.matchedModels.length)} label="matched"   color="slate"   />
+      {changedCount > 0 && <StatBadge value={String(changedCount)}       label="modified"  color="blue"    />}
+      {sameCount    > 0 && <StatBadge value={String(sameCount)}          label="unchanged" color="slate"   />}
+      {c.addedModels.length   > 0 && <StatBadge value={`+${c.addedModels.length}`}   label="added"   color="emerald" />}
+      {c.removedModels.length > 0 && <StatBadge value={`−${c.removedModels.length}`} label="removed" color="rose"    />}
+      {c.totalFieldChanges    > 0 && (
         <>
-          <span className="text-slate-300">·</span>
-          <span>
-            <span className="font-semibold text-blue-700">{c.totalFieldChanges}</span>
-            <span className="ml-1 text-slate-500">field changes</span>
-          </span>
+          <span className="text-slate-200">|</span>
+          <StatBadge value={String(c.totalFieldChanges)} label="field changes" color="indigo" />
         </>
       )}
     </div>
@@ -350,49 +342,50 @@ export function ModelDiff({
     const warnings = comparison ? computeWarnings(comparison) : [];
     return (
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-4">
+          {/* Version labels */}
+          <div className="flex shrink-0 items-center gap-2 text-sm">
             <span className="font-semibold text-slate-700">{fromVersion}</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 text-slate-400">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 7l5 5-5 5" />
             </svg>
             <span className="font-semibold text-slate-700">{toVersion}</span>
+          </div>
+
+          {/* Stats — centred in the remaining space */}
+          <div className="flex flex-1 items-center justify-center">
             {compareState === "loading" && <span className="text-xs text-slate-400">Comparing…</span>}
-            {compareState === "success" && comparison && (
-              <span className="text-xs text-slate-400">
-                <SummaryBar c={comparison} />
-              </span>
+            {compareState === "success" && comparison && <SummaryBar c={comparison} />}
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex shrink-0 items-center gap-2">
+            {compareState === "success" && (
+              <>
+                <button
+                  type="button"
+                  disabled={zodState === "loading" || zodState === "success"}
+                  onClick={() => void runZodGeneration()}
+                  className="flex h-8 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {zodState === "loading" ? "Generating…" : zodState === "success" ? "✓ Validators Generated" : "Generate Validators"}
+                </button>
+                {zodState === "error" && zodError && (
+                  <span className="text-xs text-rose-600">{zodError}</span>
+                )}
+              </>
+            )}
+            {onOpenFullScreen && (
+              <button
+                type="button"
+                onClick={onOpenFullScreen}
+                className="flex h-8 items-center rounded-lg border border-slate-800 bg-slate-800 px-3 text-xs font-medium text-white shadow-sm transition hover:bg-slate-700 hover:border-slate-700 active:scale-[0.97]"
+              >
+                View Full Diff
+              </button>
             )}
           </div>
-          {onOpenFullScreen && (
-            <button
-              type="button"
-              onClick={onOpenFullScreen}
-              className="h-8 rounded-md bg-slate-800 px-3 text-xs font-semibold text-white transition hover:bg-slate-700"
-            >
-              View Full Diff
-            </button>
-          )}
         </div>
-
-        {warnings.length > 0 && <DiffWarningsPanel warnings={warnings} />}
-
-        {compareState === "success" && (
-          <div className="flex items-center gap-3 border-t border-slate-100 pt-3">
-            <button
-              type="button"
-              disabled={zodState === "loading" || zodState === "success"}
-              onClick={() => void runZodGeneration()}
-              className="h-8 rounded-md bg-slate-800 px-3 text-xs font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-            >
-              {zodState === "loading" ? "Generating…" : zodState === "success" ? "Validators Generated ✓" : "Generate Zod Validators"}
-            </button>
-            {zodState !== "idle" && <StateChip state={zodState} />}
-            {zodState === "error" && zodError && (
-              <span className="text-xs text-rose-600">{zodError}</span>
-            )}
-          </div>
-        )}
       </div>
     );
   }
@@ -421,7 +414,7 @@ export function ModelDiff({
           <button
             type="button"
             onClick={onClose}
-            className="ml-2 h-9 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            className="ml-2 flex h-8 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.97]"
           >
             Close
           </button>
@@ -437,9 +430,9 @@ export function ModelDiff({
                 type="button"
                 disabled={zodState === "loading"}
                 onClick={() => void runZodGeneration()}
-                className="h-8 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-8 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {zodState === "loading" ? "Generating…" : "Generate Zod Schemas"}
+                {zodState === "loading" ? "Generating…" : "Generate Validators"}
               </button>
               {zodState !== "idle" && <StateChip state={zodState} />}
               {zodState === "success" && zodResult && (

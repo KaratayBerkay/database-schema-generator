@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSchemaStatsQuery, useSchemaTestMutation } from "@/queries/schema";
 import { useDashboard, useActiveProject } from "./dashboard-context";
 import { ProjectInfoProvider } from "./project-info-context";
@@ -40,6 +40,17 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   const { selectedVersion } = useDashboard();
   const activeProject = useActiveProject();
+
+  const prevVersionRef = useRef(selectedVersion);
+  const [versionFlash, setVersionFlash] = useState(false);
+  useEffect(() => {
+    if (prevVersionRef.current !== selectedVersion) {
+      prevVersionRef.current = selectedVersion;
+      setVersionFlash(true);
+      const t = setTimeout(() => setVersionFlash(false), 2000);
+      return () => clearTimeout(t);
+    }
+  }, [selectedVersion]);
 
   const { data: statsData } = useSchemaStatsQuery(activeProject?.name ?? "", selectedVersion);
   const schemaStats = {
@@ -134,19 +145,21 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             </div>
             <dl className="mt-3 space-y-2">
               {[
-                ["Project", projectName],
-                ["Version", selectedVersion],
-                ["DB", selectedProvider.toLowerCase()],
-                ["Database", databaseName],
-              ].map(([label, value]) => (
+                ["Project", projectName, false],
+                ["Version", selectedVersion, true],
+                ["DB", selectedProvider.toLowerCase(), false],
+                ["Database", databaseName, false],
+              ].map(([label, value, isVersion]) => (
                 <div
-                  key={label}
+                  key={label as string}
                   className="flex min-w-0 items-center justify-between gap-3 overflow-hidden whitespace-nowrap rounded-md bg-black/14 px-3 py-2"
                 >
                   <dt className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
                     {label}
                   </dt>
-                  <dd className="min-w-0 truncate text-sm font-semibold text-white">{value}</dd>
+                  <dd className={`min-w-0 truncate text-sm font-semibold text-white ${isVersion && versionFlash ? "animate-breathe" : ""}`}>
+                    {value}
+                  </dd>
                 </div>
               ))}
             </dl>

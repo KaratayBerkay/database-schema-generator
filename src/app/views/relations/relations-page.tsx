@@ -13,7 +13,8 @@ import { fieldTypeBadgeClass } from "@/lib/badge-utils";
 
 import { useProjectInfo } from "../shared/project-info-context";
 import { useVersionDiffLookup } from "@/hooks/use-version-diff";
-import { VersionDiffBadge, ApproveWarningButton } from "@/components/shared/version-diff-badge";
+import Link from "next/link";
+import { VersionDiffBadge } from "@/components/shared/version-diff-badge";
 import { FkTypeDetailModal } from "@/components/relations/fk-type-detail-modal";
 import type { FkTypeMismatch } from "@/components/relations/fk-type-detail-modal";
 import { useSchemaWarnings } from "@/hooks/use-schema-warnings";
@@ -232,18 +233,15 @@ export function RelationsPageContent() {
                         ? "1 relation removed since the previous version"
                         : `${removedRelationDiffs.filter((d) => d.sourceTableName === selectedModelName).length} relations removed since the previous version`}
                     </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {removedRelationDiffs
-                        .filter((d) => d.sourceTableName === selectedModelName)
-                        .map((d) => (
-                          <ApproveWarningButton
-                            key={d.relationId}
-                            warning={getWarning("relation", d.relationId, d.changeKind)}
-                            onApprove={approve}
-                            onUnapprove={unapprove}
-                          />
-                        ))}
-                    </div>
+                    <Link
+                      href={`/tracking?resolve=relations&to=${version}`}
+                      className="flex shrink-0 items-center gap-1.5 rounded-md bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700 active:scale-[0.97]"
+                    >
+                      Go to Tracking
+                      <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
+                        <path fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />
+                      </svg>
+                    </Link>
                   </div>
                   <ul className="mt-1.5 list-disc pl-4 text-xs font-normal text-red-600">
                     {removedRelationDiffs
@@ -416,6 +414,7 @@ export function RelationsPageContent() {
           mismatches={fkDetailModal.mismatches}
           fromVersion={previousVersion}
           toVersion={version}
+          trackingHref={`/tracking?resolve=relations&to=${version}`}
           onClose={() => setFkDetailModal(null)}
         />
       ) : null}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { VersionDiffBadge } from "@/components/shared/version-diff-badge";
 
 export type FkTypeMismatch = {
@@ -17,6 +18,7 @@ export function FkTypeDetailModal({
   mismatches,
   fromVersion,
   toVersion,
+  trackingHref,
   onClose,
 }: {
   relationName: string;
@@ -25,6 +27,7 @@ export function FkTypeDetailModal({
   mismatches: FkTypeMismatch[];
   fromVersion: string;
   toVersion: string;
+  trackingHref: string;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -68,7 +71,7 @@ export function FkTypeDetailModal({
 
         <div className="flex-1 overflow-y-auto">
           <p className="px-5 py-3 text-xs text-slate-500">
-            The PK on <span className="font-semibold text-slate-700">{targetTableName}</span> changed since the previous version. The FK fields below still use the old type — update them in the <span className="font-semibold text-slate-700">Schema</span> workflow.
+            The PK on <span className="font-semibold text-slate-700">{targetTableName}</span> changed since the previous version. The FK fields below still use the old type — update them in the <span className="font-semibold text-slate-700">Schema</span> workflow, then approve the change in <span className="font-semibold text-slate-700">Tracking → Relations</span>.
           </p>
           <ul className="divide-y divide-slate-100">
             {mismatches.map((m) => (
@@ -94,14 +97,24 @@ export function FkTypeDetailModal({
           </ul>
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-3">
+        <div className="flex items-center justify-between gap-3 border-t border-slate-200 px-5 py-3">
           <button
             type="button"
             onClick={onClose}
-            className="h-8 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-800"
+            className="h-8 rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-800"
           >
             Close
           </button>
+          <Link
+            href={trackingHref}
+            onClick={onClose}
+            className="flex h-8 items-center gap-1.5 rounded-md bg-slate-800 px-3 text-xs font-semibold text-white transition hover:bg-slate-700 active:scale-[0.97]"
+          >
+            Go to Tracking
+            <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
+              <path fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />
+            </svg>
+          </Link>
         </div>
       </div>
     </div>

@@ -194,7 +194,12 @@ export function setMigrationState(projectId: string, patch: Partial<Omit<Migrati
       now,
     );
   } else {
-    const merged = { ...rowToState(existing), ...patch };
+    // Strip undefined values so only explicitly-provided keys overwrite existing state.
+    // Passing undefined (e.g. from a PATCH body that omits a field) must not null-out columns.
+    const definedPatch = Object.fromEntries(
+      Object.entries(patch).filter(([, v]) => v !== undefined),
+    ) as typeof patch;
+    const merged = { ...rowToState(existing), ...definedPatch };
     db.prepare(`
       UPDATE migration_workflow_state SET
         connection_id = ?, sync_version = ?, target_version = ?, data_timestamp = ?, snapshot_id = ?,
@@ -230,6 +235,7 @@ export type MigrationSession = {
   connectionId: string;
   fromVersion: string;
   toVersion: string;
+  snapshotId: string | null;
   collectTimestamp: string | null;
   collectTableCount: number | null;
   collectRowCount: number | null;
@@ -249,6 +255,7 @@ type SessionRow = {
   connection_id: string;
   from_version: string;
   to_version: string;
+  snapshot_id: string | null;
   collect_timestamp: string | null;
   collect_table_count: number | null;
   collect_row_count: number | null;
@@ -269,6 +276,7 @@ function rowToSession(row: SessionRow): MigrationSession {
     connectionId: row.connection_id,
     fromVersion: row.from_version,
     toVersion: row.to_version,
+    snapshotId: row.snapshot_id ?? null,
     collectTimestamp: row.collect_timestamp,
     collectTableCount: row.collect_table_count,
     collectRowCount: row.collect_row_count,

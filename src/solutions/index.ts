@@ -1,12 +1,20 @@
 import * as FromString   from "./from-string";
 import * as FromNumber   from "./from-number";
 import * as FromDateTime from "./from-datetime";
+import { enumTypeDeleted } from "./from-enum";
 import { backfillRequired, backfillNullRow } from "./backfill";
 import type { FieldContext, FieldDecision, FieldResolution, EnumDecision } from "./types";
 
 export type { FieldContext, FieldDecision, FieldResolution, EnumDecision };
-export { enumValueRemoved, stringCastToEnum } from "./from-enum";
+export { enumValueRemoved, enumTypeDeleted, stringCastToEnum } from "./from-enum";
 export { backfillRequired, backfillNullRow } from "./backfill";
+
+// Canonical logical type names that are scalars.
+// Anything NOT in this set is treated as an enum type name (e.g. "billingcycle", "taskstatus").
+const KNOWN_SCALAR_TYPES = new Set([
+  "string", "text", "integer", "int", "bigint", "float", "decimal",
+  "boolean", "timestamp", "datetime", "json", "bytes", "uuid",
+]);
 
 // ─── main dispatcher ──────────────────────────────────────────────────────────
 // Routes to the correct converter function based on the from→to type pair.
@@ -23,8 +31,14 @@ export function resolveFieldMigration(
   const from = fromType.toLowerCase();
   const to   = toType.toLowerCase();
 
-  // Same type — pass through with coercion
-  if (from === to) return { ok: true, value: coerce(raw, toType) };
+  // Same type — pass through with coercion.
+  // Exception: null raw with an explicit replacement value (backfill_required) — apply the replacement.
+  if (from === to) {
+    if ((raw === null || raw === undefined) && decision.type === "replacement_value") {
+      return { ok: true, value: coerce(decision.value, toType) };
+    }
+    return { ok: true, value: coerce(raw, toType) };
+  }
 
   const key = `${from}→${to}`;
 
@@ -66,6 +80,11 @@ export function resolveFieldMigration(
     case "bigint→float":
     case "bigint→decimal":  return { ok: true, value: Number(raw) }; // precision_loss acknowledged
 
+    // ── Float / Decimal / BigInt → Boolean ──────────────────────────────────
+    case "float→boolean":
+    case "decimal→boolean":
+    case "bigint→boolean":  return FromNumber.numericToBoolean(raw, field, decision);
+
     // ── Boolean source ───────────────────────────────────────────────────────
     case "boolean→integer":
     case "boolean→bigint":
@@ -92,14 +111,52 @@ export function resolveFieldMigration(
     // ── JSON source ──────────────────────────────────────────────────────────
     case "json→string":     return { ok: true, value: typeof raw === "string" ? raw : JSON.stringify(raw) };
 
-    // ── Non-scalar target (Enum) — string values carry over as-is ────────────
-    default:
-      if (from === "string") {
-        // String → Enum: the string value is already a valid enum member in most cases.
-        // The DB will reject it at INSERT time if it isn't — that surfaces as a migration error.
-        return { ok: true, value: raw };
+    // ── Bytes source ─────────────────────────────────────────────────────────
+    case "bytes→string": {
+      if (decision.type === "pending")           return { ok: false, error: `Field "${field.name}" change not yet approved` };
+      if (decision.type === "drop" || decision.type === "db_generate") return { ok: true, skip: true };
+      if (decision.type === "replacement_value") return { ok: true, value: decision.value };
+      if (decision.type === "null_out")          return field.nullable ? { ok: true, value: null } : { ok: false, error: `Required String field "${field.name}"` };
+      // auto_cast: base64-encode the buffer
+      if (raw instanceof Buffer || raw instanceof Uint8Array) return { ok: true, value: Buffer.from(raw).toString("base64") };
+      if (typeof raw === "string") return { ok: true, value: raw };
+      return { ok: true, value: String(raw ?? "") };
+    }
+
+    // ── Enum sources and String→Enum target ──────────────────────────────────
+    default: {
+      const fromIsEnum = !KNOWN_SCALAR_TYPES.has(from);
+      const toIsEnum   = !KNOWN_SCALAR_TYPES.has(to);
+
+      // Enum → String: enum values are stored as plain strings in the DB — pass through.
+      // e.g. BillingCycle → String: "MONTHLY" stays "MONTHLY".
+      if (fromIsEnum && to === "string") return enumTypeDeleted(raw);
+
+      // Enum → Enum (different type): try to pass through the raw value so the DB validates
+      // membership. With an explicit replacement_value it becomes a remap.
+      if (fromIsEnum && toIsEnum) {
+        if (decision.type === "pending")           return { ok: false, error: `Field "${field.name}" change not yet approved` };
+        if (decision.type === "drop" || decision.type === "db_generate") return { ok: true, skip: true };
+        if (decision.type === "replacement_value") return { ok: true, value: decision.value };
+        if (decision.type === "null_out")          return field.nullable ? { ok: true, value: null } : { ok: false, error: `Required enum field "${field.name}"` };
+        return enumTypeDeleted(raw); // auto_cast — pass through, DB validates
       }
-      // Unknown pair — drop the field if the client approved, else error
+
+      // Enum → other scalar (e.g. BillingCycle → Int): cannot auto-convert — requires replacement.
+      if (fromIsEnum) {
+        if (decision.type === "pending")           return { ok: false, error: `Field "${field.name}" change not yet approved` };
+        if (decision.type === "drop" || decision.type === "db_generate") return { ok: true, skip: true };
+        if (decision.type === "replacement_value") return { ok: true, value: decision.value };
+        if (decision.type === "null_out")          return field.nullable ? { ok: true, value: null } : { ok: false, error: `Required field "${field.name}" — enter a replacement value` };
+        return { ok: false, error: `Cannot auto-convert enum value "${raw}" to ${toType} for field "${field.name}" — enter a replacement value in Tracking` };
+      }
+
+      // String → Enum: the string value is already a valid enum member in most cases.
+      // The DB will reject it at INSERT time if it isn't — that surfaces as a migration error.
+      if (from === "string") return { ok: true, value: raw };
+
+      // Unknown pair — apply any explicit decision the client provided
+      if (decision.type === "pending")           return { ok: false, error: `Field "${field.name}" change not yet approved` };
       if (decision.type === "drop" || decision.type === "db_generate") return { ok: true, skip: true };
       if (decision.type === "null_out" && field.nullable) return { ok: true, value: null };
       if (decision.type === "replacement_value") return { ok: true, value: decision.value };
@@ -107,6 +164,7 @@ export function resolveFieldMigration(
         ok: false,
         error: `No migration handler for ${fromType} → ${toType} on field "${field.name}"`,
       };
+    }
   }
 }
 
