@@ -2,13 +2,11 @@
 
 import { useState } from "react";
 import { useExportsPageState } from "@/hooks/use-exports-page-state";
-import { IconCopy, IconCheck, IconX, IconDownload } from "@tabler/icons-react";
 import { InlineError, Pagination } from "@/components/built";
 import { useExportHistoryQuery, useExportMutations } from "@/queries/exports";
 import { classNames } from "@/lib/utils";
 import { useProjectInfo } from "../shared/project-info-context";
 import { EXPORT_OPTIONS, type ExportType } from "@/constants/exports";
-import type { ExportResponse, ExportDialogState } from "@/types/exports";
 import { ExportedCodeDialog } from "@/components/exports/exported-code-dialog";
 import { PickleConfirmDialog } from "@/components/exports/pickle-confirm-dialog";
 
