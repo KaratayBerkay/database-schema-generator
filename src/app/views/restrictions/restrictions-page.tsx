@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTablesQuery } from "@/queries/tables";
 import { useRestrictionsQuery, useRestrictionMutations } from "@/queries/restrictions";
-import { classNames } from "@/lib/utils";
 import { fieldTypeBadgeClass } from "@/lib/badge-utils";
 import { useProjectInfo } from "../shared/project-info-context";
 import type {
@@ -46,12 +45,12 @@ export function RestrictionsPageContent() {
   const [error, setError] = useState("");
 
   const tablesQuery = useTablesQuery(projectName, version);
-  const models: PrismaModel[] = (tablesQuery.data ?? []) as PrismaModel[];
+  const models: PrismaModel[] = useMemo(() => (tablesQuery.data ?? []) as PrismaModel[], [tablesQuery.data]);
   const selectedModel = useMemo(() => models.find((m) => m.name === selectedModelName) ?? null, [models, selectedModelName]);
   const selectedModelKey = selectedModel?.key ?? "";
 
   const restrictionsQuery = useRestrictionsQuery(projectName, version, selectedModelName, selectedModelKey);
-  const fields: PrismaField[] = restrictionsQuery.data?.fields ?? [];
+  const fields: PrismaField[] = useMemo(() => restrictionsQuery.data?.fields ?? [], [restrictionsQuery.data]);
   const restrictions: PrismaRestriction[] = restrictionsQuery.data?.restrictions ?? [];
 
   const selectableFields = useMemo(
