@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useTablesQuery } from "@/queries/tables";
+import { useTableSelector } from "@/hooks/use-table-selector";
 import { useFieldsQuery } from "@/queries/fields";
 import { useZodSchemasQuery, useZodFileQuery, useZodMutations } from "@/queries/schema";
 import { classNames } from "@/lib/utils";
@@ -19,21 +19,21 @@ import { EmptyState, InlineError, LoadingCard } from "@/components/built";
 export function ValidationPageContent() {
   const { projectName, version: selectedVersion, hasProject } = useProjectInfo();
   const version = selectedVersion;
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const generatorRef = useRef<HTMLElement>(null);
   const [pendingFieldKeys, setPendingFieldKeys] = useState<string[] | null>(null);
 
-  const [selectedModelName, setSelectedModelName] = useState(
-    () => searchParams.get("table") ?? "",
-  );
-  const [tableSearch, setTableSearch] = useState("");
-  const [isTableSelectorOpen, setIsTableSelectorOpen] = useState(false);
   const [tablePage, setTablePage] = useState(1);
   const TABLE_PAGE_SIZE = 9;
 
   const tablesQuery = useTablesQuery(projectName, version);
   const models: PrismaModel[] = useMemo(() => (tablesQuery.data ?? []) as PrismaModel[], [tablesQuery.data]);
+
+  const {
+    selectedModelName, setSelectedModelName,
+    tableSearch, setTableSearch,
+    isTableSelectorOpen, setIsTableSelectorOpen,
+    selectModel: selectTable,
+  } = useTableSelector({ models });
 
   const [selectedFieldKeys, setSelectedFieldKeys] = useState<Set<string>>(new Set());
   const [fieldSearch, setFieldSearch] = useState("");
@@ -73,9 +73,13 @@ export function ValidationPageContent() {
   const [editingPath, setEditingPath] = useState("");
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [clearConfirmInput, setClearConfirmInput] = useState("");
-  const [defaultPath, setDefaultPath] = useState(() =>
-    typeof window !== "undefined" ? (localStorage.getItem("zod-default-path") ?? "") : ""
-  );
+  const [defaultPath, setDefaultPath] = useState("");
+  // Load the persisted path after mount. Reading localStorage in the useState
+  // initializer would make the server render "" and the client render the stored
+  // value, causing a hydration mismatch on the controlled input.
+  useEffect(() => {
+    setDefaultPath(localStorage.getItem("zod-default-path") ?? "");
+  }, []);
 
   const listZodQuery = useZodSchemasQuery(projectName, version);
   const zodSchemas = useMemo(() => listZodQuery.data ?? [], [listZodQuery.data]);
@@ -134,24 +138,6 @@ export function ValidationPageContent() {
   }, [selectableFields, fieldPage]);
 
   const totalFieldPages = Math.ceil(selectableFields.length / FIELD_PAGE_SIZE);
-
-  useEffect(() => {
-    if (selectedModelName && models.length > 0 && !models.some((m) => m.name === selectedModelName)) {
-      setSelectedModelName("");
-    }
-  }, [models, selectedModelName]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (selectedModelName) {
-      params.set("table", selectedModelName);
-    } else {
-      params.delete("table");
-    }
-    if (params.toString() !== searchParams.toString()) {
-      router.replace(`?${params.toString()}`, { scroll: false });
-    }
-  }, [selectedModelName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset field selection and editing context when model changes (unless restoring from edit)
   useEffect(() => {
@@ -234,10 +220,8 @@ export function ValidationPageContent() {
   };
 
   const selectModel = (modelName: string) => {
-    setSelectedModelName(modelName);
-    setTableSearch("");
+    selectTable(modelName); // sets name, clears table search, closes the selector
     setFieldSearch("");
-    setIsTableSelectorOpen(false);
     setGenerateError("");
     setTablePage(1);
   };

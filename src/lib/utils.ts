@@ -5,6 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function classNames(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
-}
+// `classNames` is an alias of `cn` so the codebase has a single, tailwind-merge
+// aware class-merging implementation. Prefer `cn` in new code.
+export const classNames = cn;

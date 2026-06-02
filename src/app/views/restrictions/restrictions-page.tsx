@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useTablesQuery } from "@/queries/tables";
+import { useTableSelector } from "@/hooks/use-table-selector";
 import { useRestrictionsQuery, useRestrictionMutations } from "@/queries/restrictions";
 import { fieldTypeBadgeClass } from "@/lib/badge-utils";
 import { useProjectInfo } from "../shared/project-info-context";
@@ -31,12 +31,7 @@ function getDbNameSuggestion(fieldNames: string[]) {
 
 export function RestrictionsPageContent() {
   const { projectName, version, hasProject } = useProjectInfo();
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
-  const [selectedModelName, setSelectedModelName] = useState(() => searchParams.get("table") ?? "");
-  const [tableSearch, setTableSearch] = useState("");
-  const [isTableSelectorOpen, setIsTableSelectorOpen] = useState(false);
   const [draft, setDraft] = useState<RestrictionDraft>(emptyRestrictionDraft);
   const [editingRestrictionKey, setEditingRestrictionKey] = useState("");
   const [isAddingRestriction, setIsAddingRestriction] = useState(false);
@@ -46,6 +41,14 @@ export function RestrictionsPageContent() {
 
   const tablesQuery = useTablesQuery(projectName, version);
   const models: PrismaModel[] = useMemo(() => (tablesQuery.data ?? []) as PrismaModel[], [tablesQuery.data]);
+
+  const {
+    selectedModelName,
+    tableSearch, setTableSearch,
+    isTableSelectorOpen, setIsTableSelectorOpen,
+    selectModel,
+  } = useTableSelector({ models });
+
   const selectedModel = useMemo(() => models.find((m) => m.name === selectedModelName) ?? null, [models, selectedModelName]);
   const selectedModelKey = selectedModel?.key ?? "";
 
@@ -62,18 +65,6 @@ export function RestrictionsPageContent() {
     useRestrictionMutations(projectName, version, selectedModelName, selectedModelKey);
 
   const savingRestriction = createRestrictionMutation.isPending || updateRestrictionMutation.isPending;
-
-  useEffect(() => {
-    if (selectedModelName && models.length > 0 && !models.some((m) => m.name === selectedModelName)) {
-      setSelectedModelName("");
-    }
-  }, [models, selectedModelName]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (selectedModelName) params.set("table", selectedModelName); else params.delete("table");
-    if (params.toString() !== searchParams.toString()) router.replace(`?${params.toString()}`, { scroll: false });
-  }, [selectedModelName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setDraft(emptyRestrictionDraft); setEditingRestrictionKey(""); setIsAddingRestriction(false);
@@ -245,10 +236,7 @@ export function RestrictionsPageContent() {
         isLoading={tablesQuery.isLoading}
         tone="violet"
         onSearch={setTableSearch}
-        onSelect={(modelName) => {
-          setSelectedModelName(modelName);
-          setIsTableSelectorOpen(false);
-        }}
+        onSelect={selectModel}
         onClose={() => setIsTableSelectorOpen(false)}
         typeBadgeClass={fieldTypeBadgeClass}
       />
