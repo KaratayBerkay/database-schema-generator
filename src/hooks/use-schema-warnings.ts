@@ -34,6 +34,12 @@ export function useSchemaWarnings(projectId: string, fromVersion: string, toVers
   const pendingWarnings = warnings.filter((w) => !w.approvedAt);
   const pendingCount = pendingWarnings.length;
 
+  const BLOCKING_RESOLUTIONS = new Set(["data_deleted", "lossy_convert", "precision_loss", "backfill_required"]);
+
+  const breakingPendingCount = warnings.filter(
+    (w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution),
+  ).length;
+
   // Warnings that are approved but still missing a required decision value.
   // Covers:
   //   1. Field lossy_convert / precision_loss on non-nullable target → silent 0/null is wrong
@@ -51,6 +57,19 @@ export function useSchemaWarnings(projectId: string, fromVersion: string, toVers
         (w.entityKind === "enum" && w.changeKind === "value_removed")
       ),
   ).length;
+
+  const trackingHref = (() => {
+    const to = toVersion ? `&to=${toVersion}` : "";
+    if (breakingPendingCount > 0) {
+      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "table"))    return `/tracking?resolve=tables${to}`;
+      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "enum"))     return `/tracking?resolve=enums${to}`;
+      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "field"))    return `/tracking?resolve=schema${to}`;
+      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "relation")) return `/tracking?resolve=relations${to}`;
+      return `/tracking?resolve=all${to}`;
+    }
+    if (defaultsRequiredCount > 0) return `/tracking?resolve=schema${to}`;
+    return to ? `/tracking?${to.slice(1)}` : "/tracking";
+  })();
 
   // Lookup key: "entityKind:entityId:changeKind" → warning
   const warningLookup = new Map(
@@ -97,7 +116,9 @@ export function useSchemaWarnings(projectId: string, fromVersion: string, toVers
     warnings,
     pendingWarnings,
     pendingCount,
+    breakingPendingCount,
     defaultsRequiredCount,
+    trackingHref,
     isLoading,
     getWarning,
     approve,

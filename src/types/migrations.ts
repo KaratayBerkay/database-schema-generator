@@ -225,3 +225,26 @@ export type MigrationSession = {
   runLogPath: string | null;
   updatedAt: string;
 };
+
+export type RestoreParams = {
+  connectionId: string | null;
+  fromVersion: string | null;
+  toVersion: string | null;
+  snapshotId: string | null;
+  saved: SavedMigrationState;
+};
+
+export type SavedMigrationState = {
+  connectionId: string | null;
+  syncVersion: string | null;
+  targetVersion: string | null;
+  dataTimestamp: string | null;
+  snapshotId: string | null;
+  snapshot: {
+    connectionId: string; fromVersion: string; toVersion: string;
+    tableCount: number; rowCount: number;
+    tables: { name: string; count: number }[]; collectedAt: string;
+  } | null;
+  validationPassed: boolean;
+  runLogPath: string | null;
+};

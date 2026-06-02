@@ -6,7 +6,6 @@ import type {
   InvalidRow,
   MigrateProgressEvent,
   MigrationOrderItem,
-  MigrationSession,
   PhaseState,
   RunResponse,
   ValidateResponse,
@@ -118,6 +117,7 @@ const resetFromValidateSlice: Partial<WorkflowState> = {
   validateState: "idle", validateError: "", stage1Issues: [], stage2Issues: [],
   migrateState: "idle", migrateError: "", migrateTables: [], migrateVersion: "",
   showFixModal: false, invalidRows: [], rowPatches: {}, fixModalError: "",
+  restoreState: "idle", restoreError: "", restoreTables: [],
 };
 
 function reducer(state: WorkflowState, action: WorkflowAction): WorkflowState {
@@ -274,7 +274,7 @@ export function useMigrationWorkflow({
   breakingPendingCount: number;
   defaultsRequiredCount: number;
   persistMigrationState: (patch: Record<string, unknown>) => Promise<void>;
-  onSessionsRefresh: (sessions: MigrationSession[]) => void;
+  onSessionsRefresh: () => void;
 }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -297,32 +297,56 @@ export function useMigrationWorkflow({
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buf = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      const lines = buf.split("\n");
-      buf = lines.pop() ?? "";
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        try {
-          const event = JSON.parse(line.slice(6)) as { type: string; [k: string]: unknown };
-          if (event.type === "phase" && handlers.onPhase) {
-            handlers.onPhase(event.phase as "schema_push" | "inserting", typeof event.total === "number" ? event.total : undefined, typeof event.totalRows === "number" ? event.totalRows : undefined);
-          } else if (event.type === "progress" && handlers.onProgress) {
-            handlers.onProgress(event as unknown as MigrateProgressEvent);
-          } else if (event.type === "needsFix" && handlers.onNeedsFix) {
-            handlers.onNeedsFix(event as unknown as RunResponse);
-            return;
-          } else if (event.type === "done") {
-            handlers.onDone(event as unknown as RunResponse);
-            return;
-          } else if (event.type === "error") {
-            handlers.onError((event.error as string) ?? "Migration failed.");
-            return;
-          }
-        } catch { /* malformed line */ }
+    let terminated = false;
+    let stallTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const clearStall = () => { if (stallTimer) { clearTimeout(stallTimer); stallTimer = null; } };
+    const resetStall = () => {
+      clearStall();
+      stallTimer = setTimeout(() => {
+        terminated = true;
+        void reader.cancel().catch(() => {});
+        handlers.onError("Migration stalled — no data received for 90 seconds. The server may have crashed.");
+      }, 90_000);
+    };
+
+    try {
+      resetStall();
+      outer: while (!terminated) {
+        const { done, value } = await reader.read();
+        if (terminated) break;
+        resetStall();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const event = JSON.parse(line.slice(6)) as { type: string; [k: string]: unknown };
+            if (event.type === "phase" && handlers.onPhase) {
+              handlers.onPhase(event.phase as "schema_push" | "inserting", typeof event.total === "number" ? event.total : undefined, typeof event.totalRows === "number" ? event.totalRows : undefined);
+            } else if (event.type === "progress" && handlers.onProgress) {
+              handlers.onProgress(event as unknown as MigrateProgressEvent);
+            } else if (event.type === "needsFix" && handlers.onNeedsFix) {
+              terminated = true; handlers.onNeedsFix(event as unknown as RunResponse); break outer;
+            } else if (event.type === "done") {
+              terminated = true; handlers.onDone(event as unknown as RunResponse); break outer;
+            } else if (event.type === "error") {
+              terminated = true; handlers.onError((event.error as string) ?? "Migration failed."); break outer;
+            }
+          } catch { /* malformed line */ }
+        }
       }
+      if (!terminated) handlers.onError("Stream closed without a completion event — the server may have restarted.");
+    } catch (err) {
+      if (!terminated) {
+        const msg = err instanceof Error ? err.message : "SSE stream error.";
+        handlers.onError(msg);
+      }
+    } finally {
+      clearStall();
+      void reader.cancel().catch(() => {});
     }
   }, []);
 
@@ -348,15 +372,13 @@ export function useMigrationWorkflow({
       },
     });
     void persistMigrationState({ runLogPath: data.logPath ?? null });
-    fetch(`/api/migration-state?list=true&projectId=${projectId}`)
-      .then((r) => r.json())
-      .then((list) => onSessionsRefresh(list as MigrationSession[]))
-      .catch(() => {/* best-effort */});
-  }, [projectId, targetVersion, persistMigrationState, onSessionsRefresh]);
+    onSessionsRefresh();
+  }, [targetVersion, persistMigrationState, onSessionsRefresh]);
 
   // ─── collect ───────────────────────────────────────────────────────────────
 
   const handleCollect = useCallback(async () => {
+    if (state.collectState === "loading") return;
     dispatch({ type: "COLLECT_LOADING" });
     try {
       const res = await fetch("/api/migrations/collect", {
@@ -388,6 +410,7 @@ export function useMigrationWorkflow({
   // ─── validate ──────────────────────────────────────────────────────────────
 
   const handleValidate = useCallback(async () => {
+    if (state.validateState === "loading") return;
     dispatch({ type: "VALIDATE_LOADING" });
     try {
       const res = await fetch("/api/migrations/validate", {
@@ -419,6 +442,7 @@ export function useMigrationWorkflow({
   }, [readSSE]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleMigrate = useCallback(async () => {
+    if (state.migrateState === "loading") return;
     dispatch({ type: "MIGRATE_LOADING" });
     dispatch({ type: "SET_MIGRATE_PHASE", payload: { phase: "schema_push" } });
     try {
@@ -487,7 +511,16 @@ export function useMigrationWorkflow({
   const missingContext = !activeConnectionId || !syncVersion || !targetVersion;
 
   const collectBtnDisabled  = state.collectState === "loading" || undefined;
-  const validateBtnDisabled = state.validateState === "loading" || missingContext || undefined;
+  const validateBtnDisabled = state.validateState === "loading" || missingContext || !state.collectSnapshotId || undefined;
+
+  const migrateDisabledReason =
+    state.migrateState === "loading"         ? null
+    : missingContext                          ? "Connection or version pair is missing."
+    : breakingPendingCount > 0               ? `${breakingPendingCount} warning${breakingPendingCount !== 1 ? "s" : ""} must be approved in Tracking before migrating.`
+    : defaultsRequiredCount > 0              ? `${defaultsRequiredCount} field${defaultsRequiredCount !== 1 ? "s" : ""} need a replacement value set in Tracking.`
+    : state.validateState === "success" && errorCount > 0 ? `${errorCount} validation error${errorCount !== 1 ? "s" : ""} must be resolved before migrating.`
+    : null;
+
   const migrateBtnDisabled  =
     state.migrateState === "loading" ||
     missingContext ||
@@ -508,7 +541,7 @@ export function useMigrationWorkflow({
     ...state,
     allIssues, errorCount,
     canMigrate,
-    collectBtnDisabled, validateBtnDisabled, migrateBtnDisabled,
+    collectBtnDisabled, validateBtnDisabled, migrateBtnDisabled, migrateDisabledReason,
     progressPct,
     // actions
     dispatch,

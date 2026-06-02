@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
+import { useTableSelector } from "@/hooks/use-table-selector";
+import { useCommentaryEditorState } from "@/hooks/use-commentary-editor-state";
+import { TABLE_PAGE_SIZE, FIELD_PAGE_SIZE } from "@/constants/commentary";
 import { useTablesQuery } from "@/queries/tables";
 import { useCommentaryFieldsQuery, useCommentaryMutations } from "@/queries/commentary";
 import { classNames } from "@/lib/utils";
@@ -14,28 +16,18 @@ import { EmptyState, InlineError, LoadingCard } from "@/components/built";
 
 export function CommentaryPageContent() {
   const { projectName, version, hasProject } = useProjectInfo();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const [selectedModelName, setSelectedModelName] = useState(
-    () => searchParams.get("table") ?? "",
-  );
-  const [tableSearch, setTableSearch] = useState("");
-  const [isTableSelectorOpen, setIsTableSelectorOpen] = useState(false);
-  const [tablePage, setTablePage] = useState(1);
-  const TABLE_PAGE_SIZE = 9;
-
-  const [comments, setComments] = useState<Record<string, string>>({});
-  const [dirtyKeys, setDirtyKeys] = useState<Set<string>>(new Set());
-  const [saveError, setSaveError] = useState("");
-  const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
-
-  const [fieldSearch, setFieldSearch] = useState("");
-  const [fieldPage, setFieldPage] = useState(1);
-  const FIELD_PAGE_SIZE = 10;
 
   const tablesQuery = useTablesQuery(projectName, version);
   const models: PrismaModel[] = (tablesQuery.data ?? []) as PrismaModel[];
+
+  const {
+    selectedModelName, setSelectedModelName,
+    tableSearch, setTableSearch,
+    isTableSelectorOpen, setIsTableSelectorOpen,
+    selectModel,
+  } = useTableSelector({ models });
+
+  const [tablePage, setTablePage] = useState(1);
 
   const selectedModel = useMemo(
     () => models.find((m) => m.name === selectedModelName) ?? null,
@@ -47,34 +39,20 @@ export function CommentaryPageContent() {
   const fields: PrismaField[] = fieldsQuery.data?.fields ?? [];
   const enumTypes: string[] = fieldsQuery.data?.enumTypes ?? [];
 
-  // Sync comments when fields data changes
-  useEffect(() => {
-    const initial: Record<string, string> = {};
-    for (const f of fields) initial[f.key] = f.comment ?? "";
-    setComments(initial);
-    setDirtyKeys(new Set());
-    setSavedKeys(new Set());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fieldsQuery.data]);
+  const {
+    comments, setComments,
+    dirtyKeys, setDirtyKeys,
+    saveError, setSaveError,
+    savedKeys, setSavedKeys,
+    fieldSearch, setFieldSearch,
+    fieldPage, setFieldPage,
+  } = useCommentaryEditorState({ fields, fieldsData: fieldsQuery.data, selectedModelName });
 
   const { invalidate: invalidateCommentary, update: updateCommentsMutation } =
     useCommentaryMutations(projectName, version, selectedModelName, selectedModelKey);
 
-  useEffect(() => {
-    setTablePage(1);
-  }, [tableSearch]);
-
-  useEffect(() => {
-    setFieldPage(1);
-  }, [fieldSearch]);
-
   const visibleFields = useMemo(
-    () =>
-      fields.filter(
-        (f) =>
-          !f.isRelation &&
-          f.name.toLowerCase().includes(fieldSearch.toLowerCase()),
-      ),
+    () => fields.filter((f) => !f.isRelation && f.name.toLowerCase().includes(fieldSearch.toLowerCase())),
     [fields, fieldSearch],
   );
 
@@ -84,34 +62,6 @@ export function CommentaryPageContent() {
   }, [visibleFields, fieldPage]);
 
   const totalFieldPages = Math.ceil(visibleFields.length / FIELD_PAGE_SIZE);
-
-  useEffect(() => {
-    if (selectedModelName && models.length > 0 && !models.some((m) => m.name === selectedModelName)) {
-      setSelectedModelName("");
-    }
-  }, [models, selectedModelName]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (selectedModelName) {
-      params.set("table", selectedModelName);
-    } else {
-      params.delete("table");
-    }
-    if (params.toString() !== searchParams.toString()) {
-      router.replace(`?${params.toString()}`, { scroll: false });
-    }
-  }, [selectedModelName]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => { setFieldPage(1); setSaveError(""); }, [selectedModelName]);
-
-  const selectModel = (modelName: string) => {
-    setSelectedModelName(modelName);
-    setTableSearch("");
-    setFieldSearch("");
-    setIsTableSelectorOpen(false);
-    setTablePage(1);
-  };
 
   const handleCommentChange = (fieldKey: string, value: string) => {
     setComments((prev) => ({ ...prev, [fieldKey]: value }));

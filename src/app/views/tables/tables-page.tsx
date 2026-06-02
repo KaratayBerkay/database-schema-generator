@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useTablesPageState } from "@/hooks/use-tables-page-state";
+import { TABLES_PAGE_SIZE } from "@/constants/tables";
 import type { FormEvent } from "react";
 import { useTablesQuery, useTableMutations } from "@/queries/tables";
 import { useProjectInfo } from "../shared/project-info-context";
@@ -30,7 +32,6 @@ import { EmptyState, LoadingCard } from "@/components/built";
 export function TablesPageContent() {
   const { projectName, version, versions, provider, hasProject, projectId } = useProjectInfo();
   const { diffByTableKey } = useVersionDiffLookup(projectName, version);
-  const [diffDetail, setDiffDetail] = useState<TableDiff | null>(null);
   const versionIdx = versions.indexOf(version);
   const previousVersion = versionIdx > 0 ? versions[versionIdx - 1]! : "";
   const { getWarning, approveMany } = useSchemaWarnings(projectId, previousVersion, version);
@@ -39,20 +40,23 @@ export function TablesPageContent() {
   const models: PrismaModel[] = (listQuery.data ?? []) as PrismaModel[];
   const { invalidate: invalidateTables, create: createMutation, update: updateMutation, delete: deleteMutation } = useTableMutations(projectName, version);
 
-  const [modelName, setModelName] = useState("");
-  const [pkName, setPkName] = useState("id");
-  const [pkType, setPkType] = useState<string>(defaultPkType);
-  const [createError, setCreateError] = useState("");
-  const [selectedModel, setSelectedModel] = useState<PrismaModel | null>(null);
-  const [editModelName, setEditModelName] = useState("");
-  const [editPkName, setEditPkName] = useState("");
-  const [editPkType, setEditPkType] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
-  const [updateError, setUpdateError] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 32;
-  const [searchTerm, setSearchTerm] = useState("");
-  const [helpDialog, setHelpDialog] = useState<HelpDialog>(null);
+  const {
+    modelName, setModelName,
+    pkName, setPkName,
+    pkType, setPkType,
+    createError, setCreateError,
+    selectedModel, setSelectedModel,
+    editModelName, setEditModelName,
+    editPkName, setEditPkName,
+    editPkType, setEditPkType,
+    isEditing, setIsEditing,
+    updateError, setUpdateError,
+    currentPage, setCurrentPage,
+    searchTerm, setSearchTerm,
+    helpDialog, setHelpDialog,
+    diffDetail, setDiffDetail,
+    openEdit, closeEdit, resetCreate,
+  } = useTablesPageState();
 
   const activeProvider = providerKey(provider);
   const providerDisplay = providerLabel(activeProvider);
@@ -204,7 +208,7 @@ export function TablesPageContent() {
                 models={models}
                 searchTerm={searchTerm}
                 currentPage={currentPage}
-                itemsPerPage={itemsPerPage}
+                itemsPerPage={TABLES_PAGE_SIZE}
                 diffByTableKey={diffByTableKey}
                 fieldTypeBadgeClass={fieldTypeBadgeClass}
                 onSearchChange={setSearchTerm}

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRelationFilters } from "@/hooks/use-relation-filters";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useTableSelector } from "@/hooks/use-table-selector";
 import { IconChevronDown } from "@tabler/icons-react";
 import { EmptyState, LoadingCard, Pagination } from "@/components/built";
 import { useRelationsQuery } from "@/queries/relations";
@@ -18,6 +18,7 @@ import { VersionDiffBadge } from "@/components/shared/version-diff-badge";
 import { FkTypeDetailModal } from "@/components/relations/fk-type-detail-modal";
 import type { FkTypeMismatch } from "@/components/relations/fk-type-detail-modal";
 import { useSchemaWarnings } from "@/hooks/use-schema-warnings";
+import { MODAL_TABLES_PER_PAGE } from "@/constants/relations";
 import type {
   PrismaField,
   PrismaModel,
@@ -44,26 +45,26 @@ export function RelationsPageContent() {
   const { projectName, version, hasProject, projectId, versions } = useProjectInfo();
   const previousVersion = versions[versions.indexOf(version) - 1] ?? "";
   const { getWarning, approve, unapprove } = useSchemaWarnings(projectId, previousVersion, version);
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
-  const [selectedModelName, setSelectedModelName] = useState(
-    () => searchParams.get("table") ?? "",
-  );
-  const [tableSearch, setTableSearch] = useState("");
-  const [isTableSelectorOpen, setIsTableSelectorOpen] = useState(false);
+  const tablesQuery    = useTablesQuery(projectName, version);
+  const models: PrismaModel[] = (tablesQuery.data ?? []) as PrismaModel[];
+
+  const {
+    selectedModelName, setSelectedModelName,
+    tableSearch, setTableSearch,
+    isTableSelectorOpen, setIsTableSelectorOpen,
+    selectModel,
+  } = useTableSelector({ models });
+
   const [fkDetailModal, setFkDetailModal] = useState<{
     relationName: string;
     targetTableName: string;
     mismatches: FkTypeMismatch[];
   } | null>(null);
-  const modalTablesPerPage = 12;
+
 
   const { fkCascadeMap, relationDiffs, diffByRelationId } = useVersionDiffLookup(projectName, version);
   const removedRelationDiffs = relationDiffs.filter((d) => d.changeKind === "removed");
-
-  const tablesQuery    = useTablesQuery(projectName, version);
-  const models: PrismaModel[] = (tablesQuery.data ?? []) as PrismaModel[];
 
   const selectedModel   = useMemo(() => models.find((m) => m.name === selectedModelName) ?? null, [models, selectedModelName]);
   const selectedModelKey = selectedModel?.key ?? "";
@@ -122,39 +123,11 @@ export function RelationsPageContent() {
       .some((r) => r.backReferenceName === draft.backReferenceName.trim());
   }, [ownedRelations, editingRelationKey, draft.backReferenceName, draft.targetModel]);
 
-  // Deselect model if it disappears from the list
-  useEffect(() => {
-    if (selectedModelName && models.length > 0 && !models.some((m) => m.name === selectedModelName)) {
-      setSelectedModelName("");
-    }
-  }, [models, selectedModelName]);
-
   // Auto-set FK field type from selected target reference field
   useEffect(() => {
     const refField = selectableTargetFields.find((f) => f.name === draft.references);
     if (refField) setFkFieldType(refField.type);
   }, [draft.references, selectableTargetFields]);
-
-  // Sync selected table → URL param
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (selectedModelName) {
-      params.set("table", selectedModelName);
-    } else {
-      params.delete("table");
-    }
-    if (params.toString() !== searchParams.toString()) {
-      router.replace(`?${params.toString()}`, { scroll: false });
-    }
-  }, [selectedModelName]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const selectModel = (modelName: string) => {
-    setSelectedModelName(modelName);
-    setTableSearch("");
-    filters.setRelationTargetFilter("");
-    filters.setRelationKindFilter("");
-    setIsTableSelectorOpen(false);
-  };
 
   if (!hasProject) {
     return (
@@ -377,7 +350,7 @@ export function RelationsPageContent() {
         savingRelation={savingRelation}
         modalTableSearch={modalTableSearch}
         modalTablePage={modalTablePage}
-        modalTablesPerPage={modalTablesPerPage}
+        modalTablesPerPage={MODAL_TABLES_PER_PAGE}
         fkFieldType={fkFieldType}
         fkFieldDbName={fkFieldDbName}
         error={error}

@@ -1,3 +1,5 @@
+export const TABLES_PAGE_SIZE = 32;
+
 type ProviderKey = "postgresql" | "mysql" | "sqlite";
 type PkTypeValue = "String" | "Int" | "BigInt" | "DateTime" | "Uuid";
 
