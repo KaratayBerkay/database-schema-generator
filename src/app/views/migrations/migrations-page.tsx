@@ -10,7 +10,6 @@ import { useMigrationConnections } from "@/hooks/use-migration-connections";
 import { useSyncCheck } from "@/hooks/use-sync-check";
 import { useDestroyDeploy } from "@/hooks/use-destroy-deploy";
 import { useMigrationWorkflow } from "@/hooks/use-migration-workflow";
-import type { MigrationSession } from "@/types/migrations";
 import { SessionHistory } from "@/components/migrations/session-history";
 import { MigrationTypeSelector } from "@/components/migrations/migration-type-selector";
 import { ConnectionManagementCard } from "@/components/migrations/connection-management-card";
@@ -51,7 +50,7 @@ export function MigrationsPageContent() {
   // ── plan state ────────────────────────────────────────────────────────────
   const {
     migrationPlan, setMigrationPlan,
-    dbTableCount,  setDbTableCount,
+    setDbTableCount,
     dbIsEmpty, isNewPlan, isVersionPlan,
     changePlan,
   } = useMigrationPlan({ onReset: () => { destroy.resetPush(); workflow.resetCollect(); } });
