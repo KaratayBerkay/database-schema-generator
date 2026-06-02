@@ -71,3 +71,6 @@ CLAUDE.md
 # Runtime migration artifacts (snapshots, logs, connection files)
 /src/database/migrations/
 /src/database/schemas/
+
+# Ephemeral migration child-process scripts (generated per run, auto-deleted)
+/src/database/migration-runtime/

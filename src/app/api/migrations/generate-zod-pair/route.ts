@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { generateZodSchema } from "@/lib/schema-validation/generator";
 import type { ZodPairResponse } from "@/types/migrations";
 import { db } from "@/lib/db/client";
+import { detectVersionChanges } from "@/lib/version-diff/detect-changes";
+import { writeWarningsForDiff } from "@/lib/version-diff/warning-writer";
 
 function getString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -88,6 +90,14 @@ export async function POST(request: Request) {
     ]);
 
     const allErrors = [...fromResult.errors, ...toResult.errors];
+
+    // Write schema_warnings for the version pair so Tracking and Validate have fresh data.
+    // This is the canonical trigger point — the user explicitly asked for the diff,
+    // so this is the right moment to detect changes and record warnings.
+    try {
+      const diff = detectVersionChanges(projectName, fromVersion, toVersion);
+      writeWarningsForDiff(projectName, fromVersion, toVersion, diff);
+    } catch { /* non-fatal — Zod generation still succeeded */ }
 
     return NextResponse.json<ZodPairResponse>({
       success: allErrors.length === 0,

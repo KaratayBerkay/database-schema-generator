@@ -1,10 +1,12 @@
 "use client";
 
-import { IconCheck, IconCopy, IconX } from "@tabler/icons-react";
+import { IconCheck, IconCopy, IconLoader2, IconX } from "@tabler/icons-react";
 import { classNames } from "@/lib/utils";
 
 type ConnectionStringModalProps = {
   isOpen: boolean;
+  isLoading: boolean;
+  testFailed: boolean;
   connStringValue: string;
   connStringORM: "prisma" | "drizzle" | "custom" | "plain";
   connStringEnvName: string;
@@ -17,10 +19,14 @@ type ConnectionStringModalProps = {
 };
 
 export function ConnectionStringModal({
-  isOpen, connStringValue, connStringORM, connStringEnvName, connStringCopied,
+  isOpen, isLoading, testFailed,
+  connStringValue, connStringORM, connStringEnvName, connStringCopied,
   onClose, onOrmChange, onEnvNameChange, onValueChange, onCopy,
 }: ConnectionStringModalProps) {
   if (!isOpen) return null;
+
+  const blocked = testFailed || isLoading;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
       <div className="flex w-full max-w-5xl flex-col rounded-lg border border-slate-200 bg-white shadow-2xl">
@@ -39,55 +45,82 @@ export function ConnectionStringModal({
         </div>
 
         <div className="space-y-4 p-6">
-          <div>
-            <p className="mb-1.5 text-xs font-semibold text-slate-700">ORM / Format</p>
-            <div className="flex gap-2">
-              {([
-                { id: "plain",   label: "Plain URL" },
-                { id: "prisma",  label: "Prisma"    },
-                { id: "drizzle", label: "Drizzle"   },
-                { id: "custom",  label: "Custom"    },
-              ] as const).map(({ id, label }) => (
-                <button key={id} type="button" onClick={() => onOrmChange(id)}
-                  className={classNames("h-8 rounded-md border px-3 text-xs font-semibold transition",
-                    connStringORM === id ? "border-slate-800 bg-slate-800 text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50")}>
-                  {label}
-                </button>
-              ))}
+          {/* Test failed — block the entire modal body */}
+          {testFailed ? (
+            <div className="flex flex-col items-center gap-3 py-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-100">
+                <IconX size={20} stroke={2} className="text-rose-600" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-rose-700">Connection test failed</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  The last test on this connection returned an error. Fix the connection before viewing the connection string.
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <>
+              <div>
+                <p className="mb-1.5 text-xs font-semibold text-slate-700">ORM / Format</p>
+                <div className="flex gap-2">
+                  {([
+                    { id: "plain",   label: "Plain URL" },
+                    { id: "prisma",  label: "Prisma"    },
+                    { id: "drizzle", label: "Drizzle"   },
+                    { id: "custom",  label: "Custom"    },
+                  ] as const).map(({ id, label }) => (
+                    <button key={id} type="button" onClick={() => !blocked && onOrmChange(id)}
+                      disabled={blocked}
+                      className={classNames("h-8 rounded-md border px-3 text-xs font-semibold transition",
+                        connStringORM === id ? "border-slate-800 bg-slate-800 text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
+                        blocked && "cursor-not-allowed opacity-50")}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          {connStringORM === "plain" && (
-            <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-[11px] text-slate-500">
-              Raw connection URL — no environment variable wrapper. Use directly with your database driver or CLI.
-            </p>
+              {connStringORM === "plain" && (
+                <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-[11px] text-slate-500">
+                  Raw connection URL — no environment variable wrapper. Use directly with your database driver or CLI.
+                </p>
+              )}
+
+              {connStringORM === "custom" && (
+                <div>
+                  <p className="mb-1 text-xs font-semibold text-slate-700">Environment Variable Name</p>
+                  <input value={connStringEnvName} onChange={(e) => onEnvNameChange(e.target.value)}
+                    placeholder="DATABASE_URL"
+                    disabled={blocked}
+                    className="h-8 w-full rounded-md border border-slate-300 bg-white px-3 font-mono text-xs text-slate-800 focus:border-slate-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+              )}
+
+              <div>
+                <p className="mb-1 text-xs font-semibold text-slate-700">Connection String</p>
+                {isLoading ? (
+                  <div className="flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3">
+                    <IconLoader2 size={14} stroke={2} className="shrink-0 animate-spin text-slate-400" />
+                    <span className="text-xs text-slate-400">Decrypting connection…</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input value={connStringValue} onChange={(e) => onValueChange(e.target.value)}
+                      spellCheck={false}
+                      className="h-9 min-w-0 flex-1 rounded-md border border-slate-300 bg-slate-50 px-3 font-mono text-xs text-slate-800 focus:border-slate-500 focus:bg-white focus:outline-none"
+                    />
+                    <button type="button" onClick={onCopy} title="Copy to clipboard"
+                      className="shrink-0 rounded p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
+                      {connStringCopied
+                        ? <IconCheck size={16} stroke={2.5} className="text-emerald-600" />
+                        : <IconCopy size={16} stroke={1.5} />}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           )}
-
-          {connStringORM === "custom" && (
-            <div>
-              <p className="mb-1 text-xs font-semibold text-slate-700">Environment Variable Name</p>
-              <input value={connStringEnvName} onChange={(e) => onEnvNameChange(e.target.value)}
-                placeholder="DATABASE_URL"
-                className="h-8 w-full rounded-md border border-slate-300 bg-white px-3 font-mono text-xs text-slate-800 focus:border-slate-500 focus:outline-none"
-              />
-            </div>
-          )}
-
-          <div>
-            <p className="mb-1 text-xs font-semibold text-slate-700">Connection String</p>
-            <div className="flex items-center gap-2">
-              <input value={connStringValue} onChange={(e) => onValueChange(e.target.value)}
-                spellCheck={false}
-                className="h-9 min-w-0 flex-1 rounded-md border border-slate-300 bg-slate-50 px-3 font-mono text-xs text-slate-800 focus:border-slate-500 focus:bg-white focus:outline-none"
-              />
-              <button type="button" onClick={onCopy} title="Copy to clipboard"
-                className="shrink-0 rounded p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
-                {connStringCopied
-                  ? <IconCheck size={16} stroke={2.5} className="text-emerald-600" />
-                  : <IconCopy size={16} stroke={1.5} />}
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

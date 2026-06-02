@@ -65,7 +65,12 @@ export function resolutionSeverity(w: SchemaWarning): Severity {
 export function warningNavHref(w: SchemaWarning): string {
   if (w.entityKind === "field")    return `/schema?table=${w.entityName.split(".")[0] ?? ""}`;
   if (w.entityKind === "enum")     return "/enums";
-  if (w.entityKind === "relation") return "/relations";
+  if (w.entityKind === "relation") {
+    const sourceTable = w.entityName.split(".")[0] ?? "";
+    if (w.changeKind === "removed") return `/relations?table=${sourceTable}`;
+    // FK cascade / FK field change — user must fix the field type in Schema
+    return `/schema?table=${sourceTable}`;
+  }
   return "/tables";
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { SchemaWarning } from "@/lib/schema-warnings-store";
 
@@ -10,6 +10,7 @@ export function ResolveModal({
   setPendingValue,
   enumValuesMap,
   onApprove,
+  applyFkType,
   onClose,
 }: {
   warning: SchemaWarning;
@@ -17,18 +18,30 @@ export function ResolveModal({
   setPendingValue: (v: string) => void;
   enumValuesMap: Record<string, string[]>;
   onApprove: (id: string, replacementValue?: string) => Promise<void>;
+  applyFkType: (id: string) => Promise<void>;
   onClose: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const isNullable = warning.targetNullable === true;
   const isEnumRemoval = warning.entityKind === "enum" && warning.changeKind === "value_removed";
   const isFieldDefault = warning.entityKind === "field" && warning.targetNullable !== null;
+  const isFkCascade = warning.entityKind === "relation" && warning.changeKind === "type_changed";
 
   const targetType = warning.toValue ?? "";
   const fieldName = warning.entityName.split(".")[1] ?? warning.entityName;
   const enumName = warning.entityName.split(".")[0] ?? "";
   const removedValue = warning.entityName.split(".")[1] ?? "";
   const enumAvailable = enumValuesMap[enumName] ?? [];
+
+  // Auto-select the first available replacement as soon as options load —
+  // prevents the Approve button being stuck disabled on the empty placeholder.
+  useEffect(() => {
+    if (isEnumRemoval && pendingValue === "" && enumAvailable.length > 0) {
+      setPendingValue(enumAvailable[0]!);
+    }
+  // Re-run if options arrive asynchronously after the modal opens.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enumAvailable.length]);
 
   const isStringTarget = !["Int", "BigInt", "Float", "Decimal", "Boolean", "DateTime", "Json", "Bytes"].includes(targetType);
   const isUniqueField = warning.targetUnique === true;
@@ -161,18 +174,39 @@ export function ResolveModal({
                 <span className="ml-1.5 text-[10px] font-normal text-rose-500">required</span>
               </p>
               <p className="text-[10px] text-slate-500">This value will be set on every existing row.</p>
+              {targetType === "Boolean" ? (
+                <div className="flex gap-2">
+                  {(["true", "false"] as const).map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setPendingValue(val)}
+                      className={`flex h-10 flex-1 items-center justify-center rounded-md border font-mono text-sm font-semibold transition ${
+                        pendingValue === val
+                          ? val === "true"
+                            ? "border-emerald-400 bg-emerald-100 text-emerald-700"
+                            : "border-rose-400 bg-rose-100 text-rose-700"
+                          : val === "true"
+                            ? "border-slate-200 bg-white text-slate-400 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600"
+                            : "border-slate-200 bg-white text-slate-400 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600"
+                      }`}
+                    >
+                      {val}
+                    </button>
+                  ))}
+                </div>
+              ) : (
               <input
                 value={pendingValue}
                 onChange={(e) => setPendingValue(e.target.value)}
                 placeholder={
                   targetType === "Int" || targetType === "BigInt" ? "e.g. 0"
                   : targetType === "Float" || targetType === "Decimal" ? "e.g. 0.0"
-                  : targetType === "Boolean" ? "true or false"
                   : "default value"
                 }
                 autoFocus
                 className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 font-mono text-sm text-slate-800 focus:border-slate-500 focus:outline-none"
-              />
+              />)}
             </div>
           )}
 
@@ -180,6 +214,19 @@ export function ResolveModal({
             <p className="text-sm text-slate-600">
               This field is nullable — existing rows will be set to <code className="rounded bg-slate-100 px-1 font-mono text-sm">NULL</code>.
             </p>
+          )}
+
+          {isFkCascade && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-semibold text-amber-800">Schema update required</p>
+              <p className="mt-1 text-xs text-amber-700">
+                Clicking <strong>Apply &amp; Approve</strong> will change{" "}
+                <code className="rounded bg-amber-100 px-1 font-mono">{warning.entityName.split(" →")[0]}</code> from{" "}
+                <code className="rounded bg-amber-100 px-1 font-mono">{warning.fromValue}</code> to{" "}
+                <code className="rounded bg-amber-100 px-1 font-mono">{warning.toValue === "Uuid" ? "String @db.Uuid" : warning.toValue}</code>{" "}
+                in the schema, then mark this warning approved.
+              </p>
+            </div>
           )}
         </div>
 
@@ -191,14 +238,25 @@ export function ResolveModal({
           >
             Cancel
           </button>
-          <button
-            type="button"
-            disabled={!canApprove || busy}
-            onClick={() => handleApprove()}
-            className="h-9 min-w-32 rounded-md bg-emerald-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-          >
-            {busy ? "Saving…" : "Approve"}
-          </button>
+          {isFkCascade ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={async () => { setBusy(true); await applyFkType(warning.id); setBusy(false); onClose(); }}
+              className="h-9 min-w-36 rounded-md bg-amber-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            >
+              {busy ? "Applying…" : "Apply & Approve"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={!canApprove || busy}
+              onClick={() => handleApprove()}
+              className="h-9 min-w-32 rounded-md bg-emerald-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            >
+              {busy ? "Saving…" : "Approve"}
+            </button>
+          )}
         </div>
       </div>
     </div>,

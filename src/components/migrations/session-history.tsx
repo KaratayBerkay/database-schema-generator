@@ -10,6 +10,7 @@ type MigrationSession = {
   connectionId: string;
   fromVersion: string;
   toVersion: string;
+  snapshotId: string | null;
   collectTimestamp: string | null;
   collectTableCount: number | null;
   collectRowCount: number | null;

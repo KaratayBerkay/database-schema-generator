@@ -262,20 +262,6 @@ if (!global._appDb) {
       updated_at TEXT NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS schema_artifacts (
-      id TEXT PRIMARY KEY,
-      project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      version_id INTEGER REFERENCES project_versions(id) ON DELETE CASCADE,
-      type TEXT NOT NULL,
-      fs_path TEXT NOT NULL,
-      content_hash TEXT,
-      compressed INTEGER NOT NULL DEFAULT 0,
-      encrypted INTEGER NOT NULL DEFAULT 0,
-      temporary INTEGER NOT NULL DEFAULT 1,
-      expires_at TEXT,
-      created_at TEXT NOT NULL
-    );
-
     CREATE TABLE IF NOT EXISTS migration_connections (
       id TEXT PRIMARY KEY,
       project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,

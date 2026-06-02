@@ -191,7 +191,7 @@ function runStage1(
 // Returns: modelName → Map<fieldDbName, { changeKind, fromValue, toValue }> for approved lossy warnings.
 // Used to determine whether a field should be stripped from Zod validation (truly incompatible)
 // or left in place (compatible conversion like String → Enum carries actual data through).
-type ApprovedLossyEntry2 = { changeKind: string; fromValue: string | null; toValue: string | null };
+type ApprovedLossyEntry2 = { changeKind: string; resolution: string; fromValue: string | null; toValue: string | null };
 type ApprovedLossySet = Map<string, Map<string, ApprovedLossyEntry2>>;
 
 function loadApprovedLossyFields(
@@ -202,12 +202,12 @@ function loadApprovedLossyFields(
   const projectRow = db.prepare("SELECT id FROM projects WHERE name = ?").get(projectName) as { id: string } | undefined;
   if (!projectRow) return new Map();
   const rows = db.prepare(`
-    SELECT entity_name, change_kind, from_value, to_value FROM schema_warnings
+    SELECT entity_name, change_kind, resolution, from_value, to_value FROM schema_warnings
     WHERE project_id = ? AND from_version = ? AND to_version = ?
       AND entity_kind = 'field'
-      AND resolution IN ('lossy_convert', 'data_deleted')
+      AND resolution IN ('lossy_convert', 'data_deleted', 'precision_loss', 'backfill_required')
       AND approved_at IS NOT NULL
-  `).all(projectRow.id, syncVersion, targetVersion) as { entity_name: string; change_kind: string; from_value: string | null; to_value: string | null }[];
+  `).all(projectRow.id, syncVersion, targetVersion) as { entity_name: string; change_kind: string; resolution: string; from_value: string | null; to_value: string | null }[];
   const result = new Map<string, Map<string, ApprovedLossyEntry2>>();
   for (const row of rows) {
     const dot = row.entity_name.indexOf(".");
@@ -215,9 +215,73 @@ function loadApprovedLossyFields(
     const model = row.entity_name.slice(0, dot);
     const fieldDbName = row.entity_name.slice(dot + 1).toLowerCase();
     const inner = result.get(model) ?? new Map<string, ApprovedLossyEntry2>();
-    inner.set(fieldDbName, { changeKind: row.change_kind, fromValue: row.from_value, toValue: row.to_value });
+    inner.set(fieldDbName, { changeKind: row.change_kind, resolution: row.resolution, fromValue: row.from_value, toValue: row.to_value });
     result.set(model, inner);
   }
+  return result;
+}
+
+// ─── pk-type-change skip set ──────────────────────────────────────────────────
+
+// Returns modelName → Set<lowercased DB field name> for fields that must be
+// skipped in Stage 2 because their values will be regenerated or remapped:
+//   • pk_type_changed (table-level) → the PK field will get a new UUID at run time
+//   • FK cascade (relation type_changed) → the FK field will be remapped via _referance
+type PkSkipSet = Map<string, Set<string>>;
+
+type ExtCanonicalField = CanonicalField & { constraints?: { type: string }[] };
+
+function loadPkSkipFields(
+  projectName: string,
+  syncVersion: string,
+  targetVersion: string,
+  v2Store: CanonicalStore | null,
+): PkSkipSet {
+  const projectRow = db.prepare("SELECT id FROM projects WHERE name = ?").get(projectName) as { id: string } | undefined;
+  if (!projectRow) return new Map();
+  const result = new Map<string, Set<string>>();
+
+  // PK fields whose type changed → will receive new generated values on migration
+  if (v2Store) {
+    const tableRows = db.prepare(`
+      SELECT entity_name FROM schema_warnings
+      WHERE project_id = ? AND from_version = ? AND to_version = ?
+        AND entity_kind = 'table' AND change_kind = 'pk_type_changed'
+        AND approved_at IS NOT NULL
+    `).all(projectRow.id, syncVersion, targetVersion) as { entity_name: string }[];
+    for (const { entity_name: tableName } of tableRows) {
+      const model = v2Store.models.find((m) => m.name === tableName);
+      if (!model) continue;
+      const pkField = (model.fields as ExtCanonicalField[]).find(
+        (f) => f.constraints?.some((c) => c.type === "PK"),
+      );
+      if (!pkField) continue;
+      const dbName = (pkField.dbName || pkField.name).toLowerCase();
+      const set = result.get(tableName) ?? new Set<string>();
+      set.add(dbName);
+      result.set(tableName, set);
+    }
+  }
+
+  // FK fields that reference a pk_type_changed PK → will be remapped via _referance
+  const fkRows = db.prepare(`
+    SELECT entity_name FROM schema_warnings
+    WHERE project_id = ? AND from_version = ? AND to_version = ?
+      AND entity_kind = 'relation' AND change_kind = 'type_changed'
+      AND approved_at IS NOT NULL
+  `).all(projectRow.id, syncVersion, targetVersion) as { entity_name: string }[];
+  for (const { entity_name } of fkRows) {
+    // entity_name format: "TableName.fieldName → (PK changed)"
+    const dotIdx = entity_name.indexOf(".");
+    const arrowIdx = entity_name.indexOf(" →");
+    if (dotIdx === -1 || arrowIdx === -1) continue;
+    const tableName = entity_name.slice(0, dotIdx);
+    const fieldName = entity_name.slice(dotIdx + 1, arrowIdx).toLowerCase();
+    const set = result.get(tableName) ?? new Set<string>();
+    set.add(fieldName);
+    result.set(tableName, set);
+  }
+
   return result;
 }
 
@@ -244,6 +308,7 @@ function runStage2(
   snapshotsByTable: Map<string, Record<string, unknown>[]>,
   renameMapsByModel: Map<string, Map<string, string>>,
   approvedLossy: ApprovedLossySet,
+  pkSkipFields: PkSkipSet,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const scalarTypes = new Set(["String", "Int", "BigInt", "Float", "Decimal", "Boolean", "DateTime", "Json", "Bytes"]);
@@ -253,16 +318,21 @@ function runStage2(
     if (records.length === 0) continue;
 
     const renameMap = renameMapsByModel.get(model.name) ?? new Map<string, string>();
-    // Strip a field from Zod validation only when its v1 value cannot be valid for the v2 type:
-    //   pk_type_changed  — old Int PK cannot be a UUID
-    //   incompatible conversion (String→Float/Int) — value will be replaced by default at run time
+    // Strip a field from Zod validation when its v1 value cannot be valid for the v2 type:
+    //   pk_type_changed         — old Int PK cannot be a UUID
+    //   incompatible conversion — value replaced by default at run time (String→Int, etc.)
+    //   precision_loss Float→Int — float values fail z.number().int(); migration truncates them
     // Compatible conversions (String→Enum) keep actual v1 data — do NOT strip.
     const lossyFieldMap = approvedLossy.get(model.name) ?? new Map<string, ApprovedLossyEntry2>();
     const trulyLossyFields = new Set(
       [...lossyFieldMap.entries()]
         .filter(([, entry]) => {
           if (entry.changeKind === "pk_type_changed") return true;
+          // Float/Decimal → Int: compatible by truncation, but z.number().int() rejects floats
           if (entry.fromValue && entry.toValue) {
+            const from = entry.fromValue.toLowerCase();
+            const to = entry.toValue.toLowerCase();
+            if ((from === "float" || from === "decimal") && (to === "int" || to === "integer" || to === "bigint")) return true;
             return !checkTypeConversion(entry.fromValue, entry.toValue).compatible;
           }
           return false;
@@ -270,22 +340,28 @@ function runStage2(
         .map(([fieldName]) => fieldName),
     );
 
-    const presentKeys = new Set(Object.keys(applyRenames(records[0]!, renameMap)));
+    // PK / FK fields being regenerated or remapped — strip entirely from Zod validation.
+    const pkSkip = pkSkipFields.get(model.name) ?? new Set<string>();
 
+    const presentKeys = new Set(Object.keys(applyRenames(records[0]!, renameMap)));
     const shape: Record<string, z.ZodTypeAny> = {};
     for (const field of model.fields) {
       if (!scalarTypes.has(field.type)) continue;
+      const fieldLower = field.name.toLowerCase();
       const isNewField = !presentKeys.has(field.name);
-      const isLossy = trulyLossyFields.has(field.name);
-      shape[field.name] = prismaTypeToZod(field.type, field.optional || isNewField || isLossy);
+      const isLossy = trulyLossyFields.has(field.name.toLowerCase());
+      const isPkSkip = pkSkip.has(fieldLower);
+      const isBackfill = lossyFieldMap.get(fieldLower)?.resolution === "backfill_required";
+      shape[field.name] = prismaTypeToZod(field.type, field.optional || isNewField || isLossy || isBackfill || isPkSkip);
     }
     const schema = z.object(shape).passthrough();
 
     for (let i = 0; i < records.length; i++) {
       const renamed = applyRenames(records[i]!, renameMap);
-      // Strip only truly incompatible lossy fields before Zod parsing.
-      const forValidation = trulyLossyFields.size > 0
-        ? Object.fromEntries(Object.entries(renamed).filter(([k]) => !trulyLossyFields.has(k)))
+      // Strip incompatible lossy fields AND pk/fk-skip fields before Zod parsing.
+      const skipSet = new Set([...trulyLossyFields, ...pkSkip]);
+      const forValidation = skipSet.size > 0
+        ? Object.fromEntries(Object.entries(renamed).filter(([k]) => !skipSet.has(k) && !skipSet.has(k.toLowerCase())))
         : renamed;
       const result = schema.safeParse(forValidation);
       if (!result.success) {
@@ -404,6 +480,40 @@ export async function POST(request: Request) {
     return jsonError("Project name, connection ID, sync version, target version, and snapshotId are required.");
   }
 
+  // Block composite PK type changes — the migration engine models a single PK field per table.
+  // A composite PK where the type changes would only remap the first field and silently corrupt
+  // the second. Return a hard error so the user knows to split the change.
+  const compositePkError = (() => {
+    const projectRow = db.prepare("SELECT id FROM projects WHERE name = ?").get(projectName) as { id: string } | undefined;
+    if (!projectRow) return null;
+    const pkChangedTables = db.prepare(`
+      SELECT entity_name FROM schema_warnings
+      WHERE project_id = ? AND from_version = ? AND to_version = ?
+        AND entity_kind = 'table' AND change_kind = 'pk_type_changed'
+    `).all(projectRow.id, syncVersion, targetVersion) as { entity_name: string }[];
+    if (pkChangedTables.length === 0) return null;
+    const targetVerRow = db.prepare(
+      "SELECT id FROM project_versions WHERE project_id = ? AND name = ?",
+    ).get(projectRow.id, targetVersion) as { id: number } | undefined;
+    if (!targetVerRow) return null;
+    for (const { entity_name: tableName } of pkChangedTables) {
+      const pkConstraint = db.prepare(`
+        SELECT sc.id FROM schema_constraints sc
+        JOIN schema_tables st ON st.id = sc.table_id
+        WHERE st.version_id = ? AND st.name = ? AND sc.type = 'PK'
+      `).get(targetVerRow.id, tableName) as { id: string } | undefined;
+      if (!pkConstraint) continue;
+      const fieldCount = (db.prepare(
+        "SELECT COUNT(*) as n FROM schema_constraint_fields WHERE constraint_id = ?",
+      ).get(pkConstraint.id) as { n: number }).n;
+      if (fieldCount > 1) {
+        return `Table "${tableName}" has a composite primary key (${fieldCount} fields). Composite PK type changes are not supported — split into separate single-field PK changes.`;
+      }
+    }
+    return null;
+  })();
+  if (compositePkError) return jsonError(compositePkError, 422);
+
   try {
     const [syncContent, targetContent] = await Promise.all([
       Promise.resolve(renderMigrationPrismaSchema(projectName, syncVersion).content),
@@ -434,10 +544,11 @@ export async function POST(request: Request) {
     }
 
     const approvedLossy = loadApprovedLossyFields(projectName, syncVersion, targetVersion);
+    const pkSkipFields = loadPkSkipFields(projectName, syncVersion, targetVersion, v2Store);
 
     const stage1Issues = runStage1(syncModels, snapshotsByTable);
     const stage2Issues = [
-      ...runStage2(targetModels, snapshotsByTable, renameMapsByModel, approvedLossy),
+      ...runStage2(targetModels, snapshotsByTable, renameMapsByModel, approvedLossy, pkSkipFields),
       ...runUpgradeRules(v1Store, v2Store, snapshotsByTable, approvedLossy),
     ];
     const passed =

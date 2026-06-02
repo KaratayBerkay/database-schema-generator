@@ -186,7 +186,7 @@ export function ConnectionManagementCard({
   onDbUserChange, onPasswordChange, onDatabaseChange, onConnect,
 }: ConnectionManagementCardProps) {
   return (
-    <Card locked={!canDoAnyMigration || migrationPlan === null}>
+    <Card locked={!canDoAnyMigration}>
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -217,7 +217,12 @@ export function ConnectionManagementCard({
               <button
                 type="button"
                 onClick={onToggleNewForm}
-                className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-500 shadow-sm transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 active:scale-[0.97]"
+                className={classNames(
+                  "flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium shadow-sm transition active:scale-[0.97]",
+                  connectState === "error"
+                    ? "animate-breathe border-rose-300 bg-rose-50 text-rose-600 hover:bg-rose-100"
+                    : "border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600",
+                )}
               >
                 <IconX size={13} stroke={2} />
                 Cancel

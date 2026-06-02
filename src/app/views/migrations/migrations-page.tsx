@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useProjectInfo } from "../shared/project-info-context";
+import { useDashboard } from "../shared/dashboard-context";
 import { useSchemaWarnings } from "@/hooks/use-schema-warnings";
 import { useMigrationConnections } from "@/hooks/use-migration-connections";
 import { useSyncCheck } from "@/hooks/use-sync-check";
@@ -25,6 +27,7 @@ const PREFLIGHT_PAGE_SIZE = 8;
 
 export function MigrationsPageContent() {
   const { projectId, projectName, provider, versions, hasProject } = useProjectInfo();
+  const { setSelectedVersion } = useDashboard();
   const isSQLite = provider.toLowerCase() === "sqlite";
   const canDoAnyMigration = versions.length >= 1;
   const canVersionMigrate = versions.length >= 2;
@@ -50,16 +53,21 @@ export function MigrationsPageContent() {
     }).catch(() => {/* best-effort */});
   }, [hasProject, projectId]);
 
-  // ── ref trick: break the resetFromModelDiff ↔ useMigrationConnections cycle
-  // useMigrationConnections needs the callback before workflow is initialized;
-  // the ref stays stable while always calling the latest version.
-  const resetFromModelDiffRef = useRef<() => void>(() => {});
+  const queryClient = useQueryClient();
+
+  // ── ref trick: break the resetCollect ↔ useMigrationConnections cycle
+  const resetCollectRef = useRef<() => void>(() => {});
 
   // ── hooks ─────────────────────────────────────────────────────────────────
   const { warnings, defaultsRequiredCount } = useSchemaWarnings(projectId, syncVersion, targetVersion);
 
   const breakingPendingCount = warnings.filter(
-    (w) => !w.approvedAt && (w.resolution === "data_deleted" || w.resolution === "lossy_convert" || w.resolution === "precision_loss"),
+    (w) => !w.approvedAt && (
+      w.resolution === "data_deleted" ||
+      w.resolution === "lossy_convert" ||
+      w.resolution === "precision_loss" ||
+      w.resolution === "backfill_required"
+    ),
   ).length;
 
   const conn = useMigrationConnections({
@@ -70,7 +78,7 @@ export function MigrationsPageContent() {
         destroy.resetPush();
       }
     },
-    onResetFromModelDiff: () => resetFromModelDiffRef.current(),
+    onResetFromModelDiff: () => resetCollectRef.current(),
   });
 
   const sync = useSyncCheck({
@@ -91,8 +99,23 @@ export function MigrationsPageContent() {
     onSessionsRefresh: setSessions,
   });
 
-  // Keep ref in sync after every render so useMigrationConnections always calls the latest version
-  useLayoutEffect(() => { resetFromModelDiffRef.current = workflow.resetFromModelDiff; });
+  // Keep ref in sync after every render
+  useLayoutEffect(() => { resetCollectRef.current = workflow.resetCollect; });
+
+  // ── auto-write warnings when version pair selected ────────────────────────
+  // Fires version-diff to ensure schema_warnings are written, then invalidates
+  // the warnings cache so useSchemaWarnings picks them up immediately.
+  const lastWarningPairRef = useRef("");
+  useEffect(() => {
+    if (!hasProject || !projectName || !syncVersion || !targetVersion || syncVersion === targetVersion) return;
+    const pair = `${projectName}|${syncVersion}|${targetVersion}`;
+    if (lastWarningPairRef.current === pair) return;
+    lastWarningPairRef.current = pair;
+    const params = new URLSearchParams({ projectName, fromVersion: syncVersion, toVersion: targetVersion });
+    fetch(`/api/version-diff?${params.toString()}`)
+      .then(() => queryClient.invalidateQueries({ queryKey: ["schema-warnings", projectId, syncVersion, targetVersion] }))
+      .catch(() => {/* best-effort */});
+  }, [hasProject, projectName, projectId, syncVersion, targetVersion, queryClient]);
 
   // ── restore workflow state from server on mount / project switch ──────────
   useEffect(() => {
@@ -100,43 +123,78 @@ export function MigrationsPageContent() {
     let cancelled = false;
 
     async function loadAll() {
-      const sessRes = await fetch(`/api/migration-state?list=true&projectId=${projectId}`).catch(() => null);
+      const [sessRes, res] = await Promise.all([
+        fetch(`/api/migration-state?list=true&projectId=${projectId}`).catch(() => null),
+        fetch(`/api/migration-state?projectId=${projectId}`).catch(() => null),
+      ]);
+
+      let sessionList: MigrationSession[] = [];
       if (sessRes?.ok && !cancelled) {
-        const list = await sessRes.json() as MigrationSession[];
-        if (!cancelled) setSessions(list);
+        sessionList = await sessRes.json() as MigrationSession[];
+        if (!cancelled) setSessions(sessionList);
       }
 
-      const res = await fetch(`/api/migration-state?projectId=${projectId}`).catch(() => null);
       if (!res?.ok || cancelled) return;
       type SavedState = {
         connectionId: string | null; syncVersion: string | null; targetVersion: string | null;
         dataTimestamp: string | null; snapshotId: string | null;
-        snapshot: { tableCount: number; rowCount: number; tables: { name: string; count: number }[]; collectedAt: string } | null;
-        zodGenerated: boolean; schemaCheckPassed: boolean; validationPassed: boolean; runLogPath: string | null;
+        snapshot: {
+          connectionId: string; fromVersion: string; toVersion: string;
+          tableCount: number; rowCount: number;
+          tables: { name: string; count: number }[]; collectedAt: string;
+        } | null;
+        validationPassed: boolean; runLogPath: string | null;
       };
       const state = await res.json() as SavedState | null;
       if (!state || cancelled) return;
 
-      if (state.connectionId) { conn.setActiveConnectionId(state.connectionId); conn.setConnectState("success"); }
-      if (state.syncVersion)  setSyncVersion(state.syncVersion);
-      if (state.targetVersion) setTargetVersion(state.targetVersion);
+      const connectionId  = state.connectionId  ?? state.snapshot?.connectionId  ?? null;
+      const syncVersion   = state.syncVersion   ?? state.snapshot?.fromVersion   ?? null;
+      const targetVersion = state.targetVersion ?? state.snapshot?.toVersion     ?? null;
+
+      if (connectionId)  { conn.setActiveConnectionId(connectionId);  conn.setConnectState("success"); }
+      if (syncVersion)   setSyncVersion(syncVersion);
+      if (targetVersion) setTargetVersion(targetVersion);
+
+      const hasSnapshot = !!state.snapshotId;
       workflow.dispatch({ type: "RESTORE_PHASE_STATES", payload: {
-        modelDiff: state.zodGenerated,
-        schemaCheck: state.schemaCheckPassed,
         validate: state.validationPassed,
         migrate: !!state.runLogPath,
       }});
-      if (state.snapshotId && state.snapshot) {
+
+      let resolvedSnapshotId = state.snapshotId ?? null;
+      if (!resolvedSnapshotId && state.dataTimestamp) {
+        const match = sessionList.find((s) =>
+          s.connectionId === connectionId &&
+          s.fromVersion === syncVersion &&
+          s.toVersion === targetVersion &&
+          s.collectTimestamp === state.dataTimestamp &&
+          s.snapshotId,
+        );
+        if (match?.snapshotId) {
+          resolvedSnapshotId = match.snapshotId;
+          void persistMigrationState({ snapshotId: resolvedSnapshotId });
+        }
+      }
+
+      if (resolvedSnapshotId && state.snapshot) {
         workflow.dispatch({ type: "RESTORE_COLLECT_STATE", payload: {
-          snapshotId: state.snapshotId,
+          snapshotId: resolvedSnapshotId,
           timestamp: state.snapshot.collectedAt,
           tables: state.snapshot.tables,
           total: state.snapshot.rowCount,
         }});
+      } else if (resolvedSnapshotId && state.dataTimestamp) {
+        workflow.dispatch({ type: "RESTORE_COLLECT_STATE", payload: {
+          snapshotId: resolvedSnapshotId,
+          timestamp: state.dataTimestamp,
+          tables: [],
+          total: 0,
+        }});
       } else if (state.dataTimestamp) {
         workflow.dispatch({ type: "RESTORE_TIMESTAMP_ONLY", payload: state.dataTimestamp });
       }
-      if (state.zodGenerated || state.schemaCheckPassed || state.snapshotId || state.dataTimestamp || state.validationPassed || state.runLogPath) {
+      if (hasSnapshot || state.dataTimestamp || state.validationPassed || state.runLogPath) {
         setMigrationPlan("version");
       }
     }
@@ -147,25 +205,28 @@ export function MigrationsPageContent() {
   }, [projectId]);
 
   // ── tracking deep-link ────────────────────────────────────────────────────
-  const BLOCKING_RESOLUTIONS = new Set(["data_deleted", "lossy_convert", "precision_loss"]);
+  const BLOCKING_RESOLUTIONS = new Set(["data_deleted", "lossy_convert", "precision_loss", "backfill_required"]);
   const trackingHref = (() => {
+    const to = targetVersion ? `&to=${targetVersion}` : "";
     if (breakingPendingCount > 0) {
-      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "table")) return "/tracking?resolve=tables";
-      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "enum"))  return "/tracking?resolve=enums";
-      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "field")) return "/tracking?resolve=schema";
-      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "relation")) return "/tracking?resolve=relations";
+      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "table")) return `/tracking?resolve=tables${to}`;
+      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "enum"))  return `/tracking?resolve=enums${to}`;
+      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "field")) return `/tracking?resolve=schema${to}`;
+      if (warnings.some((w) => !w.approvedAt && BLOCKING_RESOLUTIONS.has(w.resolution) && w.entityKind === "relation")) return `/tracking?resolve=relations${to}`;
+      return `/tracking?resolve=all${to}`;
     }
-    if (defaultsRequiredCount > 0) return "/tracking?resolve=schema";
-    return "/tracking";
+    if (defaultsRequiredCount > 0) return `/tracking?resolve=schema${to}`;
+    return to ? `/tracking?${to.slice(1)}` : "/tracking";
   })();
 
-  const canModelDiff = conn.connectState === "success" && canVersionMigrate && !!syncVersion && !!targetVersion && syncVersion !== targetVersion && sync.syncCheckState === "compatible";
+  // ── canCollect: allow collecting whenever connected ───────────────────────
+  const canCollect = conn.connectState === "success";
 
   function changePlan(plan: MigrationPlan) {
     if (plan === migrationPlan) return;
     setMigrationPlan(plan);
     destroy.resetPush();
-    workflow.resetFromModelDiff();
+    workflow.resetCollect();
   }
 
   // ── early return ─────────────────────────────────────────────────────────
@@ -205,15 +266,15 @@ export function MigrationsPageContent() {
           setTargetVersion(s.toVersion);
           conn.setActiveConnectionId(s.connectionId);
           conn.setConnectState("success");
-          if (s.collectTimestamp) {
+          if (s.snapshotId && s.collectTimestamp) {
             workflow.dispatch({ type: "RESTORE_COLLECT_STATE", payload: {
-              snapshotId: s.id,
+              snapshotId: s.snapshotId,
               timestamp: s.collectTimestamp,
               tables: s.collectTables ?? [],
               total: s.collectRowCount ?? 0,
             }});
           }
-          void persistMigrationState({ connectionId: s.connectionId, syncVersion: s.fromVersion, targetVersion: s.toVersion, dataTimestamp: s.collectTimestamp });
+          void persistMigrationState({ connectionId: s.connectionId, syncVersion: s.fromVersion, targetVersion: s.toVersion, snapshotId: s.snapshotId ?? null, dataTimestamp: s.collectTimestamp });
         }}
       />
 
@@ -269,13 +330,13 @@ export function MigrationsPageContent() {
         onSyncVersionChange={(v) => {
           setSyncVersion(v);
           setTargetVersion("");
-          workflow.resetFromModelDiff();
-          void persistMigrationState({ syncVersion: v, targetVersion: null, zodGenerated: false, schemaCheckPassed: false, dataTimestamp: null, snapshotId: null, validationPassed: false, runLogPath: null });
+          workflow.resetCollect();
+          void persistMigrationState({ syncVersion: v, targetVersion: null, dataTimestamp: null, snapshotId: null, validationPassed: false, runLogPath: null });
         }}
         onTargetVersionChange={(v) => {
           setTargetVersion(v);
-          workflow.resetFromModelDiff();
-          void persistMigrationState({ targetVersion: v, zodGenerated: false, schemaCheckPassed: false, dataTimestamp: null, snapshotId: null, validationPassed: false, runLogPath: null });
+          workflow.resetCollect();
+          void persistMigrationState({ targetVersion: v, dataTimestamp: null, snapshotId: null, validationPassed: false, runLogPath: null });
         }}
       />
 
@@ -296,30 +357,14 @@ export function MigrationsPageContent() {
 
       <VersionMigrationSteps
         isVersionPlan={isVersionPlan}
-        projectName={projectName}
-        versions={versions}
         syncVersion={syncVersion}
         targetVersion={targetVersion}
-        modelDiffState={workflow.modelDiffState}
-        comparison={workflow.comparison}
         warnings={warnings}
         breakingPendingCount={breakingPendingCount}
         defaultsRequiredCount={defaultsRequiredCount}
         trackingHref={trackingHref}
-        canModelDiff={canModelDiff}
-        onZodGenerated={() => {
-          workflow.dispatch({ type: "MODEL_DIFF_SUCCESS" });
-          void persistMigrationState({ zodGenerated: true });
-          workflow.dispatch({ type: "SCHEMA_CHECK_LOADING" });
-          void workflow.handleSchemaCheck();
-        }}
-        onOpenFullScreen={() => workflow.dispatch({ type: "SHOW_MODEL_DIFF_MODAL", payload: true })}
-        onComparisonReady={(c) => workflow.dispatch({ type: "SET_COMPARISON", payload: c })}
-        canSchemaCheck={workflow.canSchemaCheck}
-        schemaCheckState={workflow.schemaCheckState}
-        schemaCheckResult={workflow.schemaCheckResult}
-        onSchemaCheck={() => void workflow.handleSchemaCheck()}
-        canCollect={workflow.canCollect}
+        onGoToTracking={() => {}}
+        canCollect={canCollect}
         collectState={workflow.collectState}
         collectError={workflow.collectError}
         collectTables={workflow.collectTables}
@@ -347,8 +392,6 @@ export function MigrationsPageContent() {
         migrateBtnDisabled={workflow.migrateBtnDisabled}
         onValidate={() => void workflow.handleValidate()}
         onShowPreflight={() => workflow.dispatch({ type: "SHOW_PREFLIGHT", payload: true })}
-        showModelDiffModal={workflow.showModelDiffModal}
-        onCloseModelDiff={() => workflow.dispatch({ type: "SHOW_MODEL_DIFF_MODAL", payload: false })}
       />
 
       <CollectResultModal
@@ -385,7 +428,7 @@ export function MigrationsPageContent() {
 
       <PreflightModal
         isOpen={workflow.showPreflightModal}
-        comparison={workflow.comparison}
+        comparison={null}
         warnings={warnings}
         activeConnection={conn.activeConnection}
         syncVersion={syncVersion}
@@ -415,6 +458,8 @@ export function MigrationsPageContent() {
 
       <ConnectionStringModal
         isOpen={conn.showConnStringModal}
+        isLoading={conn.isLoadingConnString}
+        testFailed={conn.testResults[conn.activeConnectionId]?.success === false}
         connStringValue={conn.connStringValue}
         connStringORM={conn.connStringORM}
         connStringEnvName={conn.connStringEnvName}

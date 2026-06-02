@@ -69,23 +69,59 @@ function rowToWarning(r: WarningRow): SchemaWarning {
 export type NewSchemaWarning = Omit<SchemaWarning, "approvedAt" | "createdAt" | "replacementValue" | "targetNullable" | "targetUnique">;
 
 export function upsertWarnings(warnings: NewSchemaWarning[]): void {
-  const stmt = db.prepare(`
-    INSERT OR IGNORE INTO schema_warnings
-      (id, project_id, from_version, to_version, entity_kind, entity_id, entity_name,
-       change_kind, resolution, from_value, to_value, message, replacement_value, approved_at, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?)
-  `);
+  if (warnings.length === 0) return;
+
+  const { projectId, fromVersion, toVersion } = warnings[0]!;
   const now = new Date().toISOString();
-  db.transaction((rows: NewSchemaWarning[]) => {
-    for (const w of rows) {
-      stmt.run(
+
+  db.transaction(() => {
+    // 1. Snapshot existing approvals keyed by stable identity (entityKind + entityId + changeKind).
+    //    Approvals belong to the change, not to a specific generated row — they survive regeneration
+    //    as long as the same change is still detected.
+    type ApprovalRow = { entity_kind: string; entity_id: string; change_kind: string; approved_at: string; replacement_value: string | null };
+    const existing = db.prepare(`
+      SELECT entity_kind, entity_id, change_kind, approved_at, replacement_value
+      FROM schema_warnings
+      WHERE project_id = ? AND from_version = ? AND to_version = ?
+        AND approved_at IS NOT NULL
+    `).all(projectId, fromVersion, toVersion) as ApprovalRow[];
+
+    const approvalMap = new Map<string, { approvedAt: string; replacementValue: string | null }>();
+    for (const row of existing) {
+      approvalMap.set(`${row.entity_kind}|${row.entity_id}|${row.change_kind}`, {
+        approvedAt: row.approved_at,
+        replacementValue: row.replacement_value,
+      });
+    }
+
+    // 2. Delete ALL warnings for this version pair — removes stale rows no longer produced
+    //    by the current warning-writer code (old format strings, removed scenarios, etc.).
+    db.prepare(`
+      DELETE FROM schema_warnings
+      WHERE project_id = ? AND from_version = ? AND to_version = ?
+    `).run(projectId, fromVersion, toVersion);
+
+    // 3. Reinsert fresh warnings from current code, restoring any prior approval state.
+    const insert = db.prepare(`
+      INSERT INTO schema_warnings
+        (id, project_id, from_version, to_version, entity_kind, entity_id, entity_name,
+         change_kind, resolution, from_value, to_value, message, replacement_value, approved_at, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const w of warnings) {
+      const approval = approvalMap.get(`${w.entityKind}|${w.entityId}|${w.changeKind}`);
+      insert.run(
         w.id, w.projectId, w.fromVersion, w.toVersion,
         w.entityKind, w.entityId, w.entityName,
         w.changeKind, w.resolution, w.fromValue ?? null, w.toValue ?? null,
-        w.message, now,
+        w.message,
+        approval?.replacementValue ?? null,
+        approval?.approvedAt ?? null,
+        now,
       );
     }
-  })(warnings);
+  })();
 }
 
 export function approveWarning(id: string, replacementValue?: string | null): boolean {

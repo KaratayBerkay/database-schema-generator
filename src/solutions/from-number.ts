@@ -190,6 +190,28 @@ export function booleanToInt(raw: unknown, _field: FieldContext, decision: Field
   }
 }
 
+// ─── Float / Decimal / BigInt → Boolean ──────────────────────────────────────
+// resolution: lossy_convert — 0/0.0/0n → false, any non-zero → true
+
+export function numericToBoolean(raw: unknown, field: FieldContext, decision: FieldDecision): FieldResolution {
+  switch (decision.type) {
+    case "auto_cast": {
+      const n = typeof raw === "bigint" ? raw : Number(raw);
+      return { ok: true, value: n !== BigInt(0) && n !== 0 };
+    }
+    case "replacement_value": {
+      const v = decision.value.toLowerCase();
+      if (v === "true"  || v === "1") return { ok: true, value: true };
+      if (v === "false" || v === "0") return { ok: true, value: false };
+      return { ok: false, error: `"${decision.value}" is not a valid Boolean — use true/false/1/0` };
+    }
+    case "null_out":    return field.nullable ? { ok: true, value: null } : { ok: false, error: `Required Boolean field "${field.name}"` };
+    case "drop":        return { ok: true, skip: true };
+    case "db_generate": return { ok: true, skip: true };
+    case "pending":     return { ok: false, error: `Field "${field.name}" change not yet approved` };
+  }
+}
+
 export function booleanToString(raw: unknown, _field: FieldContext, decision: FieldDecision): FieldResolution {
   switch (decision.type) {
     case "auto_cast":         return { ok: true, value: String(raw) };

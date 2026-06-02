@@ -1,6 +1,5 @@
 import { execFile, spawn } from "node:child_process";
 import { mkdir, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import { promisify } from "node:util";
@@ -13,7 +12,7 @@ import { MIGRATION_REFERENCE_FIELD } from "@/lib/schema-naming";
 
 const execFileAsync = promisify(execFile);
 const migrationsDir = path.join(/*turbopackIgnore: true*/ process.cwd(), "src/database/migrations");
-const tmpDir = path.join(tmpdir(), "database-schema-generator", "migration-runtime");
+const tmpDir = path.join(/*turbopackIgnore: true*/ process.cwd(), "src/database/migration-runtime");
 
 function getString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";

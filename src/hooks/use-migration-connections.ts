@@ -44,6 +44,7 @@ export function useMigrationConnections({ onConnected, onResetFromModelDiff }: U
   const [connStringORM, setConnStringORM] = useState<"prisma" | "drizzle" | "custom" | "plain">("plain");
   const [connStringEnvName, setConnStringEnvName] = useState("DATABASE_URL");
   const [connStringCopied, setConnStringCopied] = useState(false);
+  const [isLoadingConnString, setIsLoadingConnString] = useState(false);
 
   const activeConnection = connections.find((c) => c.uuid === activeConnectionId) ?? null;
 
@@ -152,15 +153,19 @@ export function useMigrationConnections({ onConnected, onResetFromModelDiff }: U
     const isPlain = connStringORM === "plain";
     const ormEnv = connStringORM === "custom" ? connStringEnvName : "DATABASE_URL";
     setConnStringCopied(false);
+    setConnStringValue("");
     setShowConnStringModal(true);
-    if (!activeConnectionId) { setConnStringValue(isPlain ? "" : `${ormEnv}=`); return; }
+    if (!activeConnectionId) return;
+    setIsLoadingConnString(true);
     try {
       const res = await fetch(`/api/migrations/connections/url?connectionId=${activeConnectionId}`);
       const data = await res.json() as { success: boolean; url?: string };
       const url = data.success && data.url ? data.url : "";
       setConnStringValue(isPlain ? url : `${ormEnv}=${url}`);
     } catch {
-      setConnStringValue(isPlain ? "" : `${ormEnv}=`);
+      setConnStringValue("");
+    } finally {
+      setIsLoadingConnString(false);
     }
   };
 
@@ -184,7 +189,7 @@ export function useMigrationConnections({ onConnected, onResetFromModelDiff }: U
     setShowNewForm, setConnectionName, setHost, setPort, setDbUser, setPassword, setDatabase,
     setConnectState, setConnectError,
     // conn string modal
-    showConnStringModal, connStringValue, connStringORM, connStringEnvName, connStringCopied,
+    showConnStringModal, connStringValue, connStringORM, connStringEnvName, connStringCopied, isLoadingConnString,
     setShowConnStringModal, setConnStringValue, setConnStringORM, setConnStringEnvName, setConnStringCopied,
     // handlers
     loadConnections, selectConnection, handleDelete, handleTestConnection, handleConnect,
