@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback } from "react";
 import { useProjectsPageState } from "@/hooks/use-projects-page-state";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useProjectsQuery, useProjectMutations } from "@/queries/projects";
@@ -117,9 +116,6 @@ export function ProjectsPageContent() {
     deleteTarget, setDeleteTarget,
     editingProjectId, setEditingProjectId,
     savingProjectId, setSavingProjectId,
-    versionScroll, setVersionScroll,
-    versionListRef,
-    openDeleteConfirm, closeDeleteConfirm,
   } = useProjectsPageState();
 
   // ── Create handler ─────────────────────────────────────────────────────────
@@ -197,26 +193,6 @@ export function ProjectsPageContent() {
     );
   };
 
-
-  // ── Scroll helpers ─────────────────────────────────────────────────────────
-
-  const updateVersionScrollControls = useCallback(
-    (node: HTMLDivElement | null = versionListRef.current) => {
-      if (!node) { setVersionScroll({ canScrollDown: false, canScrollUp: false }); return; }
-      const max = node.scrollHeight - node.clientHeight;
-      setVersionScroll({ canScrollDown: node.scrollTop < max - 1, canScrollUp: node.scrollTop > 1 });
-    },
-    [],
-  );
-
-  const setVersionListNode = useCallback(
-    (node: HTMLDivElement | null) => {
-      versionListRef.current = node;
-      if (!node) { setVersionScroll({ canScrollDown: false, canScrollUp: false }); return; }
-      requestAnimationFrame(() => updateVersionScrollControls(node));
-    },
-    [updateVersionScrollControls],
-  );
 
   // ── JSX ────────────────────────────────────────────────────────────────────
 
