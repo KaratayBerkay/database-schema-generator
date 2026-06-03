@@ -25,7 +25,6 @@ export {
   useZodSchemasQuery,
   useZodFileQuery,
   useZodMutations,
-  useSchemaTestMutation,
 } from "./schema";
 
 // Commentary

@@ -79,7 +79,7 @@ export function ExportedCodeDialog({ dialog, copied, onCopy, onDownload, onClose
             </button>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-auto p-5">
           <div className="min-w-max rounded-md border border-slate-200 bg-white px-4 py-4 font-mono text-xs">
             {highlightCode(dialog.code, dialog.lang)}
           </div>

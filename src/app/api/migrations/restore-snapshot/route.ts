@@ -1,5 +1,5 @@
 import { execFile, spawn } from "node:child_process";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { rm } from "node:fs/promises";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import { promisify } from "node:util";
@@ -11,16 +11,11 @@ import { prepareMigrationPrismaSchema } from "@/lib/migration-schema-artifacts";
 import { MIGRATION_REFERENCE_FIELD } from "@/lib/schema-naming";
 
 const execFileAsync = promisify(execFile);
-const migrationsDir = path.join(/*turbopackIgnore: true*/ process.cwd(), "src/database/migrations");
-const tmpDir = path.join(/*turbopackIgnore: true*/ process.cwd(), "src/database/migration-runtime");
 
 function getString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function toSlug(value: string) {
-  return value.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "untitled";
-}
 
 function buildConnectionUrl(conn: StoredConnection): string {
   const p = conn.provider.toLowerCase();
@@ -32,7 +27,14 @@ function buildConnectionUrl(conn: StoredConnection): string {
 function buildRestoreScript(): string {
   return `
 'use strict';
-const fs = require('node:fs');
+
+const readStdin = () => new Promise((resolve, reject) => {
+  let raw = '';
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('data', (chunk) => { raw += chunk; });
+  process.stdin.on('end', () => resolve(raw));
+  process.stdin.on('error', reject);
+});
 const SKIP_FIELD = '${MIGRATION_REFERENCE_FIELD}';
 
 const escVal = (v, provider) => {
@@ -47,7 +49,7 @@ const escVal = (v, provider) => {
 };
 
 const main = async () => {
-  const { tables, provider, connectionUrl } = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+  const { tables, provider, connectionUrl } = JSON.parse(await readStdin());
   const p = provider.toLowerCase();
   const summaries = [];
 
@@ -145,8 +147,6 @@ export async function POST(request: Request) {
   }
   if (!stored) return Response.json({ success: false, error: "Connection not found." }, { status: 404 });
 
-  const projectSlug = toSlug(projectName);
-
   // Load sync schema for FK-ordered insert
   let schemaPath: string;
   let schemaCleanupPath = "";
@@ -175,11 +175,6 @@ export async function POST(request: Request) {
   const tables = [...snapshotsByTable.values()];
   const startedAt = new Date().toISOString();
   const ts = startedAt.replace(/[:.]/g, "-").slice(0, 19);
-  const tmpPayloadPath = path.join(tmpDir, `restore-payload-${ts}.json`);
-  const tmpScriptPath  = path.join(tmpDir, `restore-script-${ts}.js`);
-  const logsDir = path.join(migrationsDir, projectSlug, connectionId, "logs");
-  const logFilename = `restore-${syncVersion}-${ts}.json`;
-  const logPath = path.join(logsDir, logFilename);
 
   const enc = new TextEncoder();
   const stream = new ReadableStream({
@@ -196,15 +191,15 @@ export async function POST(request: Request) {
         );
 
         send({ type: "phase", phase: "inserting", total: tables.length });
-        await mkdir(logsDir, { recursive: true });
-        await mkdir(tmpDir, { recursive: true });
-        await writeFile(tmpPayloadPath, JSON.stringify({ tables, provider: stored!.provider, connectionUrl }), "utf8");
-        await writeFile(tmpScriptPath, buildRestoreScript(), "utf8");
 
-        const child = spawn(process.execPath, [tmpScriptPath, tmpPayloadPath], {
+        const child = spawn(process.execPath, ["-e", buildRestoreScript()], {
           cwd: path.join(/*turbopackIgnore: true*/ process.cwd()),
           env: { ...process.env, DATABASE_URL: connectionUrl },
         });
+        // Feed the payload over stdin (a pipe) instead of a temp file — no FS writes.
+        child.stdin?.on("error", () => { /* ignore EPIPE if the child exits early */ });
+        child.stdin?.write(JSON.stringify({ tables, provider: stored!.provider, connectionUrl }));
+        child.stdin?.end();
 
         let stderrBuf = "";
         child.stderr?.on("data", (chunk: Buffer) => { stderrBuf += chunk.toString(); });
@@ -230,26 +225,29 @@ export async function POST(request: Request) {
         const status = totalErrors === 0 ? "success" : "partial";
         const logContent = { status, type: "restore", startedAt, completedAt: new Date().toISOString(), project: projectName, connectionId, syncVersion, snapshotId, tables: tableSummaries };
 
-        await writeFile(logPath, JSON.stringify(logContent, null, 2), "utf8");
         touchLastUsedAt(connectionId);
 
         const pidRow = appDb.prepare("SELECT id FROM projects WHERE name = ?").get(projectName) as { id: string } | undefined;
         if (pidRow) {
-          upsertMigrationSession({ projectId: pidRow.id, connectionId, fromVersion: syncVersion, toVersion: syncVersion, runStatus: status, runLogPath: path.relative(process.cwd(), logPath), runTables: tableSummaries });
+          // runLogPath now holds the migration_logs row id (DB), not a filesystem path.
+          upsertMigrationSession({ projectId: pidRow.id, connectionId, fromVersion: syncVersion, toVersion: syncVersion, runStatus: status, runLogPath: ts, runTables: tableSummaries });
           insertMigrationLog({ id: ts, projectId: pidRow.id, connectionId, fromVersion: syncVersion, toVersion: syncVersion, status, content: logContent });
         }
 
-        send({ type: "done", tables: tableSummaries, logPath: path.relative(process.cwd(), logPath), restoredVersion: syncVersion });
+        send({ type: "done", tables: tableSummaries, restoredVersion: syncVersion });
 
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Restore failed.";
-        await writeFile(logPath, JSON.stringify({ status: "error", type: "restore", startedAt, failedAt: new Date().toISOString(), project: projectName, syncVersion, error: msg }, null, 2), "utf8").catch(() => {});
+        const errContent = { status: "error", type: "restore", startedAt, failedAt: new Date().toISOString(), project: projectName, connectionId, syncVersion, snapshotId, error: msg };
+        const errPidRow = appDb.prepare("SELECT id FROM projects WHERE name = ?").get(projectName) as { id: string } | undefined;
+        if (errPidRow) {
+          upsertMigrationSession({ projectId: errPidRow.id, connectionId, fromVersion: syncVersion, toVersion: syncVersion, runStatus: "failed", runError: msg });
+          insertMigrationLog({ id: ts, projectId: errPidRow.id, connectionId, fromVersion: syncVersion, toVersion: syncVersion, status: "error", content: errContent });
+        }
         send({ type: "error", error: msg });
       } finally {
         controller.close();
         await Promise.allSettled([
-          rm(tmpScriptPath, { force: true }),
-          rm(tmpPayloadPath, { force: true }),
           schemaCleanupPath ? rm(schemaCleanupPath, { force: true, recursive: true }) : Promise.resolve(),
         ]);
       }

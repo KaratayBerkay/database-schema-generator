@@ -263,6 +263,8 @@ export function useMigrationWorkflow({
   targetVersion,
   breakingPendingCount,
   defaultsRequiredCount,
+  alreadyMigrated,
+  connectionStable,
   persistMigrationState,
   onSessionsRefresh,
 }: {
@@ -273,6 +275,8 @@ export function useMigrationWorkflow({
   targetVersion: string;
   breakingPendingCount: number;
   defaultsRequiredCount: number;
+  alreadyMigrated: boolean;
+  connectionStable: boolean;
   persistMigrationState: (patch: Record<string, unknown>) => Promise<void>;
   onSessionsRefresh: () => void;
 }) {
@@ -371,7 +375,7 @@ export function useMigrationWorkflow({
         stage1Issues: data.stage1Issues,
       },
     });
-    void persistMigrationState({ runLogPath: data.logPath ?? null });
+    void persistMigrationState({ runLogPath: data.logId ?? null });
     onSessionsRefresh();
   }, [targetVersion, persistMigrationState, onSessionsRefresh]);
 
@@ -438,6 +442,12 @@ export function useMigrationWorkflow({
     onDone: (data: RunResponse) => void,
   ) => {
     const res = await fetch("/api/migrations/run", { method: "POST", headers: { "Content-Type": "application/json" }, body });
+    if (!res.ok) {
+      // Non-stream error (e.g. 409 locked from a stale tab) — surface the JSON message.
+      const data = (await res.json().catch(() => null)) as { error?: string } | null;
+      onError(data?.error ?? `Migration request failed (${res.status}).`);
+      return;
+    }
     await readSSE(res, { ...sseProgressHandlers, onNeedsFix, onDone, onError });
   }, [readSSE]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -506,15 +516,17 @@ export function useMigrationWorkflow({
   const allIssues = [...state.stage1Issues, ...state.stage2Issues];
   const errorCount = allIssues.filter((i) => i.severity === "error").length;
 
-  const canMigrate = state.collectState === "success";
+  const canMigrate = state.collectState === "success" && connectionStable;
 
   const missingContext = !activeConnectionId || !syncVersion || !targetVersion;
 
-  const collectBtnDisabled  = state.collectState === "loading" || undefined;
-  const validateBtnDisabled = state.validateState === "loading" || missingContext || !state.collectSnapshotId || undefined;
+  const collectBtnDisabled  = state.collectState === "loading" || !connectionStable || undefined;
+  const validateBtnDisabled = state.validateState === "loading" || missingContext || !state.collectSnapshotId || !connectionStable || undefined;
 
   const migrateDisabledReason =
     state.migrateState === "loading"         ? null
+    : alreadyMigrated                         ? `The ${syncVersion} → ${targetVersion} migration has already been run and is locked. View it in History.`
+    : !connectionStable                       ? "Database connection isn't verified — the selected version must match a reachable database."
     : missingContext                          ? "Connection or version pair is missing."
     : breakingPendingCount > 0               ? `${breakingPendingCount} warning${breakingPendingCount !== 1 ? "s" : ""} must be approved in Tracking before migrating.`
     : defaultsRequiredCount > 0              ? `${defaultsRequiredCount} field${defaultsRequiredCount !== 1 ? "s" : ""} need a replacement value set in Tracking.`
@@ -523,6 +535,8 @@ export function useMigrationWorkflow({
 
   const migrateBtnDisabled  =
     state.migrateState === "loading" ||
+    alreadyMigrated ||
+    !connectionStable ||
     missingContext ||
     (state.validateState === "success" && errorCount > 0) ||
     breakingPendingCount > 0 ||

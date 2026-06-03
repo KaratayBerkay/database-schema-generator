@@ -80,7 +80,7 @@ export function GeneratedCodeDialog({
             </button>
           </div>
         </div>
-        <div className="custom-scrollbar overflow-y-auto p-5 pb-12" style={{ maxHeight: "calc(92vh - 140px)" }}>
+        <div className="custom-scrollbar overflow-auto p-5 pb-12" style={{ maxHeight: "calc(92vh - 140px)" }}>
           <div className="min-w-max rounded-md border border-slate-200 bg-white px-4 py-4 font-mono text-xs">
             {highlightCode(code, "ts")}
           </div>

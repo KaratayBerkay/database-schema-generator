@@ -1,18 +1,8 @@
 import { z } from "zod";
-import path from "node:path";
-import { rm } from "node:fs/promises";
 
 import { db as appDb } from "@/lib/db/client";
 import { deleteConnection, listConnections } from "@/lib/db/migration-connections";
 import { baseProcedure, createTRPCRouter } from "../init";
-
-const migrationsDir = () => path.join(process.cwd(), "src/database/migrations");
-
-function toSlug(value: string) {
-  return (
-    value.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "untitled"
-  );
-}
 
 export const migrationsRouter = createTRPCRouter({
   listConnections: baseProcedure
@@ -34,13 +24,8 @@ export const migrationsRouter = createTRPCRouter({
 
   deleteConnection: baseProcedure
     .input(z.object({ projectName: z.string(), uuid: z.string() }))
-    .mutation(async ({ input }) => {
+    .mutation(({ input }) => {
       deleteConnection(input.uuid);
-
-      await rm(path.join(migrationsDir(), toSlug(input.projectName), input.uuid), {
-        recursive: true,
-        force: true,
-      });
 
       const projectRow = appDb
         .prepare("SELECT id FROM projects WHERE name = ?")

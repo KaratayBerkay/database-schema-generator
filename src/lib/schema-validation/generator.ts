@@ -115,6 +115,22 @@ export async function generateZodSchema(
 
   const allGeneratedSchemas = new Map<string, GeneratedSchemaEntry>();
 
+  // Register an enum's Zod schema (once) and return its schema name to reference.
+  const ensureEnumSchema = (typeName: string): string => {
+    const schemaName = pascalCase(typeName) + "Schema";
+    if (!allGeneratedSchemas.has(schemaName)) {
+      const enumDef = store.enums?.find((e) => e.name === typeName);
+      if (enumDef) {
+        allGeneratedSchemas.set(schemaName, {
+          name: schemaName,
+          code: `export const ${schemaName} = z.enum([${enumDef.values.map((v) => JSON.stringify(v.name)).join(", ")}])`,
+          isEnum: true,
+        });
+      }
+    }
+    return schemaName;
+  };
+
   const schemaFieldCodes: string[] = [];
 
   for (const field of selectedCanonicalFields) {
@@ -138,18 +154,7 @@ export async function generateZodSchema(
     let baseCode: string;
 
     if (isEnumType) {
-      const schemaName = pascalCase(field.type) + "Schema";
-      if (!allGeneratedSchemas.has(schemaName)) {
-        const enumDef = store.enums?.find((e) => e.name === field.type);
-        if (enumDef) {
-          allGeneratedSchemas.set(schemaName, {
-            name: schemaName,
-            code: `export const ${schemaName} = z.enum([${enumDef.values.map((v) => JSON.stringify(v)).join(", ")}])`,
-            isEnum: true,
-          });
-        }
-      }
-      baseCode = schemaName;
+      baseCode = ensureEnumSchema(field.type);
     } else if (relatedModel) {
       const schemaName = pascalCase(relatedModel.name) + "Schema";
       if (!allGeneratedSchemas.has(schemaName)) {
@@ -161,9 +166,10 @@ export async function generateZodSchema(
             f.constraints.some((c) => c.type === "NATIVE" && c.name === "Uuid") ||
             (f.type === "string" && f.constraints.some((c) => c.type === "NATIVE" && c.name === "Uuid"));
           const subIsTimestamp = f.constraints.some((c) => c.type === "NATIVE" && c.name === "Timestamptz");
-          const subCode = f.array
-            ? `z.array(${logicalToZodType(f.type, subIsUuid, subIsTimestamp)})`
+          const subBase = enumTypes.includes(f.type)
+            ? ensureEnumSchema(f.type)
             : logicalToZodType(f.type, subIsUuid, subIsTimestamp);
+          const subCode = f.array ? `z.array(${subBase})` : subBase;
           return `  ${f.name}: ${f.nullable ? `${subCode}.nullable()` : subCode}`;
         });
         allGeneratedSchemas.set(schemaName, {

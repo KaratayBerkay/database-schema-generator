@@ -15,6 +15,7 @@ import { MigrationTypeSelector } from "@/components/migrations/migration-type-se
 import { ConnectionManagementCard } from "@/components/migrations/connection-management-card";
 import { DeploySchemaCard } from "@/components/migrations/deploy-schema-card";
 import { VersionMigrationSteps } from "@/components/migrations/version-migration-steps";
+import { MigrationLockedBanner } from "@/components/migrations/migration-locked-banner";
 import { CollectResultModal } from "@/components/migrations/collect-result-modal";
 import { DestroyDeployModal } from "@/components/migrations/destroy-deploy-modal";
 import { PreflightModal } from "@/components/migrations/preflight-modal";
@@ -80,11 +81,26 @@ export function MigrationsPageContent() {
   const sync    = useSyncCheck({ projectName, activeConnectionId: conn.activeConnectionId, syncVersion, migrationPlan, connectState: conn.connectState });
   const destroy = useDestroyDeploy({ projectName, activeConnectionId: conn.activeConnectionId, versions });
 
+  // A version transition can be migrated only once: lock the pair if any session for
+  // (from → to) has started (run_status set). Scope is per-pair — connection ignored.
+  const migratedPairs = new Set(
+    sessions.filter((s) => s.runStatus != null).map((s) => `${s.fromVersion}->${s.toVersion}`),
+  );
+  const isPairLocked = isVersionPlan && !!syncVersion && !!targetVersion && migratedPairs.has(`${syncVersion}->${targetVersion}`);
+
+  // Migration steps may only run against a verified, reachable database. Selecting a saved
+  // connection marks connectState "success" without testing it, so that can't be trusted.
+  // The sync check actually connects, so "compatible" is the stable-connection signal — it
+  // flips to "incompatible" on ECONNREFUSED or a schema mismatch.
+  const connectionStable = sync.syncCheckState === "compatible";
+
   const workflow = useMigrationWorkflow({
     projectName, projectId,
     activeConnectionId: conn.activeConnectionId,
     syncVersion, targetVersion,
     breakingPendingCount, defaultsRequiredCount,
+    alreadyMigrated: isPairLocked,
+    connectionStable,
     persistMigrationState: (patch) => persistMigrationState(patch),
     onSessionsRefresh: invalidateSessions,
   });
@@ -110,7 +126,8 @@ export function MigrationsPageContent() {
     },
   });
 
-  const canCollect = conn.connectState === "success";
+  // Gate the version-migration steps on a verified connection, not just a selected one.
+  const canCollect = connectionStable;
 
   if (!hasProject) {
     return (
@@ -224,6 +241,10 @@ export function MigrationsPageContent() {
         />
       )}
 
+      {isPairLocked && (
+        <MigrationLockedBanner fromVersion={syncVersion} toVersion={targetVersion} />
+      )}
+
       <VersionMigrationSteps
         isVersionPlan={isVersionPlan}
         syncVersion={syncVersion}
@@ -234,6 +255,7 @@ export function MigrationsPageContent() {
         trackingHref={trackingHref}
         onGoToTracking={() => {}}
         canCollect={canCollect}
+        connectionStable={connectionStable}
         collectState={workflow.collectState}
         collectError={workflow.collectError}
         collectTables={workflow.collectTables}

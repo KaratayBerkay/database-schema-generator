@@ -1,20 +1,14 @@
 import { NextResponse } from "next/server";
 import { execFile } from "node:child_process";
-import { mkdir, rm, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { rm } from "node:fs/promises";
 import { promisify } from "node:util";
 import type { StoredConnection } from "@/types/migrations";
 import { getConnection, touchLastUsedAt } from "@/lib/db/migration-connections";
-import { registerFsPath } from "@/lib/db/fs-paths";
+import { insertMigrationLog } from "@/lib/db/migration-state";
 import { db as appDb } from "@/lib/db/client";
 import { prepareMigrationPrismaSchema } from "@/lib/migration-schema-artifacts";
 
 const execFileAsync = promisify(execFile);
-const migrationsDir = () => path.join(process.cwd(), "src/database/migrations");
-
-function toSlug(value: string) {
-  return value.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "untitled";
-}
 
 function buildConnectionUrl(conn: StoredConnection): string {
   const p = conn.provider.toLowerCase();
@@ -42,8 +36,6 @@ export async function POST(request: Request) {
     return jsonError("projectName, connectionId, and targetVersion are required.");
   }
 
-  const projectSlug = toSlug(projectName);
-
   let stored;
   try {
     stored = getConnection(connectionId);
@@ -66,10 +58,6 @@ export async function POST(request: Request) {
 
   const startedAt = new Date().toISOString();
   const ts = startedAt.replace(/[:.]/g, "-").slice(0, 19);
-  const logsDir = path.join(migrationsDir(), projectSlug, connectionId, "logs");
-  await mkdir(logsDir, { recursive: true });
-  const logFilename = `new-migration-${forceReset ? "destroy-" : ""}${toSlug(targetVersion)}-${ts}.json`;
-  const logPath = path.join(logsDir, logFilename);
 
   const prismaArgs = forceReset
     ? ["prisma", "db", "push", "--force-reset", "--schema", schemaPath, `--url=${connectionUrl}`]
@@ -83,13 +71,7 @@ export async function POST(request: Request) {
     });
 
     const completedAt = new Date().toISOString();
-
-    const pidRow = appDb.prepare("SELECT id FROM projects WHERE name = ?").get(projectName) as { id: string } | undefined;
-    if (pidRow) {
-      registerFsPath({ projectId: pidRow.id, connectionId, fileType: "migration_log", label: logFilename, fsPath: logPath });
-    }
-
-    await writeFile(logPath, JSON.stringify({
+    const logContent = {
       status: "success",
       type: forceReset ? "new-migration-force-reset" : "new-migration",
       startedAt,
@@ -97,20 +79,25 @@ export async function POST(request: Request) {
       project: projectName,
       connectionId,
       targetVersion,
-    }, null, 2), "utf8");
+    };
+
+    const pidRow = appDb.prepare("SELECT id FROM projects WHERE name = ?").get(projectName) as { id: string } | undefined;
+    if (pidRow) {
+      insertMigrationLog({ id: ts, projectId: pidRow.id, connectionId, fromVersion: null, toVersion: targetVersion, status: "success", content: logContent });
+    }
 
     touchLastUsedAt(connectionId);
 
     return NextResponse.json({
       success: true,
-      logPath: path.relative(process.cwd(), logPath),
+      logId: ts,
       newVersion: targetVersion,
     });
 
   } catch (err) {
     const e = err as { stdout?: string; stderr?: string; message?: string };
     const output = `${e.stdout ?? ""}\n${e.stderr ?? ""}\n${e.message ?? ""}`.trim();
-    await writeFile(logPath, JSON.stringify({
+    const errContent = {
       status: "error",
       type: "new-migration",
       startedAt,
@@ -119,7 +106,11 @@ export async function POST(request: Request) {
       connectionId,
       targetVersion,
       error: output || "Push failed.",
-    }, null, 2), "utf8").catch(() => { /* best-effort */ });
+    };
+    const pidRow = appDb.prepare("SELECT id FROM projects WHERE name = ?").get(projectName) as { id: string } | undefined;
+    if (pidRow) {
+      insertMigrationLog({ id: ts, projectId: pidRow.id, connectionId, fromVersion: null, toVersion: targetVersion, status: "error", content: errContent });
+    }
     return NextResponse.json({ success: false, error: output || "Push failed." }, { status: 400 });
   } finally {
     if (schemaCleanupPath) {

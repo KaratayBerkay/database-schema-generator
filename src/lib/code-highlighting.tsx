@@ -71,7 +71,7 @@ export function highlightCode(code: string, lang: "ts" | "prisma"): ReactNode {
     }
 
     return (
-      <div key={lineIndex} className="leading-6">
+      <div key={lineIndex} className="leading-6 whitespace-pre">
         <span className="mr-4 select-none text-slate-400">
           {String(lineIndex + 1).padStart(3, " ")}
         </span>

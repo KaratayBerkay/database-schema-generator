@@ -1,5 +1,3 @@
-import { mkdir, rm } from "node:fs/promises";
-import path from "node:path";
 import {
   defaultSchemaOptions,
   graphqlOptions,
@@ -17,13 +15,8 @@ import {
   initializeModelSchema,
 } from "@/lib/schema-store";
 import { db } from "@/lib/db/client";
-import { updateFsPathPrefix } from "@/lib/db/fs-paths";
 import { replaceNormalizedSchemaFromCanonicalStore } from "@/lib/schema-db/graph";
 
-// Lazy getters: defer process.cwd() to call time so Turbopack's static NFT
-// analysis never traverses the project root from this module.
-const zodDirectory     = () => path.join(process.cwd(), "src/database/zod");
-const migrationsDirectory = () => path.join(process.cwd(), "src/database/migrations");
 const defaultProjectVersion = "1.0111";
 
 // ─── db row types ─────────────────────────────────────────────────────────────
@@ -48,12 +41,6 @@ function getProjectProviderFromPrisma(provider: string) {
   if (provider === "mysql") return "MySQL";
   if (provider === "sqlite") return "SQLite";
   return "Postgres";
-}
-
-function toSchemaFilePart(value: string) {
-  return (
-    value.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "untitled"
-  );
 }
 
 function makeVersion(name: string): ProjectVersion {
@@ -120,28 +107,6 @@ const insertVersion = () => db.prepare(`
   INSERT INTO project_versions (project_id, name, created_at, sort_order)
   VALUES (?, ?, ?, ?)
 `);
-
-async function moveProjectDirectory(rootDirectory: string, oldName: string, newName: string) {
-  const { rename } = await import("node:fs/promises");
-  const oldDir = path.join(rootDirectory, toSchemaFilePart(oldName));
-  const newDir = path.join(rootDirectory, toSchemaFilePart(newName));
-  if (oldDir === newDir) return;
-  try {
-    await mkdir(path.dirname(newDir), { recursive: true });
-    await rename(oldDir, newDir);
-  } catch (error) {
-    if (error instanceof Error && "code" in error && (error.code === "ENOENT" || error.code === "EEXIST")) return;
-    throw error;
-  }
-}
-
-async function moveProjectArtifacts(projectId: string, oldName: string, newName: string) {
-  await Promise.all([
-    moveProjectDirectory(zodDirectory(), oldName, newName),
-  ]);
-  // Update all fs_paths entries for this project
-  updateFsPathPrefix(projectId, path.join(zodDirectory(), toSchemaFilePart(oldName)), path.join(zodDirectory(), toSchemaFilePart(newName)));
-}
 
 async function updateProjectModelStoreProviders(project: Project) {
   const prismaProvider = getPrismaProvider(project.provider);
@@ -258,10 +223,6 @@ export async function updateProject(
   db.prepare("UPDATE projects SET name = ?, provider = ?, schema_options = ? WHERE id = ?")
     .run(name, provider, JSON.stringify(normalizedOptions), id);
 
-  if (currentRow.name !== name) {
-    await moveProjectArtifacts(id, currentRow.name, name);
-  }
-
   const updatedProjects = readAllProjects();
   const updatedProject = updatedProjects.find((p) => p.id === id);
   if (updatedProject) {
@@ -332,12 +293,6 @@ export async function forkProjectVersion(projectId: string): Promise<{ projects:
 export async function deleteProject(id: string): Promise<Project[]> {
   const row = db.prepare("SELECT name FROM projects WHERE id = ?").get(id) as { name: string } | undefined;
   if (!row) return readAllProjects();
-
-  const slug = toSchemaFilePart(row.name);
-  await Promise.allSettled([
-    rm(path.join(zodDirectory(), slug), { recursive: true, force: true }),
-    rm(path.join(migrationsDirectory(), slug), { recursive: true, force: true }),
-  ]);
 
   db.prepare("DELETE FROM projects WHERE id = ?").run(id);
   return readAllProjects();
