@@ -28,7 +28,7 @@ export function MigrationLockedBanner({
             <span className="font-mono">{fromVersion}</span> → <span className="font-mono">{toVersion}</span> is locked
           </p>
           <p className="mt-0.5 text-xs font-medium text-amber-700">
-            This migration has already been run (or is in progress). A version transition can only be migrated once.
+            This migration has already been run on this connection (or is in progress). Each database can migrate a transition only once.
           </p>
         </div>
       </div>

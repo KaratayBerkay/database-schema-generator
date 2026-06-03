@@ -896,13 +896,14 @@ export async function POST(request: Request) {
   }
 
   // ── Migration lock ───────────────────────────────────────────────────────────
-  // A version transition can be migrated only once: once a run for this (from → to)
-  // pair has started (any connection), it is permanently locked. Fast-fail here for
-  // the common case; the lock is actually claimed atomically below, before the push.
+  // A version transition can be migrated only once *per connection*: once a run for this
+  // (connection, from → to) has started, that pair is permanently locked on that database.
+  // Other connections are unaffected. Fast-fail here for the common case; the lock is
+  // actually claimed atomically below, before the push.
   const lockProjectId = (appDb.prepare("SELECT id FROM projects WHERE name = ?").get(projectName) as { id: string } | undefined)?.id ?? null;
   const isVersionMigration = !!syncVersion && syncVersion !== targetVersion;
-  if (isVersionMigration && lockProjectId && hasMigrationStarted(lockProjectId, syncVersion, targetVersion)) {
-    return jsonError(`The ${syncVersion} → ${targetVersion} migration has already been run and is locked.`, 409);
+  if (isVersionMigration && lockProjectId && hasMigrationStarted(lockProjectId, syncVersion, targetVersion, connectionId)) {
+    return jsonError(`The ${syncVersion} → ${targetVersion} migration has already been run on this connection and is locked.`, 409);
   }
 
   let stored: StoredConnection | null;
@@ -1090,11 +1091,12 @@ export async function POST(request: Request) {
   const migrateTimestamp = startedAt.replace(/[:.]/g, "-").slice(0, 19);
 
   // Claim the lock at the point of no return (past the needsFix gate): mark this pair
-  // "running" so even an interrupted run keeps it locked. The synchronous re-check + write
-  // (no await in between) closes the two-concurrent-first-runs race; completion overwrites it.
+  // "running" on this connection so even an interrupted run keeps it locked. The synchronous
+  // re-check + write (no await in between) closes the two-concurrent-first-runs race on the
+  // same connection; completion overwrites it.
   if (isVersionMigration && lockProjectId) {
-    if (hasMigrationStarted(lockProjectId, syncVersion, targetVersion)) {
-      return jsonError(`The ${syncVersion} → ${targetVersion} migration has already been run and is locked.`, 409);
+    if (hasMigrationStarted(lockProjectId, syncVersion, targetVersion, connectionId)) {
+      return jsonError(`The ${syncVersion} → ${targetVersion} migration has already been run on this connection and is locked.`, 409);
     }
     upsertMigrationSession({ projectId: lockProjectId, connectionId, fromVersion: syncVersion, toVersion: targetVersion, runStatus: "running" });
   }

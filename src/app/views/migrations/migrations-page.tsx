@@ -81,12 +81,16 @@ export function MigrationsPageContent() {
   const sync    = useSyncCheck({ projectName, activeConnectionId: conn.activeConnectionId, syncVersion, migrationPlan, connectState: conn.connectState });
   const destroy = useDestroyDeploy({ projectName, activeConnectionId: conn.activeConnectionId, versions });
 
-  // A version transition can be migrated only once: lock the pair if any session for
-  // (from → to) has started (run_status set). Scope is per-pair — connection ignored.
+  // A version transition can be migrated only once *per connection*: lock the pair when a
+  // session for (connection → from → to) has started (run_status set). Each database migrates
+  // each transition independently, so locking v1→v2 on one connection leaves it open on the
+  // others — the key includes connectionId.
   const migratedPairs = new Set(
-    sessions.filter((s) => s.runStatus != null).map((s) => `${s.fromVersion}->${s.toVersion}`),
+    sessions.filter((s) => s.runStatus != null).map((s) => `${s.connectionId}->${s.fromVersion}->${s.toVersion}`),
   );
-  const isPairLocked = isVersionPlan && !!syncVersion && !!targetVersion && migratedPairs.has(`${syncVersion}->${targetVersion}`);
+  const isPairLocked =
+    isVersionPlan && !!syncVersion && !!targetVersion && !!conn.activeConnectionId &&
+    migratedPairs.has(`${conn.activeConnectionId}->${syncVersion}->${targetVersion}`);
 
   // Migration steps may only run against a verified, reachable database. Selecting a saved
   // connection marks connectState "success" without testing it, so that can't be trusted.
@@ -156,23 +160,6 @@ export function MigrationsPageContent() {
         activeConnection={conn.activeConnection}
       />
 
-      <SessionHistory
-        sessions={sessions}
-        knownConnectionIds={new Set(conn.connections.map((c) => c.uuid))}
-        onResume={(s) => {
-          if (!conn.connections.find((c) => c.uuid === s.connectionId)) return;
-          setMigrationPlan("version");
-          restoreSyncVersion(s.fromVersion);
-          restoreTargetVersion(s.toVersion);
-          conn.setActiveConnectionId(s.connectionId);
-          conn.setConnectState("success");
-          if (s.snapshotId && s.collectTimestamp) {
-            workflow.dispatch({ type: "RESTORE_COLLECT_STATE", payload: { snapshotId: s.snapshotId, timestamp: s.collectTimestamp, tables: s.collectTables ?? [], total: s.collectRowCount ?? 0 } });
-          }
-          void persistMigrationState({ connectionId: s.connectionId, syncVersion: s.fromVersion, targetVersion: s.toVersion, snapshotId: s.snapshotId ?? null, dataTimestamp: s.collectTimestamp });
-        }}
-      />
-
       <ConnectionManagementCard
         canDoAnyMigration={canDoAnyMigration}
         migrationPlan={migrationPlan}
@@ -208,6 +195,27 @@ export function MigrationsPageContent() {
         onDatabaseChange={conn.setDatabase}
         onConnect={() => void conn.handleConnect((patch) => persistMigrationState(patch))}
       />
+
+      {/* Session History is the migration history of the *selected* connection — only shown
+          once a connection is active, and scoped to that database (a project can have several). */}
+      {conn.activeConnectionId && (
+        <SessionHistory
+          sessions={sessions.filter((s) => s.connectionId === conn.activeConnectionId)}
+          knownConnectionIds={new Set(conn.connections.map((c) => c.uuid))}
+          onResume={(s) => {
+            if (!conn.connections.find((c) => c.uuid === s.connectionId)) return;
+            setMigrationPlan("version");
+            restoreSyncVersion(s.fromVersion);
+            restoreTargetVersion(s.toVersion);
+            conn.setActiveConnectionId(s.connectionId);
+            conn.setConnectState("success");
+            if (s.snapshotId && s.collectTimestamp) {
+              workflow.dispatch({ type: "RESTORE_COLLECT_STATE", payload: { snapshotId: s.snapshotId, timestamp: s.collectTimestamp, tables: s.collectTables ?? [], total: s.collectRowCount ?? 0 } });
+            }
+            void persistMigrationState({ connectionId: s.connectionId, syncVersion: s.fromVersion, targetVersion: s.toVersion, snapshotId: s.snapshotId ?? null, dataTimestamp: s.collectTimestamp });
+          }}
+        />
+      )}
 
       <MigrationTypeSelector
         canDoAnyMigration={canDoAnyMigration}
