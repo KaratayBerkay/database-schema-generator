@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { getSchemaStats, testPrismaSchema } from "@/lib/schema-store";
+import { getSchemaStats } from "@/lib/schema-store";
 import { generateZodSchema } from "@/lib/schema-validation/generator";
 import { listZodSchemas, readZodSchema, updateZodSchemaTargetPath, updateZodSchemaName, deleteZodSchema, deleteAllZodSchemas } from "@/lib/db/zod-schemas";
 import { db } from "@/lib/db/client";
@@ -15,16 +15,6 @@ function trpcError(err: unknown, fallback = "Operation failed."): never {
 }
 
 export const schemaRouter = createTRPCRouter({
-  test: baseProcedure
-    .input(z.object({ projectName: z.string(), version: z.string() }))
-    .mutation(async ({ input }) => {
-      try {
-        return await testPrismaSchema(input.projectName, input.version);
-      } catch (err) {
-        trpcError(err, "Schema test failed.");
-      }
-    }),
-
   stats: baseProcedure
     .input(z.object({ projectName: z.string(), version: z.string() }))
     .query(async ({ input }) => {

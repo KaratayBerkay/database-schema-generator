@@ -30,6 +30,7 @@ type VersionMigrationStepsProps = {
   onGoToTracking?: () => void;
   // Collect
   canCollect: boolean;
+  connectionStable: boolean;
   collectState: PhaseState;
   collectError: string;
   collectTables: CollectTable[];
@@ -66,7 +67,7 @@ export function VersionMigrationSteps({
   syncVersion, targetVersion,
   warnings, breakingPendingCount, defaultsRequiredCount,
   trackingHref, onGoToTracking,
-  canCollect, collectState, collectError, collectTables, collectTotal,
+  canCollect, connectionStable, collectState, collectError, collectTables, collectTotal,
   collectTimestamp, migrationOrder, restoreState, restoreError, restoreTables,
   collectBtnDisabled, onCollect, onRestore,
   canMigrate, migrateState, migrateError, validateState, validateError,
@@ -112,6 +113,21 @@ export function VersionMigrationSteps({
         </Card>
       ) : <>
 
+      {/* Connection gate: steps stay locked until the DB connection is verified */}
+      {syncVersion && !connectionStable && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-rose-300 bg-rose-50 px-4 py-3">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" aria-hidden="true">
+            <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+          </svg>
+          <div>
+            <p className="text-sm font-semibold text-rose-800">Database connection not verified</p>
+            <p className="mt-0.5 text-xs font-medium text-rose-700">
+              The selected version must match a reachable database. Resolve the connection above — Collect, Validate, and Migrate stay locked until it does.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Step 3: Collect Data */}
       <Card locked={!canCollect}>
         <CardHeader>
@@ -140,7 +156,7 @@ export function VersionMigrationSteps({
             {collectState === "success" && collectTimestamp && (
               <div className="flex flex-col gap-1">
                 <button type="button" onClick={onRestore}
-                  disabled={restoreState === "loading" || undefined}
+                  disabled={restoreState === "loading" || !connectionStable || undefined}
                   className="h-8 rounded-md border border-amber-300 bg-amber-50 px-3 text-xs font-semibold text-amber-800 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50">
                   {restoreState === "loading" ? "Restoring…" : restoreState === "success" ? "✓ Restored" : "Restore to Sync Version"}
                 </button>

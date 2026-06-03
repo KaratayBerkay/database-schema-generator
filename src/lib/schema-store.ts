@@ -9,17 +9,9 @@ import type {
   Value,
 } from "@mrleebo/prisma-ast";
 import { randomUUID } from "node:crypto";
-import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import path from "node:path";
-import { promisify } from "node:util";
 import { db } from "@/lib/db/client";
-import { ensureNormalizedSchema, readProjectVersionGraph, replaceNormalizedSchemaFromCanonicalStore } from "@/lib/schema-db/graph";
+import { ensureNormalizedSchema, replaceNormalizedSchemaFromCanonicalStore } from "@/lib/schema-db/graph";
 import { isInternalMigrationField, normalizeDatabaseIdentifier, toCamelCaseIdentifier } from "@/lib/schema-naming";
-import { renderPrismaSchemaFromGraph } from "@/lib/schema-renderers/prisma";
-
-const execFileAsync = promisify(execFile);
 
 const schemaVersion = 1;
 
@@ -30,16 +22,6 @@ function getProjectIdByName(name: string): string | null {
   } catch {
     return null;
   }
-}
-
-function toSchemaFilePart(value: string) {
-  return (
-    value
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9._-]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "untitled"
-  );
 }
 
 export type PrismaModel = {
@@ -142,19 +124,6 @@ export type PrismaFieldInput = {
   nativeAttribute?: PrismaNativeAttribute;
   updatedAtAttribute?: boolean;
   isId?: boolean;
-};
-
-export type PrismaSchemaTestStep = {
-  command: string;
-  name: "format" | "validate";
-  output: string;
-  success: boolean;
-};
-
-export type PrismaSchemaTestResult = {
-  schemaFile: string;
-  steps: PrismaSchemaTestStep[];
-  success: boolean;
 };
 
 export type PrismaModelSyncResult = {
@@ -2473,77 +2442,6 @@ export async function deleteModelRestriction(
 
   await writeModelStore(store);
   return readModelRestrictions(projectName, version, model.name, model.key);
-}
-
-async function runPrismaSchemaTestStep(
-  name: PrismaSchemaTestStep["name"],
-  schemaFile: string,
-): Promise<PrismaSchemaTestStep> {
-  const args = ["prisma", name, "--schema", schemaFile];
-  const command = `pnpm ${args.join(" ")}`;
-
-  try {
-    const { stdout, stderr } = await execFileAsync("pnpm", args, {
-      cwd: path.join(/*turbopackIgnore: true*/ process.cwd()),
-      maxBuffer: 1024 * 1024,
-    });
-
-    return {
-      command,
-      name,
-      output: [stdout, stderr].filter(Boolean).join("\n").trim(),
-      success: true,
-    };
-  } catch (error) {
-    const processError = error as {
-      stderr?: string;
-      stdout?: string;
-    };
-
-    return {
-      command,
-      name,
-      output: [processError.stdout, processError.stderr]
-        .filter(Boolean)
-        .join("\n")
-        .trim(),
-      success: false,
-    };
-  }
-}
-
-export async function testPrismaSchema(
-  projectName: string,
-  version: string,
-): Promise<PrismaSchemaTestResult> {
-  const graph = readProjectVersionGraph(projectName, version);
-  const schemaContent = renderPrismaSchemaFromGraph(graph);
-  await mkdir(path.join(tmpdir(), "database-schema-generator"), { recursive: true });
-  const tempDirectory = await mkdtemp(path.join(tmpdir(), "database-schema-generator", "schema-test-"));
-  const tempSchemaFile = path.join(tempDirectory, `${toSchemaFilePart(version)}.prisma`);
-  const steps: PrismaSchemaTestStep[] = [];
-
-  try {
-    await writeFile(tempSchemaFile, schemaContent, "utf8");
-
-    const formatStep = await runPrismaSchemaTestStep("format", tempSchemaFile);
-    steps.push(formatStep);
-
-    if (!formatStep.success) {
-      return { schemaFile: `(in-memory ${version})`, steps, success: false };
-    }
-
-    const validateStep = await runPrismaSchemaTestStep("validate", tempSchemaFile);
-    steps.push(validateStep);
-
-    return {
-      schemaFile: `(in-memory ${version})`,
-      steps,
-      success: steps.every((step) => step.success),
-    };
-  } finally {
-    await rm(tempDirectory, { force: true, recursive: true });
-  }
 }
 
 export async function addModel(

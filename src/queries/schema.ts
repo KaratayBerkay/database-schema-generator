@@ -45,8 +45,3 @@ export function useZodMutations(projectName: string, version: string) {
     generate: useMutation(trpc.schema.generateZod.mutationOptions()),
   };
 }
-
-export function useSchemaTestMutation() {
-  const trpc = useTRPC();
-  return useMutation(trpc.schema.test.mutationOptions());
-}

@@ -1,18 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import { useHistoryQuery } from "@/queries/history";
-import { classNames } from "@/lib/utils";
 import { useDashboard } from "../shared/dashboard-context";
 import { useProjectInfo } from "../shared/project-info-context";
 import type { VersionHistory } from "@/types/history";
-import { formatDate } from "@/constants/history";
-import { StatBadge } from "@/components/history/stat-badge";
+import { VersionAccordion } from "@/components/history/version-accordion";
 
 export function HistoryPageContent() {
   const { setSelectedVersion } = useDashboard();
   const { projectId: activeProjectId, projectName, version: selectedVersion, hasProject } = useProjectInfo();
   const historyQuery = useHistoryQuery(activeProjectId);
   const versions: VersionHistory[] = (historyQuery.data?.versions ?? []) as VersionHistory[];
+
+  // Open state is derived: a version is open when the user has overridden it,
+  // otherwise the active version is open by default (and follows version switches).
+  const [overrides, setOverrides] = useState<Map<string, boolean>>(new Map());
+  const isOpen = (name: string) => (overrides.has(name) ? overrides.get(name)! : name === selectedVersion);
+  const toggle = (name: string) =>
+    setOverrides((prev) => {
+      const currentlyOpen = prev.has(name) ? prev.get(name)! : name === selectedVersion;
+      const next = new Map(prev);
+      next.set(name, !currentlyOpen);
+      return next;
+    });
 
   if (!hasProject) {
     return (
@@ -57,66 +68,16 @@ export function HistoryPageContent() {
             </div>
           ) : (
             <div className="space-y-3">
-              {versions.map((v) => {
-                const isActive = v.name === selectedVersion;
-                return (
-                  <div
-                    key={v.name}
-                    className={classNames(
-                      "rounded-lg border p-4 transition",
-                      isActive
-                        ? "border-teal-300 bg-teal-50"
-                        : "border-slate-200 bg-white hover:border-slate-300",
-                    )}
-                  >
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            className={classNames(
-                              "rounded-md px-2.5 py-1 text-sm font-bold",
-                              isActive
-                                ? "bg-teal-600 text-white"
-                                : "bg-slate-100 text-slate-700",
-                            )}
-                          >
-                            {v.name}
-                          </span>
-                          {isActive && (
-                            <span className="rounded-md border border-teal-300 bg-white px-2 py-0.5 text-xs font-semibold text-teal-700">
-                              Active
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-2 text-xs font-medium text-slate-400">
-                          Created {formatDate(v.createdAt)}
-                        </p>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        <StatBadge label="Tables" value={v.tables} />
-                        <StatBadge label="Fields" value={v.fields} />
-                        <StatBadge label="Relations" value={v.relations} />
-                        <StatBadge label="Restrictions" value={v.restrictions} />
-                      </div>
-
-                      <button
-                        type="button"
-                        disabled={isActive}
-                        onClick={() => setSelectedVersion(v.name)}
-                        className={classNames(
-                          "h-9 shrink-0 rounded-md border px-4 text-sm font-semibold transition",
-                          isActive
-                            ? "cursor-default border-teal-200 bg-teal-50 text-teal-400"
-                            : "border-slate-300 bg-white text-slate-700 hover:border-teal-300 hover:text-teal-700",
-                        )}
-                      >
-                        {isActive ? "In use" : "Use"}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+              {versions.map((v) => (
+                <VersionAccordion
+                  key={v.name}
+                  version={v}
+                  isActive={v.name === selectedVersion}
+                  isOpen={isOpen(v.name)}
+                  onToggle={() => toggle(v.name)}
+                  onUse={() => setSelectedVersion(v.name)}
+                />
+              ))}
             </div>
           )}
         </div>

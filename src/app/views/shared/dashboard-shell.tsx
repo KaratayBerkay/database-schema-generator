@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useSchemaStatsQuery, useSchemaTestMutation } from "@/queries/schema";
+import { useSchemaStatsQuery } from "@/queries/schema";
 import { useDashboard, useActiveProject } from "./dashboard-context";
 import { ProjectInfoProvider } from "./project-info-context";
 import { Button } from "@/components/ui/button";
@@ -27,16 +27,12 @@ import {
   computeMenuItems,
   menuItemsBase,
 } from "./dashboard-data";
-import { classNames } from "@/lib/utils";
-import { renderAnsiOutput } from "@/lib/ansi-renderer";
-import type { PrismaSchemaTestResult } from "@/lib/schema-store";
 
 // ─── Shell ────────────────────────────────────────────────────────────────────
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isSchemaTestOpen, setIsSchemaTestOpen] = useState(false);
 
   const { selectedVersion } = useDashboard();
   const activeProject = useActiveProject();
@@ -61,17 +57,6 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     importQueuedCount: statsData?.imports ?? 0,
     enumCount: statsData?.enumCount ?? 0,
   }), [statsData]);
-
-  const schemaTestMutation = useSchemaTestMutation();
-
-  const testSchema = () => {
-    if (!activeProject || !selectedVersion) return;
-    setIsSchemaTestOpen(true);
-    schemaTestMutation.mutate({
-      projectName: activeProject.name.trim(),
-      version: selectedVersion,
-    });
-  };
 
   const activeProjectWithStats = useMemo(
     () =>
@@ -106,10 +91,6 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const projectName = activeProject?.name.trim() || "No project";
   const selectedProvider = activeProject?.provider ?? "No DB";
   const databaseName = activeProject ? `Database-${projectName}` : "No database";
-
-  const schemaTestResult = schemaTestMutation.data as PrismaSchemaTestResult | undefined;
-  const schemaTestError = schemaTestMutation.error?.message ?? "";
-  const isTestingSchema = schemaTestMutation.isPending;
 
   return (
     <SidebarProvider
@@ -232,27 +213,6 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                 </h2>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                disabled={!activeProject}
-                onClick={() => { router.push("/schema"); }}
-              >
-                Preview
-              </Button>
-              <Button
-                disabled={!activeProject}
-                onClick={() => { router.push("/sql-query"); }}
-              >
-                Generate SQL
-              </Button>
-              <Button
-                onClick={testSchema}
-                disabled={isTestingSchema || !activeProject || !selectedVersion}
-              >
-                {isTestingSchema ? "Testing..." : "Test Schema"}
-              </Button>
-            </div>
           </div>
         </header>
 
@@ -260,65 +220,6 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           <ProjectInfoProvider>{children}</ProjectInfoProvider>
         </div>
       </SidebarInset>
-
-      {/* ── Schema test panel ────────────────────────────────────────────── */}
-      {isSchemaTestOpen ? (
-        <div className="fixed inset-0 z-50 bg-slate-950/45 p-3 md:p-5">
-          <div className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl">
-            <div className="border-b border-slate-200 px-5 py-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    Schema Test
-                  </p>
-                  <h3 className="mt-1 text-xl font-semibold text-slate-950">
-                    Prisma format and validate
-                  </h3>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setIsSchemaTestOpen(false)}>
-                  Close
-                </Button>
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5">
-              {isTestingSchema ? (
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-8 text-center text-sm font-semibold text-slate-500">
-                  Running Prisma schema checks...
-                </div>
-              ) : schemaTestError ? (
-                <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
-                  {schemaTestError}
-                </div>
-              ) : schemaTestResult ? (
-                <div className="flex min-h-full flex-col gap-4">
-                  <div className={classNames("rounded-lg border p-4", schemaTestResult.success ? "border-emerald-200 bg-emerald-50" : "border-rose-200 bg-rose-50")}>
-                    <p className={classNames("text-sm font-semibold", schemaTestResult.success ? "text-emerald-700" : "text-rose-700")}>
-                      {schemaTestResult.success ? "Schema test passed." : "Schema test failed."}
-                    </p>
-                    <p className="mt-1 text-xs font-medium text-slate-600">{schemaTestResult.schemaFile}</p>
-                  </div>
-                  {schemaTestResult.steps.map((step) => (
-                    <div key={step.name} className="flex min-h-80 flex-1 flex-col rounded-lg border border-slate-200 bg-white p-4">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="text-sm font-semibold capitalize text-slate-950">{step.name}</p>
-                          <p className="mt-1 text-xs font-medium text-slate-500">{step.command}</p>
-                        </div>
-                        <span className={classNames("rounded-md px-2.5 py-1 text-xs font-bold", step.success ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700")}>
-                          {step.success ? "Passed" : "Failed"}
-                        </span>
-                      </div>
-                      <pre className="mt-3 min-h-72 flex-1 overflow-auto rounded-md bg-slate-950 p-3 text-xs leading-5 text-slate-100">
-                        {renderAnsiOutput(step.output)}
-                      </pre>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      ) : null}
     </SidebarProvider>
   );
 }

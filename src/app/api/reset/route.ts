@@ -14,13 +14,10 @@ export async function POST() {
     // Also clear ui_state so the app doesn't try to restore a deleted project
     db.prepare("DELETE FROM ui_state").run();
 
-    // Remove all generated + operational artifact directories
-    await Promise.allSettled([
-      rm(path.join(databaseDir(), "schemas"), { recursive: true, force: true }),
-      rm(path.join(databaseDir(), "zod"), { recursive: true, force: true }),
-      rm(path.join(databaseDir(), "migrations"), { recursive: true, force: true }),
-      rm(path.join(databaseDir(), "databases"), { recursive: true, force: true }),
-    ]);
+    // SQL-Query creates real SQLite .db files on disk; clear that workspace.
+    // Schemas, Zod validators, and migration logs all live in the DB now —
+    // nothing else under src/database/ is written to clean up.
+    await rm(path.join(databaseDir(), "databases"), { recursive: true, force: true });
 
     return NextResponse.json({ success: true });
   } catch (err) {

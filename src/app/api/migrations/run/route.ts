@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { execFile, spawn } from "node:child_process";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { rm } from "node:fs/promises";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import { randomUUID } from "node:crypto";
@@ -10,9 +10,8 @@ import type { Attribute, Field, Model } from "@mrleebo/prisma-ast";
 import { z } from "zod";
 import type { StoredConnection, ValidationIssue } from "@/types/migrations";
 import { getConnection, touchLastUsedAt } from "@/lib/db/migration-connections";
-import { registerFsPath } from "@/lib/db/fs-paths";
 import { db as appDb } from "@/lib/db/client";
-import { getSnapshotData, insertMigrationLog, upsertMigrationSession } from "@/lib/db/migration-state";
+import { getSnapshotData, hasMigrationStarted, insertMigrationLog, upsertMigrationSession } from "@/lib/db/migration-state";
 import { prepareMigrationPrismaSchema, renderMigrationPrismaSchema } from "@/lib/migration-schema-artifacts";
 import { readProjectVersionGraph } from "@/lib/schema-db/graph";
 import { MIGRATION_REFERENCE_FIELD } from "@/lib/schema-naming";
@@ -20,8 +19,6 @@ import { checkTypeConversion, computeMigrationOrder, generatedUniqueValue } from
 import { resolveFieldMigration, warningToDecision } from "@/solutions";
 
 const execFileAsync = promisify(execFile);
-const migrationsDir = path.join(/*turbopackIgnore: true*/ process.cwd(), "src/database/migrations");
-const tmpDir = path.join(/*turbopackIgnore: true*/ process.cwd(), "src/database/migration-runtime");
 
 // ─── canonical types ──────────────────────────────────────────────────────────
 
@@ -132,11 +129,6 @@ function prismaTypeToCanonical(prismaType: string): string {
   return PRISMA_TO_CANONICAL[prismaType] ?? prismaType.toLowerCase();
 }
 
-function toSlug(value: string) {
-  return (
-    value.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "untitled"
-  );
-}
 
 function buildConnectionUrl(conn: StoredConnection): string {
   const p = conn.provider.toLowerCase();
@@ -744,7 +736,14 @@ function runStage2(
 function buildUpsertScript(): string {
   return `
 'use strict';
-const fs = require('node:fs');
+
+const readStdin = () => new Promise((resolve, reject) => {
+  let raw = '';
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('data', (chunk) => { raw += chunk; });
+  process.stdin.on('end', () => resolve(raw));
+  process.stdin.on('error', reject);
+});
 
 const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
 const escVal = (v, provider) => {
@@ -789,7 +788,7 @@ const buildSql = (tableName, record, idField, provider) => {
 };
 
 const main = async () => {
-  const { tables, provider, connectionUrl } = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+  const { tables, provider, connectionUrl } = JSON.parse(await readStdin());
   const p = provider.toLowerCase();
   const summaries = [];
 
@@ -896,7 +895,15 @@ export async function POST(request: Request) {
     return jsonError("Project name, connection ID, target version, and snapshotId are required.");
   }
 
-  const projectSlug = toSlug(projectName);
+  // ── Migration lock ───────────────────────────────────────────────────────────
+  // A version transition can be migrated only once: once a run for this (from → to)
+  // pair has started (any connection), it is permanently locked. Fast-fail here for
+  // the common case; the lock is actually claimed atomically below, before the push.
+  const lockProjectId = (appDb.prepare("SELECT id FROM projects WHERE name = ?").get(projectName) as { id: string } | undefined)?.id ?? null;
+  const isVersionMigration = !!syncVersion && syncVersion !== targetVersion;
+  if (isVersionMigration && lockProjectId && hasMigrationStarted(lockProjectId, syncVersion, targetVersion)) {
+    return jsonError(`The ${syncVersion} → ${targetVersion} migration has already been run and is locked.`, 409);
+  }
 
   let stored: StoredConnection | null;
   try {
@@ -1081,11 +1088,16 @@ export async function POST(request: Request) {
 
   const startedAt = new Date().toISOString();
   const migrateTimestamp = startedAt.replace(/[:.]/g, "-").slice(0, 19);
-  const tmpPayloadPath = path.join(tmpDir, `migrate-payload-${migrateTimestamp}.json`);
-  const tmpScriptPath = path.join(tmpDir, `migrate-upsert-${migrateTimestamp}.js`);
-  const logsDir = path.join(migrationsDir, projectSlug, connectionId, "logs");
-  const logFilename = `version-${syncVersion}-to-${targetVersion}-${migrateTimestamp}.json`;
-  const logPath = path.join(logsDir, logFilename);
+
+  // Claim the lock at the point of no return (past the needsFix gate): mark this pair
+  // "running" so even an interrupted run keeps it locked. The synchronous re-check + write
+  // (no await in between) closes the two-concurrent-first-runs race; completion overwrites it.
+  if (isVersionMigration && lockProjectId) {
+    if (hasMigrationStarted(lockProjectId, syncVersion, targetVersion)) {
+      return jsonError(`The ${syncVersion} → ${targetVersion} migration has already been run and is locked.`, 409);
+    }
+    upsertMigrationSession({ projectId: lockProjectId, connectionId, fromVersion: syncVersion, toVersion: targetVersion, runStatus: "running" });
+  }
 
   const insertOrder = migrationOrder.length
     ? migrationOrder.map((item) => item.modelName)
@@ -1119,8 +1131,6 @@ export async function POST(request: Request) {
         // Phase 2: bulk insert
         const totalRows = tablesPayload.reduce((s, t) => s + (t?.records.length ?? 0), 0);
         send({ type: "phase", phase: "inserting", total: tablesPayload.length, totalRows });
-        await mkdir(logsDir, { recursive: true });
-        await mkdir(tmpDir, { recursive: true });
         // For MySQL, pre-convert all datetime values to 'YYYY-MM-DD HH:MM:SS' format before
         // serialising to the temp payload — JSON.stringify turns Date objects into ISO strings
         // which MySQL rejects. Doing it here (TypeScript code) avoids relying on the spawned
@@ -1143,13 +1153,14 @@ export async function POST(request: Request) {
               ),
             }))
           : tablesPayload;
-        await writeFile(tmpPayloadPath, JSON.stringify({ tables: payloadTables, provider: stored!.provider, connectionUrl }), "utf8");
-        await writeFile(tmpScriptPath, buildUpsertScript(), "utf8");
-
-        const child = spawn(process.execPath, [tmpScriptPath, tmpPayloadPath], {
+        const child = spawn(process.execPath, ["-e", buildUpsertScript()], {
           cwd: path.join(/*turbopackIgnore: true*/ process.cwd()),
           env: { ...process.env, DATABASE_URL: connectionUrl },
         });
+        // Feed the payload over stdin (a pipe) instead of a temp file — no FS writes.
+        child.stdin?.on("error", () => { /* ignore EPIPE if the child exits early */ });
+        child.stdin?.write(JSON.stringify({ tables: payloadTables, provider: stored!.provider, connectionUrl }));
+        child.stdin?.end();
 
         let stderrBuf = "";
         child.stderr?.on("data", (chunk: Buffer) => { stderrBuf += chunk.toString(); });
@@ -1181,33 +1192,29 @@ export async function POST(request: Request) {
         const status = totalErrors === 0 ? "success" : "partial";
         const logContent = { status, startedAt, completedAt, project: projectName, connectionId, syncVersion, targetVersion, snapshotId, stage1IssueCount: stage1Issues.length, totalCreated, totalErrors, insertOrder, migrationOrder, tables: tableSummaries };
 
-        await writeFile(logPath, JSON.stringify(logContent, null, 2), "utf8");
         touchLastUsedAt(connectionId);
 
         const pidRow = appDb.prepare("SELECT id FROM projects WHERE name = ?").get(projectName) as { id: string } | undefined;
         if (pidRow) {
-          registerFsPath({ projectId: pidRow.id, connectionId, fileType: "migration_log", label: logFilename, fsPath: logPath });
-          upsertMigrationSession({ projectId: pidRow.id, connectionId, fromVersion: syncVersion, toVersion: targetVersion, runStatus: status, runLogPath: path.relative(process.cwd(), logPath), runTables: tableSummaries });
+          // runLogPath now holds the migration_logs row id (DB), not a filesystem path.
+          upsertMigrationSession({ projectId: pidRow.id, connectionId, fromVersion: syncVersion, toVersion: targetVersion, runStatus: status, runLogPath: migrateTimestamp, runTables: tableSummaries });
           insertMigrationLog({ id: migrateTimestamp, projectId: pidRow.id, connectionId, fromVersion: syncVersion || null, toVersion: targetVersion, status, content: logContent });
         }
 
-        send({ type: "done", tables: tableSummaries, stage1Issues, migrationOrder, logPath: path.relative(process.cwd(), logPath), newVersion: targetVersion });
+        send({ type: "done", tables: tableSummaries, stage1Issues, migrationOrder, logId: migrateTimestamp, newVersion: targetVersion });
 
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Migration failed.";
         const errContent = { status: "error", startedAt, failedAt: new Date().toISOString(), project: projectName, connectionId, syncVersion, targetVersion, snapshotId, error: msg };
-        await writeFile(logPath, JSON.stringify(errContent, null, 2), "utf8").catch(() => {});
         const errPidRow = appDb.prepare("SELECT id FROM projects WHERE name = ?").get(projectName) as { id: string } | undefined;
         if (errPidRow) {
           upsertMigrationSession({ projectId: errPidRow.id, connectionId, fromVersion: syncVersion, toVersion: targetVersion, runStatus: "failed", runError: msg });
           insertMigrationLog({ id: migrateTimestamp, projectId: errPidRow.id, connectionId, fromVersion: syncVersion || null, toVersion: targetVersion, status: "error", content: errContent });
         }
-        send({ type: "error", error: msg, logPath: path.relative(process.cwd(), logPath) });
+        send({ type: "error", error: msg });
       } finally {
         controller.close();
         await Promise.allSettled([
-          rm(tmpScriptPath, { force: true }),
-          rm(tmpPayloadPath, { force: true }),
           schemaCleanupPath ? rm(schemaCleanupPath, { force: true, recursive: true }) : Promise.resolve(),
         ]);
       }

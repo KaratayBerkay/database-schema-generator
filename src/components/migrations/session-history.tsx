@@ -35,6 +35,12 @@ export function SessionHistory({ sessions, knownConnectionIds, onResume }: Sessi
   const partialCount = sessions.filter((s) => s.runStatus === "partial").length;
   const failCount    = sessions.filter((s) => s.runStatus && s.runStatus !== "success" && s.runStatus !== "partial").length;
 
+  // Order rows by Snapshot ascending (earliest collect first) so the oldest
+  // transition (e.g. 1.0111 → 1.0112) sits on top.
+  const orderedSessions = [...sessions].sort((a, b) =>
+    (a.collectTimestamp ?? "").localeCompare(b.collectTimestamp ?? ""),
+  );
+
   return (
     <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
       {/* ── Accordion header (always visible) ─────────────────────────────── */}
@@ -111,7 +117,7 @@ export function SessionHistory({ sessions, knownConnectionIds, onResume }: Sessi
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {sessions.map((s) => (
+                {orderedSessions.map((s) => (
                   <tr key={s.id} className="group transition hover:bg-slate-50">
                     <td className="px-4 py-3 font-semibold text-slate-800">{s.projectName}</td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.fromVersion}</td>
@@ -144,14 +150,14 @@ export function SessionHistory({ sessions, knownConnectionIds, onResume }: Sessi
                         <button
                           type="button"
                           onClick={() => onResume(s)}
-                          className="rounded-md border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 opacity-0 transition hover:border-slate-300 hover:bg-slate-50 group-hover:opacity-100"
+                          className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700"
                         >
                           Resume
                         </button>
                       ) : (
                         <span
                           title="Connection was deleted — cannot resume this session"
-                          className="rounded-md border border-slate-100 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-300 opacity-0 group-hover:opacity-100 cursor-not-allowed"
+                          className="rounded-md border border-slate-100 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-300 cursor-not-allowed"
                         >
                           No connection
                         </span>

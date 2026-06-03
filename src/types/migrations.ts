@@ -108,7 +108,7 @@ export type RunResponse = {
   invalidRows?: InvalidRow[];
   tables?: { name: string; created: number; updated: number; errors: number }[];
   migrationOrder?: { tableId: string; modelName: string; dbName: string; parentCount: number }[];
-  logPath?: string;
+  logId?: string;
   newVersion?: string;
   error?: string;
 };
@@ -170,7 +170,7 @@ export type ZodPairResponse = {
 
 export type PushNewResponse = {
   success: boolean;
-  logPath?: string;
+  logId?: string;
   newVersion?: string;
   error?: string;
 };

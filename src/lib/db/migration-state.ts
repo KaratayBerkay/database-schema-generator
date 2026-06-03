@@ -377,6 +377,19 @@ export function listMigrationSessions(projectId?: string): MigrationSession[] {
   return rows.map(rowToSession);
 }
 
+/**
+ * True when a data-migration run for this (project, from→to) pair has ever started —
+ * i.e. any session for that pair (across all connections) carries a non-null run_status
+ * ("running" written at the destructive step, or a terminal success/partial/failed).
+ * Collect-only sessions have run_status NULL and do NOT count as started.
+ */
+export function hasMigrationStarted(projectId: string, fromVersion: string, toVersion: string): boolean {
+  const row = db.prepare(
+    "SELECT 1 FROM migration_sessions WHERE project_id = ? AND from_version = ? AND to_version = ? AND run_status IS NOT NULL LIMIT 1",
+  ).get(projectId, fromVersion, toVersion);
+  return !!row;
+}
+
 // ─── Migration Logs ───────────────────────────────────────────────────────────
 
 export type MigrationLog = {
