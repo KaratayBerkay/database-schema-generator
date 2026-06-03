@@ -3,6 +3,9 @@ import { addImportedProjectVersion, createImportedProject, readProjects, refresh
 import { db } from "@/lib/db/client";
 import { writeVersionGraph, clearVersionGraph, type PickleVersionData } from "@/lib/schema-db/import-graph";
 import { readProjectVersionGraph, graphToCanonicalStore } from "@/lib/schema-db/graph";
+import { inferPrismaProviderFromContent, importTwoVersions } from "@/lib/schema-store";
+import { todayVersionName } from "@/constants/imports";
+import type { DatabaseImportResult } from "@/types/imports";
 
 export type { PickleVersionData };
 
@@ -231,5 +234,45 @@ export async function importProjectPickle(options: ImportProjectOptions) {
     projectName: registeredName,
     versionCount: versions.length,
     stats: versions.map(versionStats),
+  };
+}
+
+// ─── Import from a live database (introspected schema → new project) ───────────
+
+/**
+ * Create a brand-new project from an introspected `.prisma` schema, holding two versions:
+ * version-0 (the schema as imported, no rules applied — the fallback / migration source) and the
+ * rules-applied version (e.g. "1.0603"), built via `importTwoVersions` sharing stable IDs. The
+ * returned report lists what the rules changed between them.
+ */
+export async function importDatabaseSchema(options: {
+  projectName: string;
+  content: string;
+}): Promise<DatabaseImportResult> {
+  const provider = inferPrismaProviderFromContent(options.content);
+  const originalVersion = "0";
+  const rulesVersion = todayVersionName();
+  // version-0 = the schema as imported (no rules); then the rules-applied version.
+  const { project } = await createImportedProject(options.projectName, provider, originalVersion);
+  await addImportedProjectVersion(project.id, rulesVersion);
+  const { report, stats } = await importTwoVersions({
+    projectName: project.name,
+    originalVersion,
+    rulesVersion,
+    content: options.content,
+  });
+  void refreshProjectStats(project.name);
+
+  return {
+    projectId: project.id,
+    projectName: project.name,
+    originalVersion,
+    rulesVersion,
+    report,
+    stats: {
+      tableCount: stats.tableCount,
+      fieldCount: stats.fieldCount,
+      relationCount: stats.relationCount,
+    },
   };
 }

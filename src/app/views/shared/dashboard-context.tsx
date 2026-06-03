@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useProjectsQuery } from "@/queries/projects";
+import { isOriginalVersion, defaultWorkingVersion } from "@/lib/version-rules";
 import type { SchemaOptions } from "@/types/projects";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -62,8 +63,10 @@ export function DashboardProvider({
   const [selectedVersions, setSelectedVersions] = useState<Record<string, string>>(() => {
     const fromServer: Record<string, string> = { ...initialVersionsMap };
     for (const p of projects) {
-      if (!fromServer[p.id]) {
-        fromServer[p.id] = p.versions[0]?.name ?? "1.0111";
+      // Never default to (or keep a persisted) version-0 — it's read-only.
+      const persisted = fromServer[p.id];
+      if (!persisted || isOriginalVersion(persisted)) {
+        fromServer[p.id] = defaultWorkingVersion(p.versions.map((v) => v.name)) ?? "1.0111";
       }
     }
     return fromServer;
@@ -79,14 +82,17 @@ export function DashboardProvider({
     [activeProjectId, projects],
   );
 
+  const rawSelected = activeProject ? selectedVersions[activeProject.id] : undefined;
   const selectedVersion =
-    (activeProject ? selectedVersions[activeProject.id] : undefined) ??
-    activeProject?.versions[0]?.name ??
+    (rawSelected && !isOriginalVersion(rawSelected) ? rawSelected : undefined) ??
+    defaultWorkingVersion(activeProject?.versions.map((v) => v.name) ?? []) ??
     "No version";
 
   const setSelectedVersion = useCallback(
     (version: string) => {
       if (!activeProject) return;
+      // version-0 is the read-only imported original — not selectable as a working version.
+      if (isOriginalVersion(version)) return;
       setSelectedVersions((cur) => ({ ...cur, [activeProject.id]: version }));
       void persistVersion(activeProject.id, version);
     },

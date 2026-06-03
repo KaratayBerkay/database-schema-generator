@@ -6,6 +6,7 @@ import { useImportsPageState } from "@/hooks/use-imports-page-state";
 import { todayVersionName, parsePicklePreview } from "@/constants/imports";
 import { VersionImportTab } from "@/components/imports/version-import-tab";
 import { ProjectImportTab } from "@/components/imports/project-import-tab";
+import { DatabaseImportSection } from "@/components/imports/database-import-section";
 
 export function ImportsPageContent() {
   const {
@@ -123,6 +124,8 @@ export function ImportsPageContent() {
           )}
         </div>
       </section>
+
+      <DatabaseImportSection />
 
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="px-5 py-4">

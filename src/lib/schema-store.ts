@@ -12,6 +12,8 @@ import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db/client";
 import { ensureNormalizedSchema, replaceNormalizedSchemaFromCanonicalStore } from "@/lib/schema-db/graph";
 import { isInternalMigrationField, normalizeDatabaseIdentifier, toCamelCaseIdentifier } from "@/lib/schema-naming";
+import type { ImportAnalysis, ImportReport, ImportReportEntry } from "@/types/imports";
+import { isOriginalVersion } from "@/lib/version-rules";
 
 const schemaVersion = 1;
 
@@ -1044,7 +1046,12 @@ function pkFieldInput(pkName: string, pkType: string, provider = "postgresql"): 
   return input;
 }
 
-function writeModelStore(store: CanonicalModelStore) {
+function writeModelStore(store: CanonicalModelStore, opts?: { allowOriginal?: boolean }) {
+  // version-0 (the imported original) is frozen so the schema you collect data against can't drift.
+  // Only the import itself may write it (allowOriginal); every user mutation flows through here.
+  if (!opts?.allowOriginal && isOriginalVersion(store.projectVersion)) {
+    throw new Error("Version-0 is the read-only imported schema and can't be edited — it is only used as a migration source.");
+  }
   const projectId = getProjectIdByName(store.projectName);
   if (!projectId) return;
   db.prepare(`
@@ -1394,12 +1401,19 @@ function storeFromPrisma(
         .map((vName: string) => ({ valueId: randomUUID(), name: vName })),
     }))
     .filter((item) => item.name);
+  // Per-model map of *Prisma* field name → canonical field key. Prisma attributes (@unique,
+  // @@unique/@@index, @relation fields/references) reference field names exactly as written in the
+  // schema — for an introspected DB that's the original (often snake_case) column name, NOT the
+  // camelCased canonical name. Resolving against the canonical names would silently drop every
+  // unique constraint and relation field-mapping on a snake_case schema.
+  const prismaNameKeyByModel = new Map<string, Map<string, string>>();
+
   const models = schema.list.filter(isModelBlock).map((model) => {
     const astFields = model.properties.filter(isFieldProperty);
     const canonicalFields = astFields.map(fieldFromPrismaAst);
-    const fieldKeyByName = new Map(canonicalFields.map((f) => [f.name, f.key]));
+    const fieldKeyByName = new Map(astFields.map((af, i) => [af.name, canonicalFields[i]!.key]));
 
-    // Build restrictions using field keys (not names)
+    // Build restrictions using field keys (resolved from the Prisma field names).
     const restrictions: CanonicalRestriction[] = [
       ...astFields
         .map((astField): CanonicalRestriction | null => {
@@ -1434,8 +1448,10 @@ function storeFromPrisma(
         .filter((r): r is CanonicalRestriction => Boolean(r)),
     ];
 
+    const modelKey = randomUUID();
+    prismaNameKeyByModel.set(modelKey, fieldKeyByName);
     return {
-      key: randomUUID(),
+      key: modelKey,
       tableId: randomUUID(),
       name: model.name,
       fields: canonicalFields,
@@ -1443,11 +1459,11 @@ function storeFromPrisma(
     };
   });
 
-  // Second pass: resolve relation.fields / relation.references from names to field keys.
-  // The Prisma @relation attribute stores field names; we need to convert them to keys.
+  // Second pass: resolve relation.fields / relation.references (written as Prisma field names) to
+  // canonical field keys, using the per-model Prisma-name maps built above.
   const fieldKeyByModelAndName = new Map<string, Map<string, string>>();
   for (const model of models) {
-    const byName = new Map(model.fields.filter((f) => !f.relation).map((f) => [f.name, f.key]));
+    const byName = prismaNameKeyByModel.get(model.key)!;
     fieldKeyByModelAndName.set(model.name, byName);
     fieldKeyByModelAndName.set(model.key, byName);
   }
@@ -1772,6 +1788,212 @@ export async function writeModelStoreFromPrismaContent(
   const store = storeFromPrisma(content, projectName, version);
   await writeModelStore(store);
   return modelSyncResult(store);
+}
+
+// ─── Database import: compatibility check + auto-fix ───────────────────────────
+// An introspected `.prisma` schema can contain constructs this app's canonical model can't
+// represent (unsupported column types, composite/absent primary keys, Boolean uniques, bad
+// identifiers). `storeFromPrisma` converts blindly, so before importing we run a normalize
+// pass that coerces what's safe, skips what isn't, and records every change as a report.
+
+const IMPORT_IDENTIFIER_RE = /^[A-Za-z][A-Za-z0-9_]*$/;
+// Canonical field types are *logical* names (e.g. "string", "integer") — the keys of
+// logicalToPrismaTypes — not the Prisma scalar names in `scalarTypes`.
+const importLogicalScalarTypes = new Set(Object.keys(logicalToPrismaTypes));
+
+function sanitizeImportIdentifier(name: string, fallback: string): string {
+  let s = (name ?? "").trim().replace(/[^A-Za-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, "");
+  if (s && !/^[A-Za-z]/.test(s)) s = `X_${s}`;
+  return s || fallback;
+}
+
+function normalizeImportedStore(store: CanonicalModelStore): { store: CanonicalModelStore; report: ImportReport } {
+  const entries: ImportReportEntry[] = [];
+  let fieldsCoerced = 0;
+
+  // Pass A — make every model name a valid, unique identifier; remap back-reference field
+  // types (which carry the target model *name*) when a model is renamed.
+  const usedNames = new Set<string>();
+  const renamed = new Map<string, string>();
+  for (const model of store.models) {
+    let finalName = IMPORT_IDENTIFIER_RE.test(model.name) ? model.name : sanitizeImportIdentifier(model.name, "Model");
+    if (usedNames.has(finalName)) {
+      let i = 2;
+      while (usedNames.has(`${finalName}${i}`)) i++;
+      finalName = `${finalName}${i}`;
+    }
+    usedNames.add(finalName);
+    if (finalName !== model.name) {
+      renamed.set(model.name, finalName);
+      entries.push({ level: "coerced", scope: "model", model: model.name, message: `Table name "${model.name}" isn't a valid identifier — imported as "${finalName}".` });
+      model.name = finalName;
+    }
+  }
+  if (renamed.size) {
+    for (const model of store.models) {
+      for (const field of model.fields) {
+        const mapped = renamed.get(field.type);
+        if (mapped) field.type = mapped;
+      }
+    }
+  }
+
+  // Pass B — keep only models with a single-column primary key. Composite (@@id) and PK-less
+  // tables can't be represented, so they're skipped wholesale.
+  const survivors: CanonicalModel[] = [];
+  const modelsSkipped: string[] = [];
+  for (const model of store.models) {
+    const hasPk = model.fields.some((f) => f.constraints.some((c) => c.type === "PK"));
+    if (!hasPk) {
+      modelsSkipped.push(model.name);
+      entries.push({ level: "skipped", scope: "model", model: model.name, message: `"${model.name}" has no single-column primary key (composite or none) — it can't be represented, so it was skipped.` });
+      continue;
+    }
+    survivors.push(model);
+  }
+  const survivorKeys = new Set(survivors.map((m) => m.key));
+  const survivorNames = new Set(survivors.map((m) => m.name));
+  // Object fields point at another model by its key (owning side) or name (back-reference).
+  const modelKeyOrName = new Set<string>();
+  for (const m of store.models) { modelKeyOrName.add(m.key); modelKeyOrName.add(m.name); }
+  const enumNames = new Set((store.enums ?? []).map((e) => e.name));
+
+  // Pass C — per surviving model: drop dangling relations, coerce unsupported scalar types,
+  // clean restrictions.
+  for (const model of survivors) {
+    const keptFields: CanonicalField[] = [];
+    for (const field of model.fields) {
+      const isObjectField = field.relation !== undefined || modelKeyOrName.has(field.type);
+      if (isObjectField) {
+        const targetSurvives = survivorKeys.has(field.type) || survivorNames.has(field.type);
+        if (!targetSurvives) {
+          entries.push({ level: "coerced", scope: "relation", model: model.name, field: field.name, message: `Relation "${field.name}" referenced a skipped table — the relation was dropped.` });
+          fieldsCoerced++;
+          continue;
+        }
+        keptFields.push(field);
+        continue;
+      }
+      if (!importLogicalScalarTypes.has(field.type) && !enumNames.has(field.type)) {
+        entries.push({ level: "coerced", scope: "field", model: model.name, field: field.name, message: `Field "${field.name}" has unsupported type "${logicalTypeToPrismaType(field.type)}" — imported as String.` });
+        field.type = "string";
+        field.constraints = field.constraints.filter((c) => c.type !== "NATIVE");
+        fieldsCoerced++;
+      }
+      keptFields.push(field);
+    }
+    model.fields = keptFields;
+
+    const fieldByKey = new Map(model.fields.map((f) => [f.key, f]));
+    const restrictionSignatures = new Set<string>();
+    const keptRestrictions: CanonicalRestriction[] = [];
+    for (const r of model.restrictions) {
+      const label = r.type.toLowerCase();
+      if (r.fields.length === 0) {
+        entries.push({ level: "coerced", scope: "restriction", model: model.name, message: `An empty ${label} constraint was dropped.` });
+        fieldsCoerced++;
+        continue;
+      }
+      if (new Set(r.fields).size !== r.fields.length) {
+        entries.push({ level: "coerced", scope: "restriction", model: model.name, message: `A ${label} constraint listed the same field twice — dropped.` });
+        fieldsCoerced++;
+        continue;
+      }
+      if (r.fields.some((fk) => !fieldByKey.has(fk))) {
+        entries.push({ level: "coerced", scope: "restriction", model: model.name, message: `A ${label} constraint referenced a dropped field — dropped.` });
+        fieldsCoerced++;
+        continue;
+      }
+      if (r.type === "UNIQUE" && r.fields.length === 1) {
+        const f = fieldByKey.get(r.fields[0]!);
+        if (f && f.type === "boolean") {
+          entries.push({ level: "coerced", scope: "restriction", model: model.name, field: f.name, message: `Boolean field "${f.name}" can't be unique — the unique constraint was dropped.` });
+          fieldsCoerced++;
+          continue;
+        }
+      }
+      const sig = `${r.type}:${[...r.fields].sort().join(",")}`;
+      if (restrictionSignatures.has(sig)) {
+        entries.push({ level: "coerced", scope: "restriction", model: model.name, message: `A duplicate ${label} constraint was dropped.` });
+        fieldsCoerced++;
+        continue;
+      }
+      restrictionSignatures.add(sig);
+      keptRestrictions.push(r);
+    }
+    model.restrictions = keptRestrictions;
+  }
+
+  // Enum values must be valid identifiers too.
+  for (const en of store.enums ?? []) {
+    const keptValues: typeof en.values = [];
+    for (const v of en.values) {
+      if (IMPORT_IDENTIFIER_RE.test(v.name)) { keptValues.push(v); continue; }
+      const fixed = sanitizeImportIdentifier(v.name, "");
+      if (fixed && IMPORT_IDENTIFIER_RE.test(fixed) && !keptValues.some((k) => k.name === fixed)) {
+        entries.push({ level: "coerced", scope: "enum", model: en.name, message: `Enum value "${v.name}" isn't a valid identifier — imported as "${fixed}".` });
+        keptValues.push({ ...v, name: fixed });
+      } else {
+        entries.push({ level: "skipped", scope: "enum", model: en.name, message: `Enum value "${v.name}" couldn't be made a valid identifier — dropped.` });
+      }
+      fieldsCoerced++;
+    }
+    en.values = keptValues;
+  }
+
+  const normalized: CanonicalModelStore = { ...store, models: survivors };
+  return {
+    store: normalized,
+    report: { entries, modelsIncluded: survivors.map((m) => m.name), modelsSkipped, fieldsCoerced },
+  };
+}
+
+function normalizeImportedStoreFromContent(content: string): { store: CanonicalModelStore; report: ImportReport; provider: string } {
+  // Faithfulness lives in the physical column names: storeFromPrisma preserves each field's
+  // dbName (the @map value, or the source column name), which is what the migration engine reads
+  // and writes — so the imported version stays a valid migration source. The logical field name
+  // is camelCased by the app's normalizeStore invariant; the exact original is also kept verbatim
+  // as the saved raw `.prisma`. Only representability fixes happen below — never structural rewrites.
+  const raw = storeFromPrisma(content, "", "");
+  const { store, report } = normalizeImportedStore(raw);
+  return { store, report, provider: getProviderFromPrisma(content) };
+}
+
+/**
+ * Dry-run a database import: parse the introspected schema, run the compatibility/auto-fix
+ * pass, and return the report + inferred provider. Writes nothing and creates no project.
+ */
+export function analyzeImportSchema(content: string): ImportAnalysis {
+  const { report, provider } = normalizeImportedStoreFromContent(content);
+  return { provider, report };
+}
+
+/**
+ * Write an introspected schema into a project as **two versions**, into *already-created* version
+ * rows: `originalVersion` (version-0) holds the schema exactly as converted — no rules applied, so
+ * every table is kept (even ones with no primary key) and types stay as-is; `rulesVersion` holds the
+ * rules-applied (normalized) schema. Both are built from one parse so they share stable table/field
+ * IDs — that's what lets the migration engine later collect data against version-0 and push it into
+ * the rules-applied version. Returns the rule-change report + counts for the rules-applied version.
+ * (Project/version creation lives in schema-imports-store to avoid a schema-store ↔ projects-store cycle.)
+ */
+export async function importTwoVersions(opts: {
+  projectName: string;
+  originalVersion: string;
+  rulesVersion: string;
+  content: string;
+}): Promise<{ report: ImportReport; stats: PrismaModelSyncResult }> {
+  // Build once → shared stable IDs across both versions.
+  const rawStore = storeFromPrisma(opts.content, opts.projectName, opts.originalVersion);
+  await writeModelStore(rawStore, { allowOriginal: true });
+
+  const clone = structuredClone(rawStore) as CanonicalModelStore;
+  const { store: normalized, report } = normalizeImportedStore(clone);
+  normalized.projectName = opts.projectName;
+  normalized.projectVersion = opts.rulesVersion;
+  await writeModelStore(normalized);
+
+  return { report, stats: modelSyncResult(normalized) };
 }
 
 export async function getSchemaStore(projectName: string, version: string) {

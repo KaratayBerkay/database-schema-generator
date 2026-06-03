@@ -1,5 +1,6 @@
 import { describe, it, expect, afterAll } from "vitest";
 import { caller, DEFAULT_SCHEMA_OPTIONS } from "./helpers";
+import { analyzeImportSchema } from "@/lib/schema-store";
 
 const SOURCE_PROJECT = "Import Source Alpha";
 const VERSION = "1.0111";
@@ -7,6 +8,34 @@ const VERSION = "1.0111";
 let sourceProjectId: string;
 let importedVersionProjectId: string;
 let importedProjectProjectId: string;
+let dbImportProjectId: string;
+
+// An introspected schema that violates several of the app's rules: a Boolean @unique, an
+// unsupported column type, and a table with no primary key.
+const DB_IMPORT_PRISMA = `
+datasource db {
+  provider = "postgresql"
+}
+
+model GoodUser {
+  id          Int      @id
+  email       String   @unique
+  active      Boolean  @unique
+  shape       Geometry
+  role        Role
+  created_at  DateTime?
+  account_ref String   @unique
+}
+
+model NoPkTable {
+  label String
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+`;
 
 const setupSourceProject = async () => {
   if (sourceProjectId) return;
@@ -39,7 +68,7 @@ const setupSourceProject = async () => {
 };
 
 afterAll(async () => {
-  const ids = [sourceProjectId, importedVersionProjectId, importedProjectProjectId].filter(Boolean);
+  const ids = [sourceProjectId, importedVersionProjectId, importedProjectProjectId, dbImportProjectId].filter(Boolean);
   for (const id of ids) {
     try { await caller.projects.delete({ id }); } catch { /* best-effort cleanup */ }
   }
@@ -137,6 +166,76 @@ describe("imports.parse", () => {
     const bad = JSON.stringify({ pickleVersion: 99, type: "version", project: {}, version: {} });
     await expect(
       caller.imports.parse({ content: bad }),
+    ).rejects.toThrow();
+  });
+});
+
+describe("imports — database schema compatibility", () => {
+  it("auto-fixes and reports incompatibilities (pure analyze)", () => {
+    const analysis = analyzeImportSchema(DB_IMPORT_PRISMA);
+    expect(analysis.provider).toBe("postgresql");
+    expect(analysis.report.modelsIncluded).toContain("GoodUser");
+    expect(analysis.report.modelsIncluded).not.toContain("NoPkTable");
+    expect(analysis.report.modelsSkipped).toContain("NoPkTable");
+    // unsupported scalar type coerced to String
+    expect(analysis.report.entries.some(
+      (e) => e.level === "coerced" && e.scope === "field" && e.model === "GoodUser" && e.field === "shape",
+    )).toBe(true);
+    // Boolean @unique dropped
+    expect(analysis.report.entries.some(
+      (e) => e.level === "coerced" && e.scope === "restriction" && e.field === "active",
+    )).toBe(true);
+  });
+
+  it("creates a project with version-0 (raw) and a rules-applied version", async () => {
+    const result = await caller.imports.importFromDatabase({
+      projectName: "DB Import Project One",
+      content: DB_IMPORT_PRISMA,
+    });
+    expect(result?.projectId).toBeDefined();
+    dbImportProjectId = result!.projectId;
+    expect(result?.originalVersion).toBe("0");
+    expect(result?.rulesVersion).toBeDefined();
+    expect(result?.stats.tableCount).toBe(1); // rules version: GoodUser only
+
+    // version-0 = imported as-is: keeps the PK-less table and the original (unsupported) type.
+    const v0 = await caller.tables.list({ projectName: result!.projectName, version: "0" });
+    expect(v0?.some((m) => m.name === "GoodUser")).toBe(true);
+    expect(v0?.some((m) => m.name === "NoPkTable")).toBe(true);
+    const v0fields = await caller.fields.list({ projectName: result!.projectName, version: "0", modelName: "GoodUser" });
+    expect(v0fields?.fields.find((f) => f.name === "shape")?.type).toBe("Geometry"); // raw, not coerced
+
+    // rules-applied version: rules dropped the PK-less table and coerced the unsupported type.
+    const v1 = await caller.tables.list({ projectName: result!.projectName, version: result!.rulesVersion });
+    expect(v1?.some((m) => m.name === "GoodUser")).toBe(true);
+    expect(v1?.some((m) => m.name === "NoPkTable")).toBe(false);
+    const v1fields = await caller.fields.list({ projectName: result!.projectName, version: result!.rulesVersion, modelName: "GoodUser" });
+    expect(v1fields?.fields.find((f) => f.name === "shape")?.type).toBe("String"); // coerced
+    expect(v1fields?.fields.find((f) => f.name === "active")?.unique).toBe(false); // boolean unique dropped
+    expect(v1fields?.fields.some((f) => f.dbName === "created_at")).toBe(true); // physical name preserved
+    // A @unique on a snake_case column must survive conversion (Prisma names resolve to keys).
+    expect(v1fields?.fields.find((f) => f.dbName === "account_ref")?.unique).toBe(true);
+  });
+
+  it("version-0 is read-only — edits are rejected, the rules version is editable", async () => {
+    const proj = (await caller.projects.list()).find((p) => p.id === dbImportProjectId)!;
+    const rulesVersion = proj.versions.find((v) => v.name !== "0")!.name;
+    const field = {
+      modelName: "GoodUser", name: "note", type: "String", nullable: true, unique: false,
+      defaultValue: "", comment: "", updatedAtAttribute: false, isId: false,
+    };
+
+    await expect(
+      caller.fields.create({ projectName: proj.name, version: "0", ...field }),
+    ).rejects.toThrow(/read-only|version-0/i);
+
+    const ok = await caller.fields.create({ projectName: proj.name, version: rulesVersion, ...field });
+    expect(ok).toBeDefined();
+  });
+
+  it("rejects a too-short new project name", async () => {
+    await expect(
+      caller.imports.importFromDatabase({ projectName: "short", content: DB_IMPORT_PRISMA }),
     ).rejects.toThrow();
   });
 });

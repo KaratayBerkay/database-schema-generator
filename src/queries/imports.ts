@@ -8,5 +8,7 @@ export function useImportMutations() {
   return {
     importVersion: useMutation(trpc.imports.importVersion.mutationOptions()),
     importProject: useMutation(trpc.imports.importProject.mutationOptions()),
+    analyzeDatabaseImportFromUrl: useMutation(trpc.imports.analyzeDatabaseImportFromUrl.mutationOptions()),
+    importFromDatabase: useMutation(trpc.imports.importFromDatabase.mutationOptions()),
   };
 }
