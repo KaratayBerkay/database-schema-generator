@@ -147,6 +147,27 @@ function relationLine(
   return `  ${side.fieldName} ${targetTable.name}${typeSuffix} ${attrs.join(" ")}`;
 }
 
+// Imported schemas can store unnamed list back-references as plain fields whose logicalType is a
+// model name (with no relation side in schema_relations). Render those as relation fields — never
+// as scalar fields, where fieldLine would append `@map(dbName)` and Prisma rejects it with P1012
+// ("@map cannot be used on relation fields"). The opposite (owning) side carries the FK and the
+// relation name, so reuse that name to keep both sides matched.
+function backReferenceLine(
+  field: SchemaGraphField,
+  tableId: string,
+  tableByName: Map<string, SchemaGraphTable>,
+  relations: SchemaGraphRelation[],
+) {
+  const typeSuffix = field.isArray ? "[]" : field.nullable ? "?" : "";
+  const ownerTableId = tableByName.get(field.logicalType)?.id;
+  // The owning side owns the FK: its source is the referencing model, its target is this table.
+  const owning = ownerTableId
+    ? relations.find((relation) => relation.sourceTableId === ownerTableId && relation.targetTableId === tableId)
+    : undefined;
+  const attr = owning ? ` @relation(${quote(owning.name)})` : "";
+  return `  ${field.name} ${field.logicalType}${typeSuffix}${attr}`;
+}
+
 function blockConstraint(constraint: SchemaGraphConstraint, fieldById: Map<string, SchemaGraphField>) {
   if (constraint.fieldIds.length <= 1 && constraint.type !== "INDEX") return "";
 
@@ -190,6 +211,7 @@ export function renderPrismaSchemaFromGraph(
   options: { includeMigrationReference?: boolean } = {},
 ) {
   const tableById = new Map(graph.tables.map((table) => [table.id, table]));
+  const tableByName = new Map(graph.tables.map((table) => [table.name, table]));
   const fieldById = new Map(graph.fields.map((field) => [field.id, field]));
   const fieldsByTable = new Map<string, SchemaGraphField[]>();
   const constraintsByTable = new Map<string, SchemaGraphConstraint[]>();
@@ -207,7 +229,13 @@ export function renderPrismaSchemaFromGraph(
   const chunks = [renderPrelude(graph)];
 
   for (const item of graph.enums) {
-    const values = item.values.map((value) => `  ${value.name}`).join("\n");
+    const values = item.values
+      .map((value) =>
+        value.dbName && value.dbName !== value.name
+          ? `  ${value.name} @map(${quote(value.dbName)})`
+          : `  ${value.name}`,
+      )
+      .join("\n");
     chunks.push(`enum ${item.name} {\n${values}\n}`);
   }
 
@@ -223,7 +251,13 @@ export function renderPrismaSchemaFromGraph(
     lines.push(
       ...fields
         .sort((left, right) => left.sortOrder - right.sortOrder)
-        .map((field) => fieldLine(field, constraints, graph.project.provider)),
+        .map((field) =>
+          // A field whose logicalType is a model name is a relation back-reference that was
+          // stored as a plain field (e.g. by schema import) — render it as a relation, not a scalar.
+          tableByName.has(field.logicalType)
+            ? backReferenceLine(field, table.id, tableByName, graph.relations)
+            : fieldLine(field, constraints, graph.project.provider),
+        ),
     );
 
     if (options.includeMigrationReference) {
@@ -231,10 +265,12 @@ export function renderPrismaSchemaFromGraph(
     }
 
     for (const relation of graph.relations) {
-      const side = relation.sides.find((item) => item.tableId === table.id);
-      if (!side) continue;
-      const rendered = relationLine(relation, side, tableById, fieldById);
-      if (rendered) lines.push(rendered);
+      // A self-relation has BOTH sides on the same table (owning + back-reference); render every
+      // matching side, not just the first, or Prisma reports the owning side has no opposite (P1012).
+      for (const side of relation.sides.filter((item) => item.tableId === table.id)) {
+        const rendered = relationLine(relation, side, tableById, fieldById);
+        if (rendered) lines.push(rendered);
+      }
     }
 
     lines.push(

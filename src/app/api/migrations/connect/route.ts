@@ -9,7 +9,7 @@ import { randomUUID } from "node:crypto";
 import { getSchema } from "@mrleebo/prisma-ast";
 import type { Model } from "@mrleebo/prisma-ast";
 import { db as appDb } from "@/lib/db/client";
-import { saveConnection } from "@/lib/db/migration-connections";
+import { findConnectionConflict, saveConnection } from "@/lib/db/migration-connections";
 
 // Probe a TCP port to detect the actual database protocol before committing
 // to a Prisma connection. MySQL sends a server greeting immediately on connect;
@@ -133,6 +133,17 @@ export async function POST(request: Request) {
       `Provider mismatch: this project is configured as ${projectRow.provider} but the connection uses ${provider}. ` +
       `Create a ${projectRow.provider} connection or change the project's database provider in Settings.`,
       400,
+    );
+  }
+
+  // ── Reject duplicates within the project (checked before any network call) ─
+  // A connection can't reuse an existing name, and the same database can't be added twice.
+  const conflict = findConnectionConflict(projectRow.id, { name: connectionName, provider, host, port, user, password, database });
+  if (conflict) {
+    return jsonError(
+      conflict.reason === "name"
+        ? `A connection named "${conflict.existingName}" already exists for this project. Choose a different name.`
+        : `This database is already saved as "${conflict.existingName}". You can't add the same connection twice.`,
     );
   }
 

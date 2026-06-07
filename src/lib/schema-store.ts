@@ -187,6 +187,8 @@ type CanonicalModel = {
 type CanonicalEnumValue = {
   valueId: string;
   name: string;
+  /** The mapped DB value when the enum member uses `@map("...")` (e.g. name `in_transit` → "in transit"). */
+  dbName?: string;
 };
 
 type CanonicalEnum = {
@@ -576,9 +578,11 @@ function normalizeEnum(value: unknown): CanonicalEnum | null {
       }
       if (v && typeof v === "object") {
         const vRecord = v as Record<string, unknown>;
+        const dbName = getString(vRecord.dbName);
         return {
           valueId: getString(vRecord.valueId) || randomUUID(),
           name: getString(vRecord.name) || "",
+          ...(dbName ? { dbName } : {}),
         };
       }
       return { valueId: randomUUID(), name: "" };
@@ -1396,9 +1400,20 @@ function storeFromPrisma(
       enumId: randomUUID(),
       name: item.name,
       values: (item.enumerators ?? item.properties ?? [])
-        .map((value: any) => value.name)
-        .filter(Boolean)
-        .map((vName: string) => ({ valueId: randomUUID(), name: vName })),
+        .filter((value: any) => value && value.name)
+        .map((value: any) => {
+          // Preserve `@map("...")` on enum members (e.g. `in_transit @map("in transit")`) so the
+          // imported enum stays faithful to the DB values — otherwise a migration renders the bare
+          // identifier and the target enum rejects the original value.
+          const mapAttr = (value.attributes ?? []).find((a: any) => a?.name === "map");
+          const rawArg = mapAttr?.args?.[0]?.value;
+          const mapped = typeof rawArg === "string" ? rawArg.replace(/^["']|["']$/g, "") : "";
+          return {
+            valueId: randomUUID(),
+            name: value.name,
+            ...(mapped && mapped !== value.name ? { dbName: mapped } : {}),
+          };
+        }),
     }))
     .filter((item) => item.name);
   // Per-model map of *Prisma* field name → canonical field key. Prisma attributes (@unique,
@@ -1469,6 +1484,19 @@ function storeFromPrisma(
   }
 
   const modelByName = new Map(models.map((m) => [m.name, m]));
+
+  // Mark implicit relation back-references. An introspected schema omits `@relation` on the
+  // unambiguous list/back side (e.g. `country { city city[] }`), so `fieldFromPrismaAst` leaves
+  // `.relation` undefined and it looks like a plain column whose type is a model name. Reconstruct
+  // it as a back-reference relation (no fields/references) so the imported project is well-formed —
+  // every relation gets both sides, exactly like a project built natively in the app. Without this,
+  // such relations end up one-sided and render with a blank target table and "one-to-one".
+  for (const model of models) {
+    for (const field of model.fields) {
+      if (field.relation || !modelByName.has(field.type)) continue;
+      field.relation = { name: "", fields: [], references: [], onDelete: "", onUpdate: "" };
+    }
+  }
 
   for (const model of models) {
     for (const field of model.fields) {

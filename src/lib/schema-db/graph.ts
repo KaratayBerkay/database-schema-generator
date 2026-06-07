@@ -58,7 +58,7 @@ type CanonicalStore = {
   projectName: string;
   projectVersion: string;
   provider: string;
-  enums?: { enumId: string; name: string; values: { valueId: string; name: string }[] }[];
+  enums?: { enumId: string; name: string; values: { valueId: string; name: string; dbName?: string }[] }[];
   models: CanonicalModel[];
 };
 
@@ -553,7 +553,7 @@ function migrateLegacyStore(project: DbProject, version: DbVersion, store: Canon
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
     item.values.forEach((value, valueIndex) => {
-      insertValue.run(randomUUID(), value.valueId, enumRowId, value.name, null, valueIndex, stamp, stamp);
+      insertValue.run(randomUUID(), value.valueId, enumRowId, value.name, value.dbName ?? null, valueIndex, stamp, stamp);
     });
   }
 }
@@ -761,7 +761,7 @@ export function graphToCanonicalStore(graph: ProjectVersionGraph): CanonicalStor
     enums: graph.enums.map((item) => ({
       enumId: item.enumKey,
       name: item.name,
-      values: item.values.map((value) => ({ valueId: value.valueKey, name: value.name })),
+      values: item.values.map((value) => ({ valueId: value.valueKey, name: value.name, dbName: value.dbName ?? undefined })),
     })),
     models: graph.tables.map((table) => {
       const tableFields = fieldsByTable.get(table.id) ?? [];

@@ -288,13 +288,17 @@ function loadPkSkipFields(
 // ─── stage 2: zod vs target schema (rename v1 → v2 field names first) ────────
 
 function prismaTypeToZod(type: string, optional: boolean): z.ZodTypeAny {
+  // Numeric and date checks coerce: the pg/mysql drivers return Decimal/BigInt (and timestamp)
+  // columns as strings to preserve precision, and the native-driver run re-inserts those strings
+  // fine. Strict z.number() would over-report every Decimal value as "expected number, received
+  // string". Coercion mirrors Stage 1's isCoercible and the actual run behavior.
   let base: z.ZodTypeAny;
   switch (type) {
     case "String":   base = z.string(); break;
-    case "Int":      base = z.number().int(); break;
-    case "BigInt":   base = z.bigint(); break;
+    case "Int":      base = z.coerce.number().int(); break;
+    case "BigInt":   base = z.coerce.bigint(); break;
     case "Float":
-    case "Decimal":  base = z.number(); break;
+    case "Decimal":  base = z.coerce.number(); break;
     case "Boolean":  base = z.boolean(); break;
     case "DateTime": base = z.coerce.date(); break;
     default:         base = z.unknown(); break;
@@ -429,7 +433,12 @@ function runUpgradeRules(
       }
 
       const conversion = checkTypeConversion(sourceField.type ?? "", targetField.type ?? "");
-      const lossyApproved = (approvedLossy.get(targetModel.name) ?? new Map<string, ApprovedLossyEntry2>()).has(targetName);
+      // Approved-lossy entries are keyed by the warning's logical (canonical) field name; match on
+      // that first, falling back to the physical dbName. They differ for snake_case columns — logical
+      // "ipBlock" vs db "ip_block" — which otherwise drops the approval and over-reports the error.
+      const lossyMap = approvedLossy.get(targetModel.name) ?? new Map<string, ApprovedLossyEntry2>();
+      const lossyApproved =
+        lossyMap.has((targetField.name ?? "").toLowerCase()) || lossyMap.has(targetName.toLowerCase());
       if (!conversion.compatible && !lossyApproved) {
         issues.push({
           model: targetModel.name,

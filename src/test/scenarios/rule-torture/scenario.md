@@ -14,9 +14,16 @@ import rules. Push it to a real database **without this application**, then impo
 export PGPASSWORD=dev
 psql postgresql://dev:dev@localhost:54321/dev -c "DROP DATABASE IF EXISTS torture_test;" -c "CREATE DATABASE torture_test;"
 psql postgresql://dev:dev@localhost:54321/torture_test -f src/test/scenarios/rule-torture/schema.sql
+psql postgresql://dev:dev@localhost:54321/torture_test -f src/test/scenarios/rule-torture/seed.sql
 ```
 
 Then in the app: **Imports → `postgresql://dev:dev@localhost:54321/torture_test`** → Connect & analyze → Import.
+
+`seed.sql` populates all 8 tables with distinct row counts (2,3,…,9) so a 0 → rules data migration
+has something to carry and something to lose: the skipped tables `events_log` (4) and `order_item`
+(8) carry **0** into the rules version; every kept table round-trips its full count; `shipment` (9)
+survives with its `order_item` relation pruned but `order_id`/`product_id` columns intact. See the
+full count table in `../torture-test-guide.md` §A.5.
 
 ## What each construct tests
 

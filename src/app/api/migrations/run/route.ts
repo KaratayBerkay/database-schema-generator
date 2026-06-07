@@ -758,6 +758,15 @@ const escVal = (v, provider) => {
     if (p === 'mysql') return "'" + v.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '') + "'";
     return "'" + v.toISOString() + "'";
   }
+  // Buffer / bytea: a Buffer survives the stdin JSON round-trip as { type:'Buffer', data:[...] }
+  // (or stays a real Buffer if not serialised). Emit a backslash-free hex literal per provider —
+  // the template-literal wrapping this script strips lone backslashes, so a '\\x...' literal is unsafe.
+  if (Buffer.isBuffer(v) || (v && typeof v === 'object' && v.type === 'Buffer' && Array.isArray(v.data))) {
+    const hex = (Buffer.isBuffer(v) ? v : Buffer.from(v.data)).toString('hex');
+    const p = (provider ?? '').toLowerCase();
+    if (p === 'postgresql' || p === 'postgres') return "decode('" + hex + "', 'hex')";
+    return "X'" + hex + "'";
+  }
   // ISO datetime strings stored in snapshot — MySQL needs 'YYYY-MM-DD HH:MM:SS'
   if (typeof v === 'string' && ISO_RE.test(v)) {
     const p = (provider ?? '').toLowerCase();
@@ -766,6 +775,9 @@ const escVal = (v, provider) => {
       if (!isNaN(d.getTime())) return "'" + d.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '') + "'";
     }
   }
+  // JSON / jsonb (plain objects + arrays): serialise to a quoted JSON literal so { sku: 1 } inserts
+  // as '{"sku":1}' instead of the broken '[object Object]' (which Postgres rejects → row dropped).
+  if (typeof v === 'object') return "'" + JSON.stringify(v).replace(/'/g, "''") + "'";
   return "'" + String(v).replace(/'/g, "''") + "'";
 };
 
@@ -823,8 +835,19 @@ const main = async () => {
         await client.query('BEGIN');
         try {
           for (const rec of records) {
-            try { await client.query(buildSql(tableName, rec, idField, provider)); created++; }
-            catch (e) { errorDetails.push({ error: e?.message ?? String(e), record: rec }); }
+            // Wrap each row in a SAVEPOINT: Postgres aborts the entire transaction on any error, so
+            // without this one bad row would poison the rest of the table (and the final COMMIT would
+            // roll back even the rows that succeeded). Rolling back to the savepoint keeps the
+            // transaction usable and preserves every good row.
+            try {
+              await client.query('SAVEPOINT row_sp');
+              await client.query(buildSql(tableName, rec, idField, provider));
+              await client.query('RELEASE SAVEPOINT row_sp');
+              created++;
+            } catch (e) {
+              try { await client.query('ROLLBACK TO SAVEPOINT row_sp'); } catch (_) {}
+              errorDetails.push({ error: e?.message ?? String(e), record: rec });
+            }
           }
           await client.query('COMMIT');
         } catch (e) {
