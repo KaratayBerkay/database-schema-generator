@@ -1,5 +1,7 @@
 "use client";
 
+import { useEscapeKey } from "@/hooks/use-escape-key";
+
 type DestroyDeployModalProps = {
   isOpen: boolean;
   newTargetVersion: string;
@@ -16,6 +18,7 @@ export function DestroyDeployModal({
   destroyDbPreview, destroyDbPreviewLoading,
   onConfirmTextChange, onCancel, onConfirm,
 }: DestroyDeployModalProps) {
+  useEscapeKey(onCancel, isOpen);
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">

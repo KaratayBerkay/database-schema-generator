@@ -11,6 +11,7 @@ import { VersionDiffBadge } from "@/components/shared/version-diff-badge";
 import { EnumEditPanel, type CanonicalEnum } from "@/components/enums/enum-edit-panel";
 import { validateEnumName } from "@/constants/enums";
 import { EmptyState, LoadingCard } from "@/components/built";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 export function EnumsPageContent() {
   const { projectName, version, provider, hasProject } = useProjectInfo();
@@ -21,6 +22,7 @@ export function EnumsPageContent() {
   const [editingEnum, setEditingEnum] = useState<CanonicalEnum | null>(null);
   const [search, setSearch] = useState("");
   const [confirmDeleteName, setConfirmDeleteName] = useState("");
+  useEscapeKey(() => setConfirmDeleteName(""), !!confirmDeleteName);
 
   const { data: versionDiff } = useVersionDiff(projectName, version);
   const { diffByEnumId } = useVersionDiffLookup(projectName, version);

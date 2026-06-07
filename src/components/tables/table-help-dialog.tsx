@@ -3,6 +3,7 @@
 import { pkExampleLine, type ProviderKey } from "@/constants/tables";
 import type { HelpDialog } from "@/types/tables";
 import { CloseIcon } from "@/components/tables/table-icons";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type PkOption = { value: string; label: string; summary: string; badgeClass: string };
 
@@ -19,6 +20,7 @@ type TableHelpDialogProps = {
 export function TableHelpDialog({
   helpDialog, pkTypes, providerDisplay, pkName, pkType, activeProvider, onClose,
 }: TableHelpDialogProps) {
+  useEscapeKey(onClose, !!helpDialog);
   if (!helpDialog) return null;
   return (
     <div

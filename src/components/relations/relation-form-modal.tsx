@@ -5,6 +5,7 @@ import { classNames } from "@/lib/utils";
 import { toCamelCaseIdentifier } from "@/lib/schema-naming";
 import type { PrismaField, PrismaModel } from "@/lib/schema-store";
 import type { RelationDraft } from "@/types/relation";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type RelationFormModalProps = {
   isOpen: boolean;
@@ -80,6 +81,7 @@ export function RelationFormModal({
   models, tablesIsLoading, targetFieldsIsLoading, selectableTargetFields,
   onCancel, onSave, onUpdateDraft, onTableSearchChange, onTablePageChange, onFkDbNameChange,
 }: RelationFormModalProps) {
+  useEscapeKey(onCancel, isOpen);
   if (!isOpen) return null;
 
   const filteredModels = models.filter((m) => m.name.toLowerCase().includes(modalTableSearch.toLowerCase()));

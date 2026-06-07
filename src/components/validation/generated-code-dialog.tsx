@@ -3,6 +3,7 @@
 import { IconCopy, IconCheck, IconX } from "@tabler/icons-react";
 import { classNames } from "@/lib/utils";
 import { highlightCode } from "@/lib/code-highlighting";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type GeneratedCodeDialogProps = {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export function GeneratedCodeDialog({
   isOpen, code, filePath, schemaName, modelName, date,
   schemaCount, enumCount, warnings, copied, onCopy, onClose,
 }: GeneratedCodeDialogProps) {
+  useEscapeKey(onClose, isOpen);
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-3">

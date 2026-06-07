@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 import type { SchemaWarning } from "@/lib/schema-warnings-store";
 
 export function ResolveModal({
@@ -32,6 +33,8 @@ export function ResolveModal({
   const enumName = warning.entityName.split(".")[0] ?? "";
   const removedValue = warning.entityName.split(".")[1] ?? "";
   const enumAvailable = enumValuesMap[enumName] ?? [];
+
+  useEscapeKey(onClose);
 
   // Auto-select the first available replacement as soon as options load —
   // prevents the Approve button being stuck disabled on the empty placeholder.

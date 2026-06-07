@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { VersionDiffBadge } from "@/components/shared/version-diff-badge";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 export type FkTypeMismatch = {
   fieldName: string;
@@ -30,11 +30,7 @@ export function FkTypeDetailModal({
   trackingHref: string;
   onClose: () => void;
 }) {
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   return (
     <div

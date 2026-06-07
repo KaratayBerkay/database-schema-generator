@@ -3,6 +3,7 @@
 import { classNames } from "@/lib/utils";
 import type { ConnectionRecord, ModelComparisonResult, MigrationOrderItem, PreflightItem } from "@/types/migrations";
 import type { SchemaWarning } from "@/lib/schema-warnings-store";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type CollectTable = { name: string; count: number };
 
@@ -109,6 +110,7 @@ export function PreflightModal({
   preflightTab, preflightPage, preflightPageSize,
   onTabChange, onPageChange, onCancel, onBeginMigration,
 }: PreflightModalProps) {
+  useEscapeKey(onCancel, isOpen);
   if (!isOpen) return null;
 
   const { crucial, warning } = buildPreflightItems(comparison, warnings);

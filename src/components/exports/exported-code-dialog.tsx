@@ -3,6 +3,7 @@
 import { IconCopy, IconCheck, IconX, IconDownload } from "@tabler/icons-react";
 import { classNames } from "@/lib/utils";
 import { highlightCode } from "@/lib/code-highlighting";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type DialogState = {
   exportId: string;
@@ -22,6 +23,7 @@ type ExportedCodeDialogProps = {
 };
 
 export function ExportedCodeDialog({ dialog, copied, onCopy, onDownload, onClose }: ExportedCodeDialogProps) {
+  useEscapeKey(onClose, !!dialog);
   if (!dialog) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-3">

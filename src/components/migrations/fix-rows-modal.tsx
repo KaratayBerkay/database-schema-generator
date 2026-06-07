@@ -1,6 +1,7 @@
 "use client";
 
 import type { InvalidRow } from "@/types/migrations";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type FixRowsModalProps = {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export function FixRowsModal({
   isOpen, invalidRows, rowPatches, fixModalLoading, fixModalError,
   onPatch, onCancel, onFixAndMigrate,
 }: FixRowsModalProps) {
+  useEscapeKey(onCancel, isOpen);
   if (!isOpen) return null;
 
   const editCount = Object.values(rowPatches).reduce((s, p) => s + Object.keys(p).length, 0);

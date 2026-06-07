@@ -2,6 +2,7 @@
 
 import { classNames } from "@/lib/utils";
 import type { PrismaModel } from "@/lib/schema-store";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type SelectorTone = "cyan" | "violet" | "amber" | "orange" | "fuchsia";
 
@@ -74,6 +75,7 @@ export function TableSelectorModal({
   onPageChange,
   typeBadgeClass,
 }: TableSelectorModalProps) {
+  useEscapeKey(onClose, isOpen);
   if (!isOpen) return null;
 
   const styles = toneClasses[tone];
