@@ -2,6 +2,7 @@
 
 import { classNames } from "@/lib/utils";
 import type { ExportType } from "@/constants/exports";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type PickleConfirmDialogProps = {
   pendingPickle: ExportType | null;
@@ -12,6 +13,7 @@ type PickleConfirmDialogProps = {
 };
 
 export function PickleConfirmDialog({ pendingPickle, version, projectName, onConfirm, onCancel }: PickleConfirmDialogProps) {
+  useEscapeKey(onCancel, !!pendingPickle);
   if (!pendingPickle) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-3">

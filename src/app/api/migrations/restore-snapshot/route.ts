@@ -45,6 +45,16 @@ const escVal = (v, provider) => {
   }
   if (typeof v === 'number' || typeof v === 'bigint') return String(v);
   if (v instanceof Date) return "'" + v.toISOString() + "'";
+  // Buffer / bytea: survives the stdin JSON round-trip as { type:'Buffer', data:[...] }. Emit a
+  // backslash-free hex literal per provider (the wrapping template-literal strips lone backslashes).
+  if (Buffer.isBuffer(v) || (v && typeof v === 'object' && v.type === 'Buffer' && Array.isArray(v.data))) {
+    const hex = (Buffer.isBuffer(v) ? v : Buffer.from(v.data)).toString('hex');
+    const p = (provider ?? '').toLowerCase();
+    if (p === 'postgresql' || p === 'postgres') return "decode('" + hex + "', 'hex')";
+    return "X'" + hex + "'";
+  }
+  // JSON / jsonb (plain objects + arrays): serialise to a quoted JSON literal instead of '[object Object]'.
+  if (typeof v === 'object') return "'" + JSON.stringify(v).replace(/'/g, "''") + "'";
   return "'" + String(v).replace(/'/g, "''") + "'";
 };
 

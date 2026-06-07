@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { TableDiff } from "@/lib/version-diff/detect-changes";
 import { VersionDiffBadge } from "@/components/shared/version-diff-badge";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 export function TableDiffDetailModal({
   tableDiff,
@@ -19,11 +20,7 @@ export function TableDiffDetailModal({
   onApproveAll?: (ids: string[]) => Promise<void>;
   onClose: () => void;
 }) {
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   const [approving, setApproving] = useState(false);
 

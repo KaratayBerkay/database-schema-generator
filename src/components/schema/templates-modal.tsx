@@ -6,6 +6,7 @@ import { providers as allProviders } from "@/constants/projects";
 import { typeBadgeClass, typeSelectClass } from "@/constants/schema";
 import type { FieldTemplate } from "@/lib/field-template-store";
 import type { useFieldTemplates } from "@/hooks/use-field-templates";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type TemplateState = ReturnType<typeof useFieldTemplates>;
 
@@ -37,6 +38,7 @@ export function TemplatesModal({
   addTemplateToTable, setTemplateProviderFilter, setTemplateTypeFilter,
   setTemplatePage, setTemplateOverrideNames,
 }: TemplatesModalProps) {
+  useEscapeKey(onClose, isOpen);
   if (!isOpen) return null;
   return (
     <div

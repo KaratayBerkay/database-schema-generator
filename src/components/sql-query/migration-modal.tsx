@@ -2,6 +2,7 @@
 
 import { classNames } from "@/lib/utils";
 import type { MigrateResult } from "@/types/sql-query";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type MigrationModalProps = {
   isOpen: boolean;
@@ -15,6 +16,7 @@ type MigrationModalProps = {
 export function MigrationModal({
   isOpen, migrating, migrateResult, deletingSchema, onDeleteSchema, onClose,
 }: MigrationModalProps) {
+  useEscapeKey(onClose, isOpen);
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-3">

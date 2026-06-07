@@ -2,6 +2,7 @@
 
 import { classNames } from "@/lib/utils";
 import type { MigrationOrderItem } from "@/types/migrations";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type CollectTable = { name: string; count: number };
 type CollectMismatch = { schemaTable: string; resolvedTable: string | null };
@@ -28,6 +29,7 @@ export function CollectResultModal({
   collectTimestamp, collectModalPage, migrationOrder,
   onPageChange, onCancel, onProceed,
 }: CollectResultModalProps) {
+  useEscapeKey(onCancel, isOpen && isVersionPlan);
   if (!isOpen || !isVersionPlan) return null;
 
   const PAGE_SIZE = 15;

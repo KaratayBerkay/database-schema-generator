@@ -52,82 +52,69 @@ export type MigrationOrderItem = {
 
 export function computeMigrationOrder(graph: ProjectVersionGraph): MigrationOrderItem[] {
   const tableById = new Map(graph.tables.map((table) => [table.id, table]));
-  const dependencies = new Map<string, Set<string>>();
-  const dependents = new Map<string, Set<string>>();
 
+  // FK direction: a relation's source owns the FK (child) and references its target (parent).
+  // Rows must be inserted parent-before-child so the FK is satisfiable, so the child depends on
+  // the parent. Self-relations impose no cross-table ordering and are ignored here.
+  const parents = new Map<string, Set<string>>();   // table -> tables it references (must come first)
+  const children = new Map<string, Set<string>>();  // table -> tables that reference it
   for (const table of graph.tables) {
-    dependencies.set(table.id, new Set());
-    dependents.set(table.id, new Set());
+    parents.set(table.id, new Set());
+    children.set(table.id, new Set());
   }
-
   for (const relation of graph.relations) {
-    if (!tableById.has(relation.sourceTableId) || !tableById.has(relation.targetTableId)) {
-      continue;
-    }
-
-    // The migration bridge writes dependent/related rows first so parent rows can
-    // reconnect using the old-reference -> new-id map.
-    dependencies.get(relation.targetTableId)?.add(relation.sourceTableId);
-    dependents.get(relation.sourceTableId)?.add(relation.targetTableId);
+    if (!tableById.has(relation.sourceTableId) || !tableById.has(relation.targetTableId)) continue;
+    if (relation.sourceTableId === relation.targetTableId) continue;
+    parents.get(relation.sourceTableId)!.add(relation.targetTableId);
+    children.get(relation.targetTableId)!.add(relation.sourceTableId);
   }
 
+  // parentCount = number of transitive ancestor tables (cycle-safe), kept for reporting/UI.
   const parentCountByTable = new Map<string, number>();
-  const visit = (tableId: string, seen = new Set<string>()): number => {
-    const direct = dependencies.get(tableId) ?? new Set<string>();
-    let count = direct.size;
-    for (const dep of direct) {
-      if (seen.has(dep)) continue;
-      seen.add(dep);
-      count += visit(dep, seen);
+  for (const table of graph.tables) {
+    const seen = new Set<string>();
+    const stack = [...(parents.get(table.id) ?? [])];
+    while (stack.length > 0) {
+      const ancestor = stack.pop()!;
+      if (seen.has(ancestor)) continue;
+      seen.add(ancestor);
+      for (const grandparent of parents.get(ancestor) ?? []) stack.push(grandparent);
     }
-    return count;
+    parentCountByTable.set(table.id, seen.size);
+  }
+
+  // Kahn topological sort, parents first. Ties break by sortOrder then name; a true FK cycle is
+  // broken by force-emitting the lowest-sortOrder remaining table (its back-edge FK must be
+  // nullable to be insertable at all).
+  const remainingDeps = new Map<string, number>();
+  for (const table of graph.tables) remainingDeps.set(table.id, parents.get(table.id)!.size);
+  const remaining = new Set(graph.tables.map((table) => table.id));
+  const bySortOrder = (left: string, right: string) => {
+    const leftTable = tableById.get(left)!;
+    const rightTable = tableById.get(right)!;
+    return leftTable.sortOrder - rightTable.sortOrder || leftTable.name.localeCompare(rightTable.name);
   };
 
-  for (const table of graph.tables) {
-    parentCountByTable.set(table.id, visit(table.id));
-  }
-
-  const inDegree = new Map<string, number>();
-  for (const table of graph.tables) {
-    inDegree.set(table.id, dependencies.get(table.id)?.size ?? 0);
-  }
-
-  const queue = graph.tables
-    .filter((table) => (inDegree.get(table.id) ?? 0) === 0)
-    .sort((left, right) => left.sortOrder - right.sortOrder || left.name.localeCompare(right.name))
-    .map((table) => table.id);
   const ordered: string[] = [];
-
-  while (queue.length > 0) {
-    const tableId = queue.shift()!;
-    ordered.push(tableId);
-    for (const dependent of dependents.get(tableId) ?? []) {
-      const nextDegree = (inDegree.get(dependent) ?? 0) - 1;
-      inDegree.set(dependent, nextDegree);
-      if (nextDegree === 0) queue.push(dependent);
+  while (remaining.size > 0) {
+    const ready = [...remaining].filter((id) => remainingDeps.get(id) === 0).sort(bySortOrder);
+    const next = ready.length > 0 ? ready[0]! : [...remaining].sort(bySortOrder)[0]!;
+    remaining.delete(next);
+    ordered.push(next);
+    for (const child of children.get(next) ?? []) {
+      remainingDeps.set(child, (remainingDeps.get(child) ?? 0) - 1);
     }
-    queue.sort((left, right) => {
-      const leftTable = tableById.get(left);
-      const rightTable = tableById.get(right);
-      return (leftTable?.sortOrder ?? 0) - (rightTable?.sortOrder ?? 0) || left.localeCompare(right);
-    });
   }
 
-  for (const table of graph.tables) {
-    if (!ordered.includes(table.id)) ordered.push(table.id);
-  }
-
-  return ordered
-    .map((tableId) => {
-      const table = tableById.get(tableId)!;
-      return {
-        tableId: table.tableId,
-        modelName: table.name,
-        dbName: table.dbName ?? table.name,
-        parentCount: parentCountByTable.get(table.id) ?? 0,
-      };
-    })
-    .sort((left, right) => right.parentCount - left.parentCount);
+  return ordered.map((tableId) => {
+    const table = tableById.get(tableId)!;
+    return {
+      tableId: table.tableId,
+      modelName: table.name,
+      dbName: table.dbName ?? table.name,
+      parentCount: parentCountByTable.get(table.id) ?? 0,
+    };
+  });
 }
 
 export function fieldReadName(field: SchemaGraphField) {

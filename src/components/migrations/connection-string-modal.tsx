@@ -2,6 +2,7 @@
 
 import { IconCheck, IconCopy, IconLoader2, IconX } from "@tabler/icons-react";
 import { classNames } from "@/lib/utils";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type ConnectionStringModalProps = {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export function ConnectionStringModal({
   connStringValue, connStringORM, connStringEnvName, connStringCopied,
   onClose, onOrmChange, onEnvNameChange, onValueChange, onCopy,
 }: ConnectionStringModalProps) {
+  useEscapeKey(onClose, isOpen);
   if (!isOpen) return null;
 
   const blocked = testFailed || isLoading;

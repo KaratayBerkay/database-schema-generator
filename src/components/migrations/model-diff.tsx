@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 import { StateChip } from "./phase-state";
 import { DiffWarningsPanel, computeWarnings, type DiffWarning } from "@/components/migrations/diff-warnings-panel";
 import type {
@@ -312,6 +313,8 @@ export function ModelDiff({
   useEffect(() => { if (!inline && !autoCompared.current && fromVersion && toVersion && fromVersion !== toVersion) { autoCompared.current = true; void runCompare(); } }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
   useEffect(() => { if (inline && fromVersion && toVersion && fromVersion !== toVersion) { void runCompare(); } }, [fromVersion, toVersion]);
+  // Escape closes the full-screen overlay (the inline step card has no close affordance).
+  useEscapeKey(onClose ?? (() => {}), !inline && Boolean(onClose));
 
   async function runZodGeneration() {
     setZodState("loading");

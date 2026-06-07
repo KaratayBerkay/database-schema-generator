@@ -45,6 +45,7 @@ import {
 import { DatabaseIcon } from "@/components/projects/project-icons";
 import { ProjectCard } from "@/components/projects/project-card";
 import { classNames } from "@/lib/utils";
+import { isOriginalVersion } from "@/lib/version-rules";
 import type { Project } from "@/types/projects";
 import { InlineError } from "@/components/built";
 import { useProjectReset } from "@/hooks/use-project-reset";
@@ -412,26 +413,32 @@ export function ProjectsPageContent() {
                     <p className="py-4 text-center text-sm text-slate-400">No versions available.</p>
                   ) : (
                     activeVersions.map((version, idx) => {
-                      const isSelected = version === selectedVersion;
+                      const locked = isOriginalVersion(version);
+                      const isSelected = !locked && version === selectedVersion;
                       const isLatest = idx === activeVersions.length - 1;
                       return (
                         <button
                           key={version}
                           type="button"
-                          onClick={() => setSelectedVersion(version)}
+                          disabled={locked}
+                          onClick={() => { if (!locked) setSelectedVersion(version); }}
+                          title={locked ? "Read-only original schema — selectable only as a migration source" : undefined}
                           className={classNames(
                             "group flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition",
-                            isSelected ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
+                            locked ? "cursor-not-allowed border-slate-200 bg-slate-50/70"
+                            : isSelected ? "border-emerald-300 bg-emerald-50"
+                            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
                           )}
                         >
                           <div className="flex items-center gap-2.5">
                             <span className={classNames("h-2 w-2 rounded-full", isSelected ? "bg-emerald-500" : "bg-slate-300")} />
-                            <span className={classNames("font-mono text-sm font-semibold", isSelected ? "text-emerald-800" : "text-slate-700")}>
+                            <span className={classNames("font-mono text-sm font-semibold", locked ? "text-slate-400" : isSelected ? "text-emerald-800" : "text-slate-700")}>
                               {version}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            {isLatest && <Badge variant="outline" className="border-slate-200 bg-slate-50 text-[10px] text-slate-500">latest</Badge>}
+                            {locked && <Badge variant="outline" className="border-amber-200 bg-amber-50 text-[10px] text-amber-700">read-only · migration source</Badge>}
+                            {!locked && isLatest && <Badge variant="outline" className="border-slate-200 bg-slate-50 text-[10px] text-slate-500">latest</Badge>}
                             {isSelected && <Badge variant="outline" className="border-emerald-200 bg-emerald-100 text-[10px] text-emerald-700">viewing</Badge>}
                           </div>
                         </button>
