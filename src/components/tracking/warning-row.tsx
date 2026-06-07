@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { SchemaWarning } from "@/lib/schema-warnings-store";
-import { warningNavHref } from "@/lib/tracking-utils";
+import type { SchemaWarning } from "@/lib/stores/schema-warnings-store";
+import { warningNavHref } from "@/lib/domain/tracking-utils";
 import { ResolveModal } from "@/components/tracking/resolve-modal";
 import { SeverityBadge } from "@/components/tracking/severity-badge";
 import { StrategyBadge } from "@/components/tracking/strategy-badge";

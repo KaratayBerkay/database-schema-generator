@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useEscapeKey } from "@/hooks/use-escape-key";
-import type { SchemaWarning } from "@/lib/schema-warnings-store";
+import type { SchemaWarning } from "@/lib/stores/schema-warnings-store";
 
 export function ResolveModal({
   warning,

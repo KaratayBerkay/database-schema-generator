@@ -6,7 +6,7 @@ import type { StoredConnection } from "@/types/migrations";
 import { getConnection, touchLastUsedAt } from "@/lib/db/migration-connections";
 import { insertMigrationLog } from "@/lib/db/migration-state";
 import { db as appDb } from "@/lib/db/client";
-import { prepareMigrationPrismaSchema } from "@/lib/migration-schema-artifacts";
+import { prepareMigrationPrismaSchema } from "@/lib/migrations/migration-schema-artifacts";
 
 const execFileAsync = promisify(execFile);
 

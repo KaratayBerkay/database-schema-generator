@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { batchUpdateFieldComments, readModelFields } from "@/lib/schema-store";
+import { batchUpdateFieldComments, readModelFields } from "@/lib/stores/schema-store";
 import { baseProcedure, createTRPCRouter } from "../init";
 
 export const commentaryRouter = createTRPCRouter({

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { unapproveWarnings } from "@/lib/schema-warnings-store";
+import { unapproveWarnings } from "@/lib/stores/schema-warnings-store";
 
 export async function POST(request: Request) {
   let ids: string[];

@@ -1,6 +1,6 @@
 "use client";
 
-import type { PrismaModel } from "@/lib/schema-store";
+import type { PrismaModel } from "@/lib/stores/schema-store";
 import type { TableDiff } from "@/lib/version-diff/detect-changes";
 import { TableDiffSummary } from "@/components/shared/version-diff-badge";
 

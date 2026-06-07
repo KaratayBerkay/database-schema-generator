@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 import { useWorkerBusy } from "@/hooks/use-worker-busy";
-import type { SchemaWarning } from "@/lib/schema-warnings-store";
+import type { SchemaWarning } from "@/lib/stores/schema-warnings-store";
 import { useWarningsByKindQuery } from "@/queries/tracking";
 import { ResolveModal } from "@/components/tracking/resolve-modal";
 import { StrategyLegend } from "@/components/tracking/strategy-legend";

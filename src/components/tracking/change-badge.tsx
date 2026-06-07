@@ -1,7 +1,7 @@
 "use client";
 
 import { changeBadge } from "@/constants/tracking";
-import type { TrackingChangeKind } from "@/lib/tracking-utils";
+import type { TrackingChangeKind } from "@/lib/domain/tracking-utils";
 
 export function ChangeBadge({ kind }: { kind: TrackingChangeKind }) {
   const c = changeBadge[kind];

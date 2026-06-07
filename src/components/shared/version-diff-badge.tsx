@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ChangeSeverity, FieldDiff, TableDiff } from "@/lib/version-diff/detect-changes";
-import type { SchemaWarning } from "@/lib/schema-warnings-store";
+import type { SchemaWarning } from "@/lib/stores/schema-warnings-store";
 
 const severityStyles: Record<ChangeSeverity, { badge: string; dot: string; label: string }> = {
   breaking: {

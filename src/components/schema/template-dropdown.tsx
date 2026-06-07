@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { IconChevronDown, IconPlus } from "@tabler/icons-react";
 import { classNames } from "@/lib/utils";
 import { typeBadgeClass } from "@/constants/schema";
-import type { FieldTemplate } from "@/lib/field-template-store";
+import type { FieldTemplate } from "@/lib/stores/field-template-store";
 
 export function TemplateDropdown({
   baseTemplates,

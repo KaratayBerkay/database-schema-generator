@@ -12,9 +12,9 @@ import type { StoredConnection, ValidationIssue } from "@/types/migrations";
 import { getConnection, touchLastUsedAt } from "@/lib/db/migration-connections";
 import { db as appDb } from "@/lib/db/client";
 import { getSnapshotData, hasMigrationStarted, insertMigrationLog, upsertMigrationSession } from "@/lib/db/migration-state";
-import { prepareMigrationPrismaSchema, renderMigrationPrismaSchema } from "@/lib/migration-schema-artifacts";
+import { prepareMigrationPrismaSchema, renderMigrationPrismaSchema } from "@/lib/migrations/migration-schema-artifacts";
 import { readProjectVersionGraph } from "@/lib/schema-db/graph";
-import { MIGRATION_REFERENCE_FIELD } from "@/lib/schema-naming";
+import { MIGRATION_REFERENCE_FIELD } from "@/lib/domain/schema-naming";
 import { checkTypeConversion, computeMigrationOrder, generatedUniqueValue } from "@/lib/migrations/rules";
 import { resolveFieldMigration, warningToDecision } from "@/solutions";
 

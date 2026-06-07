@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { PrismaField } from "@/lib/schema-store";
+import type { PrismaField } from "@/lib/stores/schema-store";
 
 type UseCommentaryEditorStateOptions = {
   fields: PrismaField[];

@@ -1,6 +1,6 @@
 import { describe, it, expect, afterAll } from "vitest";
 import { caller, DEFAULT_SCHEMA_OPTIONS } from "./helpers";
-import { analyzeImportSchema } from "@/lib/schema-store";
+import { analyzeImportSchema } from "@/lib/stores/schema-store";
 
 const SOURCE_PROJECT = "Import Source Alpha";
 const VERSION = "1.0111";

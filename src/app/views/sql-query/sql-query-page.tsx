@@ -8,7 +8,7 @@ import { dracula } from "@uiw/codemirror-theme-dracula";
 import { keymap } from "@codemirror/view";
 import { Prec } from "@codemirror/state";
 import { classNames } from "@/lib/utils";
-import { fieldTypeBadgeClass } from "@/lib/badge-utils";
+import { fieldTypeBadgeClass } from "@/lib/format/badge-utils";
 import { useProjectInfo } from "../shared/project-info-context";
 import { useSchemaModels } from "@/hooks/use-schema-models";
 import { useDbManagement } from "@/hooks/use-db-management";

@@ -45,7 +45,7 @@ import {
 import { DatabaseIcon } from "@/components/projects/project-icons";
 import { ProjectCard } from "@/components/projects/project-card";
 import { classNames } from "@/lib/utils";
-import { isOriginalVersion } from "@/lib/version-rules";
+import { isOriginalVersion } from "@/lib/domain/version-rules";
 import type { Project } from "@/types/projects";
 import { InlineError } from "@/components/built";
 import { useProjectReset } from "@/hooks/use-project-reset";

@@ -1,5 +1,5 @@
 import type { graphToCanonicalStore } from "@/lib/schema-db/graph";
-import { isInternalMigrationField, normalizeDatabaseIdentifier } from "@/lib/schema-naming";
+import { isInternalMigrationField, normalizeDatabaseIdentifier } from "@/lib/domain/schema-naming";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 

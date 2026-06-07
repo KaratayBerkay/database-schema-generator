@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { PrismaRelation } from "@/lib/schema-store";
+import type { PrismaRelation } from "@/lib/stores/schema-store";
 import type { RelationTab } from "@/types/relation";
 import { relationKindLabel } from "@/constants/relations";
 

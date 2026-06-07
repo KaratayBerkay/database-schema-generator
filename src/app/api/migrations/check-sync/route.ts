@@ -6,7 +6,7 @@ import { getSchema } from "@mrleebo/prisma-ast";
 import type { Attribute, Field, Model } from "@mrleebo/prisma-ast";
 import type { StoredConnection } from "@/types/migrations";
 import { getConnection } from "@/lib/db/migration-connections";
-import { renderMigrationPrismaSchema } from "@/lib/migration-schema-artifacts";
+import { renderMigrationPrismaSchema } from "@/lib/migrations/migration-schema-artifacts";
 
 function getString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";

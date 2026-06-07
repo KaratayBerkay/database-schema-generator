@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useProjectsQuery } from "@/queries/projects";
-import { isOriginalVersion, defaultWorkingVersion } from "@/lib/version-rules";
+import { isOriginalVersion, defaultWorkingVersion } from "@/lib/domain/version-rules";
 import type { SchemaOptions } from "@/types/projects";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@ import { execFile } from "node:child_process";
 import { access, rm } from "node:fs/promises";
 import { promisify } from "node:util";
 import type { SchemaCheckResult } from "@/types/migrations";
-import { prepareMigrationPrismaSchema } from "@/lib/migration-schema-artifacts";
+import { prepareMigrationPrismaSchema } from "@/lib/migrations/migration-schema-artifacts";
 
 const execFileAsync = promisify(execFile);
 

@@ -9,7 +9,7 @@ import { useProjectInfo } from "../shared/project-info-context";
 import { useVersionDiffLookup } from "@/hooks/use-version-diff";
 import { useSchemaWarnings } from "@/hooks/use-schema-warnings";
 import { TableDiffDetailModal } from "@/components/tables/table-diff-detail-modal";
-import type { PrismaModel } from "@/lib/schema-store";
+import type { PrismaModel } from "@/lib/stores/schema-store";
 import {
   pkTypeDetails,
   defaultPkType,

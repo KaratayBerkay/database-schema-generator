@@ -13,7 +13,7 @@ import {
   getSchemaStats,
   getSchemaStore,
   initializeModelSchema,
-} from "@/lib/schema-store";
+} from "@/lib/stores/schema-store";
 import { db } from "@/lib/db/client";
 import { replaceNormalizedSchemaFromCanonicalStore } from "@/lib/schema-db/graph";
 

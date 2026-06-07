@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { ValidationIssue } from "@/types/migrations";
 import { db } from "@/lib/db/client";
 import { getSnapshotData } from "@/lib/db/migration-state";
-import { renderMigrationPrismaSchema } from "@/lib/migration-schema-artifacts";
+import { renderMigrationPrismaSchema } from "@/lib/migrations/migration-schema-artifacts";
 import { checkTypeConversion, generatedUniqueValue } from "@/lib/migrations/rules";
 
 

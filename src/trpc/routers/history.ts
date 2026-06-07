@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { readProjects } from "@/lib/projects-store";
-import { getSchemaStats } from "@/lib/schema-store";
+import { readProjects } from "@/lib/stores/projects-store";
+import { getSchemaStats } from "@/lib/stores/schema-store";
 import { listMigrationLogs } from "@/lib/db/migration-state";
 import { listConnections } from "@/lib/db/migration-connections";
 import type { VersionMigrationRun, VersionMigrationSummary } from "@/types/history";

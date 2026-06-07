@@ -2,7 +2,7 @@
 
 import { classNames } from "@/lib/utils";
 import type { ConnectionRecord, ModelComparisonResult, MigrationOrderItem, PreflightItem } from "@/types/migrations";
-import type { SchemaWarning } from "@/lib/schema-warnings-store";
+import type { SchemaWarning } from "@/lib/stores/schema-warnings-store";
 import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type CollectTable = { name: string; count: number };

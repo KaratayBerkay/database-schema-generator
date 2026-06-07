@@ -6,7 +6,7 @@ import type {
   SchemaGraphRelation,
   SchemaGraphTable,
 } from "@/lib/schema-db/graph";
-import { isInternalMigrationField, MIGRATION_REFERENCE_FIELD } from "@/lib/schema-naming";
+import { isInternalMigrationField, MIGRATION_REFERENCE_FIELD } from "@/lib/domain/schema-naming";
 
 const logicalToPrisma: Record<string, string> = {
   string: "String",

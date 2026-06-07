@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getWarnings } from "@/lib/schema-warnings-store";
+import { getWarnings } from "@/lib/stores/schema-warnings-store";
 
 function getString(v: string | null): string {
   return v?.trim() ?? "";

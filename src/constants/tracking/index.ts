@@ -1,4 +1,4 @@
-import type { TrackingEntryKind, TrackingChangeKind } from "@/lib/tracking-utils";
+import type { TrackingEntryKind, TrackingChangeKind } from "@/lib/domain/tracking-utils";
 
 // ─── Warning severity ─────────────────────────────────────────────────────────
 

@@ -11,9 +11,9 @@ import type {
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db/client";
 import { ensureNormalizedSchema, replaceNormalizedSchemaFromCanonicalStore } from "@/lib/schema-db/graph";
-import { isInternalMigrationField, normalizeDatabaseIdentifier, toCamelCaseIdentifier } from "@/lib/schema-naming";
+import { isInternalMigrationField, normalizeDatabaseIdentifier, toCamelCaseIdentifier } from "@/lib/domain/schema-naming";
 import type { ImportAnalysis, ImportReport, ImportReportEntry } from "@/types/imports";
-import { isOriginalVersion } from "@/lib/version-rules";
+import { isOriginalVersion } from "@/lib/domain/version-rules";
 
 const schemaVersion = 1;
 

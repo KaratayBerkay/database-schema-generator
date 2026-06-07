@@ -1,5 +1,5 @@
 import type { Severity, StrategyName } from "@/constants/tracking";
-import type { SchemaWarning } from "@/lib/schema-warnings-store";
+import type { SchemaWarning } from "@/lib/stores/schema-warnings-store";
 
 export type TrackingEntryKind = "field_default" | "enum" | "enum_value";
 

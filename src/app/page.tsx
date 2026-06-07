@@ -1,4 +1,4 @@
-import { readProjects } from "@/lib/projects-store";
+import { readProjects } from "@/lib/stores/projects-store";
 import { redirect } from "next/navigation";
 import CreateFirstProject from "@/components/projects/create-first-project";
 

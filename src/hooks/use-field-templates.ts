@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useFieldTemplatesQuery, useFieldTemplateMutations } from "@/queries/field-templates";
 import { useFieldMutations } from "@/queries/fields";
 import { useProjectInfo } from "@/app/views/shared/project-info-context";
-import type { PrismaField } from "@/lib/schema-store";
-import type { FieldTemplate, FieldTemplateInput } from "@/lib/field-template-store";
+import type { PrismaField } from "@/lib/stores/schema-store";
+import type { FieldTemplate, FieldTemplateInput } from "@/lib/stores/field-template-store";
 
 function makeEmptyTemplateInput(provider: string): FieldTemplateInput {
   return { name: "", type: "String", nullable: false, unique: false, defaultValue: "", comment: "", provider };

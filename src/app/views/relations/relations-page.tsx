@@ -8,7 +8,7 @@ import { useRelationsQuery } from "@/queries/relations";
 import { useTablesQuery } from "@/queries/tables";
 import { useFieldsQuery } from "@/queries/fields";
 import { classNames } from "@/lib/utils";
-import { fieldTypeBadgeClass } from "@/lib/badge-utils";
+import { fieldTypeBadgeClass } from "@/lib/format/badge-utils";
 
 import { useProjectInfo } from "../shared/project-info-context";
 import { useVersionDiffLookup } from "@/hooks/use-version-diff";
@@ -20,7 +20,7 @@ import type {
   PrismaField,
   PrismaModel,
   PrismaRelation,
-} from "@/lib/schema-store";
+} from "@/lib/stores/schema-store";
 import type { RelationTab } from "@/types/relation";
 import { relationKindLabel } from "@/constants/relations";
 import { RelationCard } from "@/components/relations/relation-card";

@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db/client";
-import { isInternalMigrationField, normalizeDatabaseIdentifier } from "@/lib/schema-naming";
+import { isInternalMigrationField, normalizeDatabaseIdentifier } from "@/lib/domain/schema-naming";
 
 type DbProject = {
   id: string;

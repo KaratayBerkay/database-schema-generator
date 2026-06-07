@@ -1,14 +1,14 @@
 import { z } from "zod";
 import { db } from "@/lib/db/client";
-import { getWarnings, type SchemaWarning } from "@/lib/schema-warnings-store";
+import { getWarnings, type SchemaWarning } from "@/lib/stores/schema-warnings-store";
 import { baseProcedure, createTRPCRouter } from "../init";
 import {
   formatDefault,
   type DefaultChange,
   type DefaultChangeKind,
   type TrackingEntry,
-} from "@/lib/tracking-utils";
-import { readModelFields, updateModelField, type PrismaFieldInput, type PrismaNativeAttribute } from "@/lib/schema-store";
+} from "@/lib/domain/tracking-utils";
+import { readModelFields, updateModelField, type PrismaFieldInput, type PrismaNativeAttribute } from "@/lib/stores/schema-store";
 
 export type { DefaultChange, DefaultChangeKind, TrackingEntry };
 export { formatDefault };

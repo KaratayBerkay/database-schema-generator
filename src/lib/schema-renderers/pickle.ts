@@ -1,7 +1,7 @@
 import "server-only";
 import type { ProjectVersionGraph } from "@/lib/schema-db/graph";
 import { readProjectVersionGraph } from "@/lib/schema-db/graph";
-import { isInternalMigrationField, normalizeDatabaseIdentifier } from "@/lib/schema-naming";
+import { isInternalMigrationField, normalizeDatabaseIdentifier } from "@/lib/domain/schema-naming";
 import { db } from "@/lib/db/client";
 
 function serializeVersion(graph: ProjectVersionGraph) {

@@ -4,7 +4,7 @@ import {
   deleteProject,
   readProjects,
   updateProject,
-} from "@/lib/projects-store";
+} from "@/lib/stores/projects-store";
 import {
   graphqlOptions,
   prismaClients,

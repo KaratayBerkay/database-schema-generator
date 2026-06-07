@@ -10,7 +10,7 @@ import { getConnection, touchLastUsedAt } from "@/lib/db/migration-connections";
 import { db as appDb } from "@/lib/db/client";
 import { insertMigrationSnapshot, insertSnapshotData, upsertMigrationSession, setMigrationState } from "@/lib/db/migration-state";
 import type { SnapshotTableData } from "@/lib/db/migration-state";
-import { renderMigrationPrismaSchema } from "@/lib/migration-schema-artifacts";
+import { renderMigrationPrismaSchema } from "@/lib/migrations/migration-schema-artifacts";
 import { readProjectVersionGraph } from "@/lib/schema-db/graph";
 import { computeMigrationOrder, fieldReadName, withMigrationReference } from "@/lib/migrations/rules";
 

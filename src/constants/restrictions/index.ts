@@ -1,4 +1,4 @@
-import type { PrismaRestrictionType } from "@/lib/schema-store";
+import type { PrismaRestrictionType } from "@/lib/stores/schema-store";
 
 export function restrictionTypeLabel(type: PrismaRestrictionType): string {
   return type === "UNIQUE" ? "Unique" : "Index";

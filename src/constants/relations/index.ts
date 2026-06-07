@@ -1,6 +1,6 @@
 export const MODAL_TABLES_PER_PAGE = 12;
 
-import type { PrismaRelation } from "@/lib/schema-store";
+import type { PrismaRelation } from "@/lib/stores/schema-store";
 import type { RelationDraft } from "@/types/relation";
 
 export const emptyRelationDraft: RelationDraft = {

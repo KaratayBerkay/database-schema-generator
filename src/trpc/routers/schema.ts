@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { getSchemaStats } from "@/lib/schema-store";
+import { getSchemaStats } from "@/lib/stores/schema-store";
 import { generateZodSchema } from "@/lib/schema-validation/generator";
 import { listZodSchemas, readZodSchema, updateZodSchemaTargetPath, updateZodSchemaName, deleteZodSchema, deleteAllZodSchemas } from "@/lib/db/zod-schemas";
 import { db } from "@/lib/db/client";

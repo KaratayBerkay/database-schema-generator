@@ -9,7 +9,7 @@ import {
   renameEnum,
   renameEnumValue,
   reorderEnumValues,
-} from "@/lib/schema-store";
+} from "@/lib/stores/schema-store";
 import { baseProcedure, createTRPCRouter } from "../init";
 
 function trpcError(err: unknown, fallback = "Operation failed."): never {

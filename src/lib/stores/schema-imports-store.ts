@@ -1,9 +1,9 @@
 import "server-only";
-import { addImportedProjectVersion, createImportedProject, readProjects, refreshProjectStats } from "@/lib/projects-store";
+import { addImportedProjectVersion, createImportedProject, readProjects, refreshProjectStats } from "@/lib/stores/projects-store";
 import { db } from "@/lib/db/client";
 import { writeVersionGraph, clearVersionGraph, type PickleVersionData } from "@/lib/schema-db/import-graph";
 import { readProjectVersionGraph, graphToCanonicalStore } from "@/lib/schema-db/graph";
-import { inferPrismaProviderFromContent, importTwoVersions } from "@/lib/schema-store";
+import { inferPrismaProviderFromContent, importTwoVersions } from "@/lib/stores/schema-store";
 import { todayVersionName } from "@/constants/imports";
 import type { DatabaseImportResult } from "@/types/imports";
 

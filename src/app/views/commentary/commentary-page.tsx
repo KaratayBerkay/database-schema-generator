@@ -7,10 +7,10 @@ import { TABLE_PAGE_SIZE, FIELD_PAGE_SIZE } from "@/constants/commentary";
 import { useTablesQuery } from "@/queries/tables";
 import { useCommentaryFieldsQuery, useCommentaryMutations } from "@/queries/commentary";
 import { classNames } from "@/lib/utils";
-import { fieldTypeBadgeClass } from "@/lib/badge-utils";
+import { fieldTypeBadgeClass } from "@/lib/format/badge-utils";
 import { useProjectInfo } from "../shared/project-info-context";
-import type { PrismaField, PrismaModel } from "@/lib/schema-store";
-import { displayType } from "@/lib/display-utils";
+import type { PrismaField, PrismaModel } from "@/lib/stores/schema-store";
+import { displayType } from "@/lib/format/display-utils";
 import { TableSelectorModal } from "@/features/table-selector";
 import { EmptyState, InlineError, LoadingCard } from "@/components/built";
 

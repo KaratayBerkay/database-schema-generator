@@ -1,4 +1,4 @@
-import type { PrismaRestrictionType } from "@/lib/schema-store";
+import type { PrismaRestrictionType } from "@/lib/stores/schema-store";
 
 export type RestrictionDraft = {
   type: PrismaRestrictionType;

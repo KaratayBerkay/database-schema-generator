@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db/client";
-import type { PrismaFieldInput, PrismaNativeAttribute } from "@/lib/schema-store";
+import type { PrismaFieldInput, PrismaNativeAttribute } from "@/lib/stores/schema-store";
 
 export type FieldTemplate = PrismaFieldInput & {
   id: string;

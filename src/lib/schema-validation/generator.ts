@@ -1,4 +1,4 @@
-import { getSchemaStore } from "@/lib/schema-store";
+import { getSchemaStore } from "@/lib/stores/schema-store";
 import { upsertZodSchema } from "@/lib/db/zod-schemas";
 import { db } from "@/lib/db/client";
 

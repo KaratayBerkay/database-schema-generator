@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "./client";
-import { decrypt, encrypt, generateSecret } from "@/lib/migration-crypto";
+import { decrypt, encrypt, generateSecret } from "@/lib/migrations/migration-crypto";
 import type { ConnectionRecord, StoredConnection } from "@/types/migrations";
 
 type ConnectionRow = {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { approveWarning, unapproveWarning, remapWarning } from "@/lib/schema-warnings-store";
+import { approveWarning, unapproveWarning, remapWarning } from "@/lib/stores/schema-warnings-store";
 
 export async function PATCH(
   request: Request,

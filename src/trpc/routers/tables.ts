@@ -7,8 +7,8 @@ import {
   modelExistsInSchema,
   readSchema,
   updateModel,
-} from "@/lib/schema-store";
-import { refreshProjectStats } from "@/lib/projects-store";
+} from "@/lib/stores/schema-store";
+import { refreshProjectStats } from "@/lib/stores/projects-store";
 import { baseProcedure, createTRPCRouter } from "../init";
 
 const identifierPattern = /^[a-zA-Z][a-zA-Z0-9_]*$/;

@@ -15,7 +15,7 @@ import type {
   RunResponse,
   ValidationIssue,
 } from "@/types/migrations";
-import type { SchemaWarning } from "@/lib/schema-warnings-store";
+import type { SchemaWarning } from "@/lib/stores/schema-warnings-store";
 
 type CollectTable = { name: string; count: number };
 

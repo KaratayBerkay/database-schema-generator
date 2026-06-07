@@ -4,14 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useTablesQuery } from "@/queries/tables";
 import { useTableSelector } from "@/hooks/use-table-selector";
 import { useRestrictionsQuery, useRestrictionMutations } from "@/queries/restrictions";
-import { fieldTypeBadgeClass } from "@/lib/badge-utils";
+import { fieldTypeBadgeClass } from "@/lib/format/badge-utils";
 import { useProjectInfo } from "../shared/project-info-context";
 import type {
   PrismaField,
   PrismaModel,
   PrismaRestriction,
   PrismaRestrictionType,
-} from "@/lib/schema-store";
+} from "@/lib/stores/schema-store";
 import type { RestrictionDraft } from "@/types/restriction";
 import { RestrictionTypeGuide } from "@/components/restrictions/restriction-type-guide";
 import { RestrictionForm } from "@/components/restrictions/restriction-form";

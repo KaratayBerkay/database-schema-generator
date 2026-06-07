@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { PrismaModel } from "@/lib/schema-store";
+import type { PrismaModel } from "@/lib/stores/schema-store";
 import type { HelpDialog } from "@/types/tables";
 
 export function useTablesPageState() {

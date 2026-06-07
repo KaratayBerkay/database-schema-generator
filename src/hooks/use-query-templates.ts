@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { PrismaField } from "@/lib/schema-store";
+import type { PrismaField } from "@/lib/stores/schema-store";
 
 export function useQueryTemplates({
   projectName,

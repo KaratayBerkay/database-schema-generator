@@ -7,7 +7,7 @@ import {
   forkProjectVersion,
   readProjects,
   updateProject,
-} from "@/lib/projects-store";
+} from "@/lib/stores/projects-store";
 import { baseProcedure, createTRPCRouter } from "../init";
 
 const schemaOptionsSchema = z.object({

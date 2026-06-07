@@ -6,8 +6,8 @@ import {
   importVersionPickle,
   importProjectPickle,
   importDatabaseSchema,
-} from "@/lib/schema-imports-store";
-import { analyzeImportSchema } from "@/lib/schema-store";
+} from "@/lib/stores/schema-imports-store";
+import { analyzeImportSchema } from "@/lib/stores/schema-store";
 import { introspectFromUrl, databaseNameFromUrl } from "@/lib/db/introspect";
 import { baseProcedure, createTRPCRouter } from "../init";
 

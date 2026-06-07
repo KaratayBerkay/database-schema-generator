@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useTRPC } from "@/trpc/client";
-import type { TrackingEntry, TrackingEntryKind, TrackingChangeKind } from "@/lib/tracking-utils";
+import type { TrackingEntry, TrackingEntryKind, TrackingChangeKind } from "@/lib/domain/tracking-utils";
 import { rowTint, kindLabel } from "@/constants/tracking";
 import { ChangeBadge } from "./change-badge";
 import { ValueDisplay } from "./value-display";

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRelationMutations } from "@/queries/relations";
 import { useFieldMutations } from "@/queries/fields";
 import { useProjectInfo } from "@/app/views/shared/project-info-context";
-import type { PrismaModel, PrismaRelation } from "@/lib/schema-store";
+import type { PrismaModel, PrismaRelation } from "@/lib/stores/schema-store";
 import type { RelationDraft } from "@/types/relation";
 import { emptyRelationDraft, csvToList, listToCsv, deriveBackReferenceName } from "@/constants/relations";
 

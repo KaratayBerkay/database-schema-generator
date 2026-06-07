@@ -2,7 +2,7 @@
 
 import { classNames } from "@/lib/utils";
 import { restrictionTypeLabel, restrictionTypeClass } from "@/constants/restrictions";
-import type { PrismaRestriction } from "@/lib/schema-store";
+import type { PrismaRestriction } from "@/lib/stores/schema-store";
 
 type RestrictionCardProps = {
   restriction: PrismaRestriction;

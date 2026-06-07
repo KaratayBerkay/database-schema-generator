@@ -1,7 +1,7 @@
 "use client";
 
 import { classNames } from "@/lib/utils";
-import type { PrismaModel } from "@/lib/schema-store";
+import type { PrismaModel } from "@/lib/stores/schema-store";
 import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type SelectorTone = "cyan" | "violet" | "amber" | "orange" | "fuchsia";

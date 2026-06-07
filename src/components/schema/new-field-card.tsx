@@ -3,7 +3,7 @@
 import { IconCheck, IconTrash } from "@tabler/icons-react";
 import { classNames } from "@/lib/utils";
 import { typeSelectClass } from "@/constants/schema";
-import type { PrismaFieldInput } from "@/lib/schema-store";
+import type { PrismaFieldInput } from "@/lib/stores/schema-store";
 
 type EnumValue = { valueId: string; name: string };
 

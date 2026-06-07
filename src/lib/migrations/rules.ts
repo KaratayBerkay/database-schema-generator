@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { ProjectVersionGraph, SchemaGraphField } from "@/lib/schema-db/graph";
-import { MIGRATION_REFERENCE_FIELD, MIGRATION_REFERENCES_FIELD } from "@/lib/schema-naming";
+import { MIGRATION_REFERENCE_FIELD, MIGRATION_REFERENCES_FIELD } from "@/lib/domain/schema-naming";
 
 export type TypeConversionRule = {
   compatible: boolean;

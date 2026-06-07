@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db/client";
-import { upsertWarnings, type NewSchemaWarning } from "@/lib/schema-warnings-store";
+import { upsertWarnings, type NewSchemaWarning } from "@/lib/stores/schema-warnings-store";
 import { getTypeResolution, getPkTypeResolution, worstResolution, type Resolution } from "@/solutions/type-conversion-matrix";
 import type { VersionDiff, FieldDiff, TableDiff, EnumDiff, RelationDiff, RestrictionDiff, CascadeHint, FkRelationHint } from "@/lib/version-diff/detect-changes";
 

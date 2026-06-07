@@ -2,8 +2,8 @@
 
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { classNames } from "@/lib/utils";
-import { toCamelCaseIdentifier } from "@/lib/schema-naming";
-import type { PrismaField, PrismaModel } from "@/lib/schema-store";
+import { toCamelCaseIdentifier } from "@/lib/domain/schema-naming";
+import type { PrismaField, PrismaModel } from "@/lib/stores/schema-store";
 import type { RelationDraft } from "@/types/relation";
 import { useEscapeKey } from "@/hooks/use-escape-key";
 

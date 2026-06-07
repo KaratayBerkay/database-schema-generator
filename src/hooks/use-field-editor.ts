@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldMutations } from "@/queries/fields";
 import { defaultFieldTypes } from "@/constants/schema";
 import type { FieldDiff } from "@/lib/version-diff/detect-changes";
-import type { PrismaField, PrismaFieldInput } from "@/lib/schema-store";
+import type { PrismaField, PrismaFieldInput } from "@/lib/stores/schema-store";
 
 const FIELDS_PER_PAGE = 12;
 

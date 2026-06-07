@@ -12,7 +12,7 @@ import Link from "next/link";
 import { VersionDiffBadge } from "@/components/shared/version-diff-badge";
 import { classNames } from "@/lib/utils";
 import { EmptyState, InlineError, LoadingCard, Pagination } from "@/components/built";
-import type { PrismaModel } from "@/lib/schema-store";
+import type { PrismaModel } from "@/lib/stores/schema-store";
 import { typeBadgeClass } from "@/constants/schema";
 import { FieldLegend } from "@/components/schema/field-legend";
 import { TableSelectorModal } from "@/features/table-selector";

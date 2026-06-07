@@ -1,8 +1,8 @@
 "use client";
 
 import { strategyStyle } from "@/constants/tracking";
-import { resolveStrategy } from "@/lib/tracking-utils";
-import type { SchemaWarning } from "@/lib/schema-warnings-store";
+import { resolveStrategy } from "@/lib/domain/tracking-utils";
+import type { SchemaWarning } from "@/lib/stores/schema-warnings-store";
 
 export function StrategyBadge({ w }: { w: SchemaWarning }) {
   if (!w.approvedAt) return null;

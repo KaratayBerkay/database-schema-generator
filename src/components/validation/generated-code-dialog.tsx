@@ -2,7 +2,7 @@
 
 import { IconCopy, IconCheck, IconX } from "@tabler/icons-react";
 import { classNames } from "@/lib/utils";
-import { highlightCode } from "@/lib/code-highlighting";
+import { highlightCode } from "@/lib/format/code-highlighting";
 import { useEscapeKey } from "@/hooks/use-escape-key";
 
 type GeneratedCodeDialogProps = {

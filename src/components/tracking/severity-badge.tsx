@@ -1,8 +1,8 @@
 "use client";
 
 import { severityConfig } from "@/constants/tracking";
-import { resolutionSeverity } from "@/lib/tracking-utils";
-import type { SchemaWarning } from "@/lib/schema-warnings-store";
+import { resolutionSeverity } from "@/lib/domain/tracking-utils";
+import type { SchemaWarning } from "@/lib/stores/schema-warnings-store";
 
 export function SeverityBadge({ w }: { w: SchemaWarning }) {
   const c = severityConfig[resolutionSeverity(w)];

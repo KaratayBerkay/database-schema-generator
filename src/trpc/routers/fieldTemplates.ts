@@ -6,7 +6,7 @@ import {
   deleteFieldTemplate,
   readFieldTemplateStore,
   updateFieldTemplate,
-} from "@/lib/field-template-store";
+} from "@/lib/stores/field-template-store";
 import { baseProcedure, createTRPCRouter } from "../init";
 
 function trpcError(err: unknown, fallback = "Operation failed."): never {

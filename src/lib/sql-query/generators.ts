@@ -1,4 +1,4 @@
-import type { PrismaField } from "@/lib/schema-store";
+import type { PrismaField } from "@/lib/stores/schema-store";
 
 export function formatDuration(ms: number): string {
   return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`;

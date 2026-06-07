@@ -6,8 +6,8 @@ import {
   deleteModelRestriction,
   readModelRestrictions,
   updateModelRestriction,
-} from "@/lib/schema-store";
-import { refreshProjectStats } from "@/lib/projects-store";
+} from "@/lib/stores/schema-store";
+import { refreshProjectStats } from "@/lib/stores/projects-store";
 import { baseProcedure, createTRPCRouter } from "../init";
 
 function trpcError(err: unknown, fallback = "Operation failed."): never {

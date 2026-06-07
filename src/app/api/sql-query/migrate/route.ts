@@ -5,7 +5,7 @@ import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import { generateSQLiteSchema } from "@/lib/schema-store";
+import { generateSQLiteSchema } from "@/lib/stores/schema-store";
 
 const execFileAsync = promisify(execFile);
 

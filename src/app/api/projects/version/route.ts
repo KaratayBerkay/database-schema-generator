@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { forkProjectVersion } from "@/lib/projects-store";
+import { forkProjectVersion } from "@/lib/stores/projects-store";
 
 function getString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";

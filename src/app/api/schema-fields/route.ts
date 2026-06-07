@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { refreshProjectStats } from "@/lib/projects-store";
+import { refreshProjectStats } from "@/lib/stores/projects-store";
 import {
   createModelField,
   deleteModelField,
@@ -7,7 +7,7 @@ import {
   updateModelField,
   type PrismaNativeAttribute,
   type PrismaFieldInput,
-} from "@/lib/schema-store";
+} from "@/lib/stores/schema-store";
 
 function getString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
