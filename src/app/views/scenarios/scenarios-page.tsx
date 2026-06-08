@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { IconTrash } from "@tabler/icons-react";
 import { useScenariosQuery, useScenarioMutations } from "@/queries/scenarios";
 import { useProjectMutations } from "@/queries/projects";
 import { useDashboard } from "../shared/dashboard-context";
@@ -28,11 +29,18 @@ type ScenarioSummary = {
 
 type LoadResult = { projectId: string; projectName: string; version: string } | undefined;
 
+type CardHandlers = {
+  onLoad: (scenarioId: string, name: string) => void;
+  onReload: (scenarioId: string) => void;
+  onRemove: (scenarioId: string, projectId: string) => void;
+  onOpen: (projectId: string) => void;
+};
+
 export function ScenariosPageContent() {
   const router = useRouter();
   const scenariosQuery = useScenariosQuery();
   const { invalidate: invalidateScenarios, load, reload } = useScenarioMutations();
-  const { invalidate: invalidateProjects } = useProjectMutations();
+  const { invalidate: invalidateProjects, delete: deleteProject } = useProjectMutations();
   const { setActiveProjectId } = useDashboard();
 
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -47,11 +55,9 @@ export function ScenariosPageContent() {
     router.push("/tables");
   };
 
-  const afterLoad = (res: LoadResult) => {
-    void invalidateScenarios();
-    void invalidateProjects();
+  const failed = (scenarioId: string, message: string) => {
     setBusyId(null);
-    if (res) openProject(res.projectId);
+    setError({ id: scenarioId, message });
   };
 
   const handleLoad = (scenarioId: string, name: string) => {
@@ -60,11 +66,13 @@ export function ScenariosPageContent() {
     load.mutate(
       { scenarioId, projectName: name },
       {
-        onSuccess: (res) => afterLoad(res),
-        onError: (err) => {
+        onSuccess: (res: LoadResult) => {
+          void invalidateScenarios();
+          void invalidateProjects();
           setBusyId(null);
-          setError({ id: scenarioId, message: err.message });
+          if (res) openProject(res.projectId);
         },
+        onError: (err) => failed(scenarioId, err.message),
       },
     );
   };
@@ -75,14 +83,34 @@ export function ScenariosPageContent() {
     reload.mutate(
       { scenarioId },
       {
-        onSuccess: (res) => afterLoad(res),
-        onError: (err) => {
+        onSuccess: (res: LoadResult) => {
+          void invalidateScenarios();
+          void invalidateProjects();
           setBusyId(null);
-          setError({ id: scenarioId, message: err.message });
+          if (res) openProject(res.projectId);
         },
+        onError: (err) => failed(scenarioId, err.message),
       },
     );
   };
+
+  const handleRemove = (scenarioId: string, projectId: string) => {
+    setBusyId(scenarioId);
+    setError(null);
+    deleteProject.mutate(
+      { id: projectId },
+      {
+        onSuccess: () => {
+          void invalidateScenarios();
+          void invalidateProjects();
+          setBusyId(null);
+        },
+        onError: (err) => failed(scenarioId, err.message),
+      },
+    );
+  };
+
+  const handlers: CardHandlers = { onLoad: handleLoad, onReload: handleReload, onRemove: handleRemove, onOpen: openProject };
 
   return (
     <div className="space-y-5">
@@ -132,9 +160,8 @@ export function ScenariosPageContent() {
             Spin up a fully-designed example schema in a brand-new project, then walk it through the
             workflows in the sidebar to learn the app by example. <span className="font-semibold text-foreground">Basic</span>{" "}
             scenarios are a single version; <span className="font-semibold text-foreground">advanced</span>{" "}
-            scenarios ship multiple versions (always starting at v1) so you can explore the Tracking
-            and Migrations flows. Once you load a scenario it&apos;s disabled — use{" "}
-            <span className="font-semibold text-foreground">Re-load</span> to reset it if you change things.
+            scenarios ship multiple versions (always starting at v1). Once you load a scenario, use{" "}
+            <span className="font-semibold text-foreground">Re-load</span> to reset it, or the trash icon to remove it.
           </p>
         </div>
 
@@ -151,9 +178,7 @@ export function ScenariosPageContent() {
                 scenarios={basic}
                 busyId={busyId}
                 error={error}
-                onLoad={handleLoad}
-                onReload={handleReload}
-                onOpen={openProject}
+                handlers={handlers}
               />
               <ScenarioGroup
                 title="Advanced"
@@ -161,9 +186,7 @@ export function ScenariosPageContent() {
                 scenarios={advanced}
                 busyId={busyId}
                 error={error}
-                onLoad={handleLoad}
-                onReload={handleReload}
-                onOpen={openProject}
+                handlers={handlers}
               />
             </>
           )}
@@ -179,18 +202,14 @@ function ScenarioGroup({
   scenarios,
   busyId,
   error,
-  onLoad,
-  onReload,
-  onOpen,
+  handlers,
 }: {
   title: string;
   description: string;
   scenarios: ScenarioSummary[];
   busyId: string | null;
   error: { id: string; message: string } | null;
-  onLoad: (scenarioId: string, name: string) => void;
-  onReload: (scenarioId: string) => void;
-  onOpen: (projectId: string) => void;
+  handlers: CardHandlers;
 }) {
   if (scenarios.length === 0) return null;
 
@@ -208,9 +227,7 @@ function ScenarioGroup({
             busy={busyId === scenario.id}
             anyBusy={busyId !== null}
             errorMessage={error?.id === scenario.id ? error.message : ""}
-            onLoad={onLoad}
-            onReload={onReload}
-            onOpen={onOpen}
+            handlers={handlers}
           />
         ))}
       </div>
@@ -223,23 +240,21 @@ function ScenarioCard({
   busy,
   anyBusy,
   errorMessage,
-  onLoad,
-  onReload,
-  onOpen,
+  handlers,
 }: {
   scenario: ScenarioSummary;
   busy: boolean;
   anyBusy: boolean;
   errorMessage: string;
-  onLoad: (scenarioId: string, name: string) => void;
-  onReload: (scenarioId: string) => void;
-  onOpen: (projectId: string) => void;
+  handlers: CardHandlers;
 }) {
+  const { onLoad, onReload, onRemove, onOpen } = handlers;
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState("");
-  const [confirmReload, setConfirmReload] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
-  const isLoaded = scenario.loaded !== null;
+  const loaded = scenario.loaded;
+  const isLoaded = loaded !== null;
 
   const openForm = () => {
     setFormOpen(true);
@@ -265,14 +280,21 @@ function ScenarioCard({
             <h4 className="text-base font-semibold text-foreground">{scenario.title}</h4>
           </div>
           <div className="flex items-center gap-1.5">
-            {isLoaded && (
-              <span className="rounded-md border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">
-                Loaded
-              </span>
-            )}
             <span className="rounded-md border border-border bg-card px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
               {scenario.provider}
             </span>
+            {isLoaded && (
+              <button
+                type="button"
+                onClick={() => setConfirmRemove(true)}
+                disabled={anyBusy}
+                title="Remove this project"
+                aria-label="Remove this project"
+                className="flex h-7 w-7 items-center justify-center rounded-md border border-rose-500/30 bg-card text-rose-400 transition hover:bg-rose-500/15 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <IconTrash size={15} stroke={1.8} />
+              </button>
+            )}
           </div>
         </div>
         <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -312,56 +334,52 @@ function ScenarioCard({
             ))}
           </div>
 
-          {isLoaded ? (
-            <div className="space-y-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
-              <p className="text-xs text-emerald-200">
-                Loaded as{" "}
-                <span className="font-semibold">{scenario.loaded!.projectName}</span>
+          {isLoaded && confirmRemove ? (
+            <div className="space-y-2 rounded-md border border-rose-500/30 bg-rose-500/10 p-3">
+              <p className="text-xs font-medium text-rose-200">
+                Remove <span className="font-semibold">{loaded.projectName}</span> and all its versions?
+                This can&apos;t be undone.
               </p>
-              {confirmReload ? (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-amber-200">
-                    Re-loading discards any changes and resets this project to the original scenario.
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onReload(scenario.id)}
-                      disabled={busy}
-                      className="h-9 flex-1 rounded-md bg-amber-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-muted"
-                    >
-                      {busy ? "Resetting…" : "Confirm re-load"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmReload(false)}
-                      disabled={busy}
-                      className="h-9 rounded-md border border-border bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-card disabled:cursor-not-allowed"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => onOpen(scenario.loaded!.projectId)}
-                    disabled={anyBusy}
-                    className="h-9 flex-1 rounded-md bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-muted"
-                  >
-                    Open project
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmReload(true)}
-                    disabled={anyBusy}
-                    className="h-9 rounded-md border border-amber-500/40 bg-card px-4 text-sm font-semibold text-amber-300 transition hover:bg-amber-500/15 disabled:cursor-not-allowed"
-                  >
-                    Re-load
-                  </button>
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onRemove(scenario.id, loaded.projectId)}
+                  disabled={busy}
+                  className="h-9 flex-1 rounded-md bg-rose-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-muted"
+                >
+                  {busy ? "Removing…" : "Remove project"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmRemove(false)}
+                  disabled={busy}
+                  className="h-9 rounded-md border border-border bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-card disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+              </div>
+              <InlineError message={errorMessage} />
+            </div>
+          ) : isLoaded ? (
+            <div className="space-y-2">
+              <p className="text-xs text-emerald-300">
+                Loaded as{" "}
+                <button
+                  type="button"
+                  onClick={() => onOpen(loaded.projectId)}
+                  className="font-semibold underline underline-offset-2 hover:text-emerald-200"
+                >
+                  {loaded.projectName}
+                </button>
+              </p>
+              <button
+                type="button"
+                onClick={() => onReload(scenario.id)}
+                disabled={anyBusy}
+                className="h-10 w-full rounded-md border border-amber-500/40 bg-card px-5 text-sm font-semibold text-amber-300 transition hover:bg-amber-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {busy ? "Resetting…" : "Re-load project from start"}
+              </button>
               <InlineError message={errorMessage} />
             </div>
           ) : formOpen ? (
