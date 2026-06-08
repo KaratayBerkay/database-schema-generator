@@ -64,7 +64,7 @@ export function ScenarioCard({
               {scenario.provider}
             </span>
             <Link
-              href="/projects"
+              href={loaded ? `/projects?search=${encodeURIComponent(loaded.projectId)}` : "/projects"}
               title="Manage in Projects"
               aria-label="Manage in Projects"
               className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition hover:bg-background hover:text-foreground"

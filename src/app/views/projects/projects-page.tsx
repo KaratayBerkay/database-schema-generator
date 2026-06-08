@@ -36,7 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   defaultSchemaOptions,
   graphqlOptions,
@@ -85,7 +85,10 @@ export function ProjectsPageContent() {
   const router = useRouter();
 
   // ── Search filters ───────────────────────────────────────────────────────────
-  const [projectSearch, setProjectSearch] = useState("");
+  // Pre-fill the project search from `?search=` (e.g. the Scenarios "Manage in
+  // Projects" shortcut passes the loaded project id so it's filtered on arrival).
+  const searchParams = useSearchParams();
+  const [projectSearch, setProjectSearch] = useState(() => searchParams.get("search") ?? "");
   const [versionSearch, setVersionSearch] = useState("");
 
   const projectQuery = projectSearch.trim().toLowerCase();
