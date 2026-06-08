@@ -11,7 +11,12 @@ const execFileAsync = promisify(execFile);
 
 function toSchemaFilePart(value: string) {
   return (
-    value.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "untitled"
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, "-")
+      .replace(/\.{2,}/g, ".") // collapse '..' so a project/version can't traverse out of the databases dir
+      .replace(/^[.-]+|[.-]+$/g, "") || "untitled"
   );
 }
 

@@ -158,7 +158,11 @@ export function useMigrationConnections({ onConnected, onResetFromModelDiff }: U
     if (!activeConnectionId) return;
     setIsLoadingConnString(true);
     try {
-      const res = await fetch(`/api/migrations/connections/url?connectionId=${activeConnectionId}`);
+      const res = await fetch(`/api/migrations/connections/url`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ connectionId: activeConnectionId }),
+      });
       const data = await res.json() as { success: boolean; url?: string };
       const url = data.success && data.url ? data.url : "";
       setConnStringValue(isPlain ? url : `${ormEnv}=${url}`);

@@ -1,6 +1,13 @@
 import "server-only";
 import { db } from "./client";
-import { decrypt, encrypt, generateSecret } from "@/lib/migrations/migration-crypto";
+import {
+  decrypt,
+  encrypt,
+  generateSecret,
+  isWrappedKey,
+  unwrapDataKey,
+  wrapDataKey,
+} from "@/lib/migrations/migration-crypto";
 import type { ConnectionRecord, StoredConnection } from "@/types/migrations";
 
 type ConnectionRow = {
@@ -18,24 +25,42 @@ type ConnectionRow = {
   last_used_at: string;
 };
 
+/**
+ * Recover a row's data key. The `secret` column holds the data key *wrapped* by the master key
+ * (which lives outside app.db). Rows written before envelope encryption stored the data key as bare
+ * hex; those are unwrapped transparently and re-wrapped in place on first read, so the on-disk DB
+ * stops containing a usable decryption key.
+ */
+function dataKeyForRow(row: ConnectionRow): string {
+  if (isWrappedKey(row.secret)) return unwrapDataKey(row.secret);
+  const dataKey = row.secret;
+  db.prepare("UPDATE migration_connections SET secret = ? WHERE id = ?").run(
+    wrapDataKey(dataKey),
+    row.id,
+  );
+  return dataKey;
+}
+
 function rowToRecord(row: ConnectionRow): ConnectionRecord {
+  const key = dataKeyForRow(row);
   return {
     uuid: row.id,
-    name: decrypt(row.name_enc, row.secret),
-    provider: decrypt(row.provider_enc, row.secret),
-    host: decrypt(row.host_enc, row.secret),
-    port: decrypt(row.port_enc, row.secret),
-    database: decrypt(row.database_enc, row.secret),
+    name: decrypt(row.name_enc, key),
+    provider: decrypt(row.provider_enc, key),
+    host: decrypt(row.host_enc, key),
+    port: decrypt(row.port_enc, key),
+    database: decrypt(row.database_enc, key),
     createdAt: row.created_at,
     lastUsedAt: row.last_used_at,
   };
 }
 
 function rowToStored(row: ConnectionRow): StoredConnection {
+  const key = dataKeyForRow(row);
   return {
     ...rowToRecord(row),
-    user: decrypt(row.user_enc, row.secret),
-    password: decrypt(row.password_enc, row.secret),
+    user: decrypt(row.user_enc, key),
+    password: decrypt(row.password_enc, key),
   };
 }
 
@@ -138,7 +163,9 @@ export function saveConnection(
     database: string;
   },
 ): void {
-  const secret = generateSecret();
+  // Encrypt the fields with a fresh per-row data key, then store only the master-key-wrapped data
+  // key — never the data key itself — so the app.db file alone can't decrypt the credentials.
+  const dataKey = generateSecret();
   const now = new Date().toISOString();
   db.prepare(`
     INSERT INTO migration_connections
@@ -148,14 +175,14 @@ export function saveConnection(
   `).run(
     conn.id,
     projectId,
-    encrypt(conn.name, secret),
-    encrypt(conn.provider, secret),
-    encrypt(conn.host, secret),
-    encrypt(conn.port, secret),
-    encrypt(conn.database, secret),
-    encrypt(conn.user, secret),
-    encrypt(conn.password, secret),
-    secret,
+    encrypt(conn.name, dataKey),
+    encrypt(conn.provider, dataKey),
+    encrypt(conn.host, dataKey),
+    encrypt(conn.port, dataKey),
+    encrypt(conn.database, dataKey),
+    encrypt(conn.user, dataKey),
+    encrypt(conn.password, dataKey),
+    wrapDataKey(dataKey),
     now,
     now,
   );

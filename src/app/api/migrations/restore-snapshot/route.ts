@@ -37,6 +37,19 @@ const readStdin = () => new Promise((resolve, reject) => {
 });
 const SKIP_FIELD = '${MIGRATION_REFERENCE_FIELD}';
 
+// A single backslash, built without a backslash literal so the wrapping template-literal can't mangle it.
+const BACKSLASH = String.fromCharCode(92);
+// Escape an arbitrary string into a single-quoted SQL literal. Single quotes are doubled for every
+// provider; MySQL/MariaDB also treat backslash as a string-escape char, so double backslashes there
+// to stop a lone backslash from escaping the closing quote and injecting SQL.
+const escStr = (s, provider) => {
+  const p = (provider ?? '').toLowerCase();
+  const quoted = p === 'mysql'
+    ? s.split(BACKSLASH).join(BACKSLASH + BACKSLASH).replace(/'/g, "''")
+    : s.replace(/'/g, "''");
+  return "'" + quoted + "'";
+};
+
 const escVal = (v, provider) => {
   if (v === null || v === undefined) return 'NULL';
   if (typeof v === 'boolean') {
@@ -54,9 +67,14 @@ const escVal = (v, provider) => {
     return "X'" + hex + "'";
   }
   // JSON / jsonb (plain objects + arrays): serialise to a quoted JSON literal instead of '[object Object]'.
-  if (typeof v === 'object') return "'" + JSON.stringify(v).replace(/'/g, "''") + "'";
-  return "'" + String(v).replace(/'/g, "''") + "'";
+  if (typeof v === 'object') return escStr(JSON.stringify(v), provider);
+  return escStr(String(v), provider);
 };
+
+// Quote SQL identifiers, doubling embedded quote chars. Names are validated upstream to
+// /^[A-Za-z][A-Za-z0-9_]*$/ — this is defense-in-depth for the restore path, which never re-checks.
+const escId = (name) => '"' + String(name).split('"').join('""') + '"';
+const escIdMy = (name) => '\`' + String(name).split('\`').join('\`\`') + '\`';
 
 const main = async () => {
   const { tables, provider, connectionUrl } = JSON.parse(await readStdin());
@@ -72,9 +90,9 @@ const main = async () => {
       const run = db.transaction((recs) => {
         for (const rec of recs) {
           const entries = Object.entries(rec).filter(([k, v]) => k !== SKIP_FIELD && v !== undefined);
-          const cols = entries.map(([k]) => '"' + k + '"').join(', ');
+          const cols = entries.map(([k]) => escId(k)).join(', ');
           const vals = entries.map(([, v]) => escVal(v, provider)).join(', ');
-          const sql = 'INSERT OR REPLACE INTO "' + tableName + '" (' + cols + ') VALUES (' + vals + ')';
+          const sql = 'INSERT OR REPLACE INTO ' + escId(tableName) + ' (' + cols + ') VALUES (' + vals + ')';
           try { db.prepare(sql).run(); created++; }
           catch (e) { errorDetails.push({ error: e?.message ?? String(e) }); }
         }
@@ -95,11 +113,11 @@ const main = async () => {
         try {
           for (const rec of records) {
             const entries = Object.entries(rec).filter(([k, v]) => k !== SKIP_FIELD && v !== undefined);
-            const cols = entries.map(([k]) => '"' + k + '"').join(', ');
+            const cols = entries.map(([k]) => escId(k)).join(', ');
             const vals = entries.map(([, v]) => escVal(v, provider)).join(', ');
-            const up = entries.filter(([k]) => k !== idField).map(([k]) => '"' + k + '" = EXCLUDED."' + k + '"').join(', ');
-            const sql = 'INSERT INTO "' + tableName + '" (' + cols + ') VALUES (' + vals + ')' +
-              (up.length ? ' ON CONFLICT ("' + idField + '") DO UPDATE SET ' + up : ' ON CONFLICT DO NOTHING');
+            const up = entries.filter(([k]) => k !== idField).map(([k]) => escId(k) + ' = EXCLUDED.' + escId(k)).join(', ');
+            const sql = 'INSERT INTO ' + escId(tableName) + ' (' + cols + ') VALUES (' + vals + ')' +
+              (up.length ? ' ON CONFLICT (' + escId(idField) + ') DO UPDATE SET ' + up : ' ON CONFLICT DO NOTHING');
             try { await client.query(sql); created++; }
             catch (e) { errorDetails.push({ error: e?.message ?? String(e) }); }
           }
@@ -117,10 +135,10 @@ const main = async () => {
         let created = 0; const errorDetails = [];
         for (const rec of records) {
           const entries = Object.entries(rec).filter(([k, v]) => k !== SKIP_FIELD && v !== undefined);
-          const cols = entries.map(([k]) => '\`' + k + '\`').join(', ');
+          const cols = entries.map(([k]) => escIdMy(k)).join(', ');
           const vals = entries.map(([, v]) => escVal(v, provider)).join(', ');
-          const updates = entries.filter(([k]) => k !== idField).map(([k]) => '\`' + k + '\` = VALUES(\`' + k + '\`)').join(', ');
-          const sql = 'INSERT INTO \`' + tableName + '\` (' + cols + ') VALUES (' + vals + ')' +
+          const updates = entries.filter(([k]) => k !== idField).map(([k]) => escIdMy(k) + ' = VALUES(' + escIdMy(k) + ')').join(', ');
+          const sql = 'INSERT INTO ' + escIdMy(tableName) + ' (' + cols + ') VALUES (' + vals + ')' +
             (updates.length ? ' ON DUPLICATE KEY UPDATE ' + updates : '');
           try { await conn.execute(sql); created++; }
           catch (e) { errorDetails.push({ error: e?.message ?? String(e) }); }

@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { getConnection } from "@/lib/db/migration-connections";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const connectionId = searchParams.get("connectionId")?.trim() ?? "";
+// POST (not GET): the response contains a plaintext connection string with the DB password. Keeping
+// it out of the URL avoids leaking credentials into access logs, browser history, and Referer
+// headers, and prevents a cross-origin page from triggering it via simple navigation.
+export async function POST(request: Request) {
+  const body = (await request.json().catch(() => ({}))) as { connectionId?: string };
+  const connectionId = body.connectionId?.trim() ?? "";
   if (!connectionId) {
     return NextResponse.json({ success: false, error: "connectionId is required." }, { status: 400 });
   }

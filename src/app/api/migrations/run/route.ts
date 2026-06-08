@@ -746,6 +746,19 @@ const readStdin = () => new Promise((resolve, reject) => {
 });
 
 const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+// A single backslash, built without a backslash literal so the wrapping template-literal can't mangle it.
+const BACKSLASH = String.fromCharCode(92);
+// Escape an arbitrary string into a single-quoted SQL literal. Single quotes are doubled for every
+// provider. MySQL/MariaDB additionally treat backslash as a string-escape char (unless the session
+// runs with NO_BACKSLASH_ESCAPES), so a value ending in or containing a lone backslash would escape
+// the closing quote and let following bytes parse as SQL — double backslashes for MySQL to stop that.
+const escStr = (s, provider) => {
+  const p = (provider ?? '').toLowerCase();
+  const quoted = p === 'mysql'
+    ? s.split(BACKSLASH).join(BACKSLASH + BACKSLASH).replace(/'/g, "''")
+    : s.replace(/'/g, "''");
+  return "'" + quoted + "'";
+};
 const escVal = (v, provider) => {
   if (v === null || v === undefined) return 'NULL';
   if (typeof v === 'boolean') {
@@ -777,25 +790,28 @@ const escVal = (v, provider) => {
   }
   // JSON / jsonb (plain objects + arrays): serialise to a quoted JSON literal so { sku: 1 } inserts
   // as '{"sku":1}' instead of the broken '[object Object]' (which Postgres rejects → row dropped).
-  if (typeof v === 'object') return "'" + JSON.stringify(v).replace(/'/g, "''") + "'";
-  return "'" + String(v).replace(/'/g, "''") + "'";
+  if (typeof v === 'object') return escStr(JSON.stringify(v), provider);
+  return escStr(String(v), provider);
 };
 
 const REF_FIELD = '${MIGRATION_REFERENCE_FIELD}';
+// Quote a SQL identifier (table/column) by doubling embedded double-quotes. Names are validated to
+// /^[A-Za-z][A-Za-z0-9_]*$/ upstream, so this is defense-in-depth: the run path never re-checks them.
+const escId = (name) => '"' + String(name).split('"').join('""') + '"';
 const buildSql = (tableName, record, idField, provider) => {
   const entries = Object.entries(record).filter(([k, v]) => k !== REF_FIELD && v !== undefined);
   const cols = entries.map(([k]) => k);
   const vals = entries.map(([, v]) => escVal(v, provider));
   const p = provider.toLowerCase();
   if (p === 'sqlite') {
-    const qt = '"' + tableName + '"';
-    return 'INSERT OR REPLACE INTO ' + qt + ' (' + cols.map(c => '"' + c + '"').join(', ') + ') VALUES (' + vals.join(', ') + ')';
+    const qt = escId(tableName);
+    return 'INSERT OR REPLACE INTO ' + qt + ' (' + cols.map(escId).join(', ') + ') VALUES (' + vals.join(', ') + ')';
   }
   // postgresql
-  const qt = '"' + tableName + '"';
-  const qc = cols.map(c => '"' + c + '"').join(', ');
-  const up = cols.filter(c => c !== idField).map(c => '"' + c + '" = EXCLUDED."' + c + '"').join(', ');
-  const conflict = up.length ? ' ON CONFLICT ("' + idField + '") DO UPDATE SET ' + up : ' ON CONFLICT DO NOTHING';
+  const qt = escId(tableName);
+  const qc = cols.map(escId).join(', ');
+  const up = cols.filter(c => c !== idField).map(c => escId(c) + ' = EXCLUDED.' + escId(c)).join(', ');
+  const conflict = up.length ? ' ON CONFLICT (' + escId(idField) + ') DO UPDATE SET ' + up : ' ON CONFLICT DO NOTHING';
   return 'INSERT INTO ' + qt + ' (' + qc + ') VALUES (' + vals.join(', ') + ')' + conflict;
 };
 
@@ -869,15 +885,17 @@ const main = async () => {
       for (const { tableName, idField, records } of tables) {
         let created = 0;
         const errorDetails = [];
+        // Backtick-quote a MySQL identifier, doubling any embedded backtick (defense-in-depth).
+        const escIdMy = (name) => '\`' + String(name).split('\`').join('\`\`') + '\`';
         const buildMysqlSql = (rec) => {
           const entries = Object.entries(rec).filter(([k, v]) => k !== REF_FIELD && v !== undefined);
-          const cols = entries.map(([k]) => '\`' + k + '\`').join(', ');
+          const cols = entries.map(([k]) => escIdMy(k)).join(', ');
           const vals = entries.map(([, v]) => escVal(v, provider)).join(', ');
           const updates = entries
             .filter(([k]) => k !== idField)
-            .map(([k]) => '\`' + k + '\` = VALUES(\`' + k + '\`)')
+            .map(([k]) => escIdMy(k) + ' = VALUES(' + escIdMy(k) + ')')
             .join(', ');
-          return 'INSERT INTO \`' + tableName + '\` (' + cols + ') VALUES (' + vals + ')' +
+          return 'INSERT INTO ' + escIdMy(tableName) + ' (' + cols + ') VALUES (' + vals + ')' +
             (updates.length ? ' ON DUPLICATE KEY UPDATE ' + updates : '');
         };
         for (const rec of records) {
