@@ -42,12 +42,12 @@ export function SessionHistory({ sessions, knownConnectionIds, onResume }: Sessi
   );
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+    <div className="rounded-lg border border-border bg-card shadow-sm">
       {/* ── Accordion header (always visible) ─────────────────────────────── */}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50/60"
+        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-background/60"
       >
         <div className="flex items-center gap-3">
           {/* Chevron */}
@@ -56,18 +56,18 @@ export function SessionHistory({ sessions, knownConnectionIds, onResume }: Sessi
             fill="none"
             strokeWidth={2}
             stroke="currentColor"
-            className={classNames("h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200", open && "rotate-90")}
+            className={classNames("h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200", open && "rotate-90")}
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 4l4 4-4 4" />
           </svg>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Session History
-              <span className="ml-2 font-mono normal-case tracking-normal text-slate-400">({sessions.length})</span>
+              <span className="ml-2 font-mono normal-case tracking-normal text-muted-foreground">({sessions.length})</span>
             </p>
             {!open && (
-              <p className="mt-0.5 text-[11px] text-slate-400">
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
                 Click to expand past migration runs.
               </p>
             )}
@@ -78,17 +78,17 @@ export function SessionHistory({ sessions, knownConnectionIds, onResume }: Sessi
         {!open && (
           <div className="flex shrink-0 items-center gap-1.5">
             {successCount > 0 && (
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+              <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
                 {successCount} success
               </span>
             )}
             {partialCount > 0 && (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+              <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
                 {partialCount} partial
               </span>
             )}
             {failCount > 0 && (
-              <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
+              <span className="rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-semibold text-rose-300">
                 {failCount} failed
               </span>
             )}
@@ -99,13 +99,13 @@ export function SessionHistory({ sessions, knownConnectionIds, onResume }: Sessi
       {/* ── Expandable table ─────────────────────────────────────────────── */}
       {open && (
         <>
-          <div className="border-t border-slate-100 px-5 pb-1 pt-1.5">
-            <p className="text-[11px] text-slate-400">Click a row to resume that session.</p>
+          <div className="border-t border-border px-5 pb-1 pt-1.5">
+            <p className="text-[11px] text-muted-foreground">Click a row to resume that session.</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-100 bg-slate-50 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                <tr className="border-b border-border bg-background text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   <th className="px-4 py-2.5 text-left">Project</th>
                   <th className="px-4 py-2.5 text-left">From</th>
                   <th className="px-4 py-2.5 text-left">To</th>
@@ -118,31 +118,31 @@ export function SessionHistory({ sessions, knownConnectionIds, onResume }: Sessi
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {orderedSessions.map((s) => (
-                  <tr key={s.id} className="group transition hover:bg-slate-50">
-                    <td className="px-4 py-3 font-semibold text-slate-800">{s.projectName}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.fromVersion}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.toVersion}</td>
-                    <td className="px-4 py-3 text-right font-mono text-xs text-slate-600">
-                      {s.collectTableCount ?? <span className="text-slate-300">—</span>}
+                  <tr key={s.id} className="group transition hover:bg-background">
+                    <td className="px-4 py-3 font-semibold text-foreground">{s.projectName}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-foreground">{s.fromVersion}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-foreground">{s.toVersion}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs text-muted-foreground">
+                      {s.collectTableCount ?? <span className="text-muted-foreground">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs text-slate-600">
-                      {s.collectRowCount != null ? s.collectRowCount.toLocaleString() : <span className="text-slate-300">—</span>}
+                    <td className="px-4 py-3 text-right font-mono text-xs text-muted-foreground">
+                      {s.collectRowCount != null ? s.collectRowCount.toLocaleString() : <span className="text-muted-foreground">—</span>}
                     </td>
-                    <td className="px-4 py-3 font-mono text-[11px] text-slate-500">
-                      {s.collectTimestamp ?? <span className="text-slate-300">—</span>}
+                    <td className="px-4 py-3 font-mono text-[11px] text-muted-foreground">
+                      {s.collectTimestamp ?? <span className="text-muted-foreground">—</span>}
                     </td>
                     <td className="px-4 py-3">
                       {s.runStatus ? (
                         <span className={classNames(
                           "rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                          s.runStatus === "success" ? "bg-emerald-100 text-emerald-700"
-                          : s.runStatus === "partial" ? "bg-amber-100 text-amber-700"
-                          : "bg-rose-100 text-rose-700",
+                          s.runStatus === "success" ? "bg-emerald-500/20 text-emerald-300"
+                          : s.runStatus === "partial" ? "bg-amber-500/20 text-amber-300"
+                          : "bg-rose-500/20 text-rose-300",
                         )}>
                           {s.runStatus}
                         </span>
                       ) : (
-                        <span className="text-xs text-slate-300">—</span>
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -150,14 +150,14 @@ export function SessionHistory({ sessions, knownConnectionIds, onResume }: Sessi
                         <button
                           type="button"
                           onClick={() => onResume(s)}
-                          className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700"
+                          className="rounded-md border border-border bg-card px-3 py-1 text-xs font-semibold text-foreground transition hover:border-teal-500/40 hover:bg-teal-500/15 hover:text-teal-300"
                         >
                           Resume
                         </button>
                       ) : (
                         <span
                           title="Connection was deleted — cannot resume this session"
-                          className="rounded-md border border-slate-100 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-300 cursor-not-allowed"
+                          className="rounded-md border border-border bg-background px-3 py-1 text-xs font-semibold text-muted-foreground cursor-not-allowed"
                         >
                           No connection
                         </span>

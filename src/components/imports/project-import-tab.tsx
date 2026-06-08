@@ -26,33 +26,33 @@ export function ProjectImportTab({
     return (
       <>
         <DropZone accept=".json" onFile={onFileSelect} label="Select a Project pickle file" />
-        {parseError && <p className="mt-2 text-sm font-medium text-rose-600">{parseError}</p>}
+        {parseError && <p className="mt-2 text-sm font-medium text-rose-300">{parseError}</p>}
       </>
     );
   }
 
   return (
     <>
-      <div className="rounded-xl border border-orange-100 bg-orange-50/60 p-4">
+      <div className="rounded-xl border border-orange-500/25 bg-orange-500/15 p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-md bg-orange-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-orange-700">
+              <span className="rounded-md bg-orange-500/20 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-orange-300">
                 Project Pickle
               </span>
               <ProviderBadge provider={preview?.provider ?? ""} />
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-muted-foreground">
                 {preview?.versionCount ?? 0} version{(preview?.versionCount ?? 0) !== 1 ? "s" : ""}
               </span>
             </div>
-            <p className="mt-1.5 max-w-xs truncate text-sm font-semibold text-slate-800">{file.name}</p>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <p className="mt-1.5 max-w-xs truncate text-sm font-semibold text-foreground">{file.name}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
               From <span className="font-semibold">{preview?.sourceProjectName}</span>
               {preview?.exportedAt ? ` · ${new Date(preview.exportedAt).toLocaleString()}` : ""}
             </p>
           </div>
           <button type="button" onClick={onChangeFile}
-            className="shrink-0 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-100">
+            className="shrink-0 rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted">
             Change
           </button>
         </div>
@@ -63,22 +63,22 @@ export function ProjectImportTab({
         )}
       </div>
 
-      <div className="rounded-xl border border-slate-200 p-4 space-y-3">
-        <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Import Options</p>
+      <div className="rounded-xl border border-border p-4 space-y-3">
+        <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">Import Options</p>
         <div className="max-w-sm">
-          <label className="mb-1.5 block text-xs font-semibold text-slate-600">
-            Project name <span className="font-normal text-slate-400">(min 8 chars)</span>
+          <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+            Project name <span className="font-normal text-muted-foreground">(min 8 chars)</span>
           </label>
           <input value={projectName} onChange={(e) => onProjectNameChange(e.target.value)}
             placeholder={preview?.sourceProjectName ?? "Project name"}
-            className="h-9 w-full rounded-md border border-slate-300 bg-white px-2.5 text-sm font-medium text-slate-700 outline-none placeholder:text-slate-400 focus:border-lime-500"
+            className="h-9 w-full rounded-md border border-border bg-card px-2.5 text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground focus:border-lime-500"
           />
         </div>
       </div>
 
       <div className="flex justify-end">
         <button type="button" onClick={onImport} disabled={!canImport}
-          className="h-9 rounded-md bg-lime-600 px-5 text-sm font-semibold text-white transition hover:bg-lime-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+          className="h-9 rounded-md bg-lime-600 px-5 text-sm font-semibold text-white transition hover:bg-lime-700 disabled:cursor-not-allowed disabled:bg-muted">
           {isImporting ? "Importing..." : "Import Project"}
         </button>
       </div>

@@ -99,23 +99,23 @@ export default function CreateFirstProject() {
   };
 
   return (
-    <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+    <div className="w-full max-w-md rounded-xl border border-border bg-card p-8 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
         Schema Studio
       </p>
-      <h1 className="mt-2 text-2xl font-bold text-slate-950">Get started</h1>
-      <p className="mt-1 text-sm text-slate-500">
+      <h1 className="mt-2 text-2xl font-bold text-foreground">Get started</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
         Create a new project or import an existing Prisma schema.
       </p>
 
-      <div className="mt-5 flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+      <div className="mt-5 flex rounded-lg border border-border bg-background p-1">
         <button
           type="button"
           onClick={() => setTab("create")}
           className={`flex-1 rounded-md py-2 text-sm font-semibold transition ${
             tab === "create"
-              ? "bg-white text-slate-950 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Create project
@@ -125,8 +125,8 @@ export default function CreateFirstProject() {
           onClick={() => setTab("import")}
           className={`flex-1 rounded-md py-2 text-sm font-semibold transition ${
             tab === "import"
-              ? "bg-white text-slate-950 shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Import schema
@@ -136,7 +136,7 @@ export default function CreateFirstProject() {
       {tab === "create" ? (
         <form onSubmit={handleCreate} className="mt-6 space-y-4">
           <div>
-            <label htmlFor="project-name" className="block text-sm font-semibold text-slate-700">
+            <label htmlFor="project-name" className="block text-sm font-semibold text-foreground">
               Project name
             </label>
             <input
@@ -144,58 +144,58 @@ export default function CreateFirstProject() {
               value={name}
               onChange={(e) => { setName(e.target.value); setCreateError(""); }}
               placeholder="Customer Portal"
-              className="mt-1.5 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-600"
+              className="mt-1.5 h-11 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-emerald-600"
               autoFocus
             />
             {tooShort && (
-              <p className="mt-1.5 text-xs font-medium text-rose-600">At least 8 characters required.</p>
+              <p className="mt-1.5 text-xs font-medium text-rose-300">At least 8 characters required.</p>
             )}
           </div>
 
           <div>
-            <label htmlFor="db-provider" className="block text-sm font-semibold text-slate-700">
+            <label htmlFor="db-provider" className="block text-sm font-semibold text-foreground">
               Database provider
             </label>
             <select
               id="db-provider"
               value={provider}
               onChange={(e) => setProvider(e.target.value)}
-              className="mt-1.5 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition focus:border-emerald-600"
+              className="mt-1.5 h-11 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition focus:border-emerald-600"
             >
               {providers.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
 
           <div>
-            <label htmlFor="prisma-client" className="block text-sm font-semibold text-slate-700">
+            <label htmlFor="prisma-client" className="block text-sm font-semibold text-foreground">
               Prisma client
             </label>
             <select
               id="prisma-client"
               value={client}
               onChange={(e) => setClient(e.target.value)}
-              className="mt-1.5 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition focus:border-emerald-600"
+              className="mt-1.5 h-11 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition focus:border-emerald-600"
             >
               {prismaClients.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 
           <div>
-            <label htmlFor="graphql-stack" className="block text-sm font-semibold text-slate-700">
+            <label htmlFor="graphql-stack" className="block text-sm font-semibold text-foreground">
               GraphQL stack
             </label>
             <select
               id="graphql-stack"
               value={graphql}
               onChange={(e) => setGraphql(e.target.value)}
-              className="mt-1.5 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition focus:border-emerald-600"
+              className="mt-1.5 h-11 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition focus:border-emerald-600"
             >
               {graphqlOptions.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
 
           {createError && (
-            <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
+            <p className="rounded-md border border-rose-500/30 bg-rose-500/15 px-3 py-2 text-sm font-semibold text-rose-300">
               {createError}
             </p>
           )}
@@ -203,7 +203,7 @@ export default function CreateFirstProject() {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="h-11 w-full rounded-md bg-emerald-600 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="h-11 w-full rounded-md bg-emerald-600 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-muted"
           >
             {creating ? "Creating…" : "Create Project"}
           </button>
@@ -211,7 +211,7 @@ export default function CreateFirstProject() {
       ) : (
         <form onSubmit={handleImport} className="mt-6 space-y-4">
           <div>
-            <label htmlFor="import-name" className="block text-sm font-semibold text-slate-700">
+            <label htmlFor="import-name" className="block text-sm font-semibold text-foreground">
               Project name
             </label>
             <input
@@ -219,16 +219,16 @@ export default function CreateFirstProject() {
               value={importName}
               onChange={(e) => { setImportName(e.target.value); setImportError(""); }}
               placeholder="Customer Portal"
-              className="mt-1.5 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-600"
+              className="mt-1.5 h-11 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-emerald-600"
               autoFocus
             />
             {importTooShort && (
-              <p className="mt-1.5 text-xs font-medium text-rose-600">At least 8 characters required.</p>
+              <p className="mt-1.5 text-xs font-medium text-rose-300">At least 8 characters required.</p>
             )}
           </div>
 
           <div>
-            <label htmlFor="import-file" className="block text-sm font-semibold text-slate-700">
+            <label htmlFor="import-file" className="block text-sm font-semibold text-foreground">
               Prisma schema file
             </label>
             <div className="mt-1.5 flex items-center gap-3">
@@ -243,7 +243,7 @@ export default function CreateFirstProject() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="h-11 flex-1 rounded-md border border-slate-300 bg-white px-3 text-left text-sm font-medium text-slate-500 transition hover:border-slate-400 hover:bg-slate-50"
+                className="h-11 flex-1 rounded-md border border-border bg-card px-3 text-left text-sm font-medium text-muted-foreground transition hover:border-slate-400 hover:bg-background"
               >
                 {importFile ? importFile.name : "Choose .prisma file…"}
               </button>
@@ -251,7 +251,7 @@ export default function CreateFirstProject() {
                 <button
                   type="button"
                   onClick={() => { setImportFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                  className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-50"
+                  className="h-11 rounded-md border border-border bg-card px-3 text-sm font-semibold text-muted-foreground transition hover:bg-background"
                 >
                   Clear
                 </button>
@@ -260,7 +260,7 @@ export default function CreateFirstProject() {
           </div>
 
           {importError && (
-            <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
+            <p className="rounded-md border border-rose-500/30 bg-rose-500/15 px-3 py-2 text-sm font-semibold text-rose-300">
               {importError}
             </p>
           )}
@@ -268,7 +268,7 @@ export default function CreateFirstProject() {
           <button
             type="submit"
             disabled={!canImport}
-            className="h-11 w-full rounded-md bg-emerald-600 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="h-11 w-full rounded-md bg-emerald-600 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-muted"
           >
             {importing ? "Importing…" : "Import Schema"}
           </button>

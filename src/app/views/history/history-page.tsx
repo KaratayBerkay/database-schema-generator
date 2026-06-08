@@ -27,30 +27,30 @@ export function HistoryPageContent() {
 
   if (!hasProject) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
-        <p className="text-slate-600">Select a project to view its version history.</p>
+      <div className="rounded-lg border border-border bg-card p-8 text-center">
+        <p className="text-muted-foreground">Select a project to view its version history.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
-      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-5 py-4">
+      <section className="rounded-lg border border-border bg-card shadow-sm">
+        <div className="border-b border-border px-5 py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Main Window
               </p>
-              <h3 className="mt-1 text-xl font-semibold text-slate-950">
+              <h3 className="mt-1 text-xl font-semibold text-foreground">
                 Version History
               </h3>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-md border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700">
+              <span className="rounded-md border border-teal-500/30 bg-teal-500/15 px-3 py-1.5 text-xs font-semibold text-teal-300">
                 {projectName}
               </span>
-              <span className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">
+              <span className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground">
                 {versions.length} {versions.length === 1 ? "version" : "versions"}
               </span>
             </div>
@@ -59,12 +59,12 @@ export function HistoryPageContent() {
 
         <div className="p-5">
           {historyQuery.isLoading ? (
-            <div className="py-12 text-center text-sm font-medium text-slate-500">
+            <div className="py-12 text-center text-sm font-medium text-muted-foreground">
               Loading history…
             </div>
           ) : versions.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
-              <p className="text-sm font-medium text-slate-500">No version history found for this project.</p>
+            <div className="rounded-lg border border-dashed border-border bg-background p-10 text-center">
+              <p className="text-sm font-medium text-muted-foreground">No version history found for this project.</p>
             </div>
           ) : (
             <div className="space-y-3">

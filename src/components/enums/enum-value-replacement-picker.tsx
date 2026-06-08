@@ -25,7 +25,7 @@ export function EnumValueReplacementPicker({
 
   if (!warning) {
     return (
-      <span className="rounded border border-red-200 bg-red-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-red-500 line-through">
+      <span className="rounded border border-red-500/30 bg-red-500/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-red-500 line-through">
         {removedValue}
       </span>
     );
@@ -35,15 +35,15 @@ export function EnumValueReplacementPicker({
     if (editing) {
       return (
         <span className="inline-flex flex-wrap items-center gap-1">
-          <span className="rounded border border-red-200 bg-red-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-red-500 line-through">
+          <span className="rounded border border-red-500/30 bg-red-500/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-red-500 line-through">
             {removedValue}
           </span>
-          <span className="text-[10px] font-semibold text-slate-400">→</span>
+          <span className="text-[10px] font-semibold text-muted-foreground">→</span>
           <select
             value={editSelected}
             onChange={(e) => setEditSelected(e.target.value)}
             disabled={busy}
-            className="h-6 rounded border border-amber-300 bg-white px-1 font-mono text-[11px] font-semibold text-slate-800 outline-none focus:border-amber-500 disabled:opacity-50"
+            className="h-6 rounded border border-amber-500/40 bg-card px-1 font-mono text-[11px] font-semibold text-foreground outline-none focus:border-amber-500 disabled:opacity-50"
           >
             {availableValues.map((v) => (
               <option key={v} value={v}>{v}</option>
@@ -58,7 +58,7 @@ export function EnumValueReplacementPicker({
               setEditing(false);
               setBusy(false);
             }}
-            className="inline-flex h-6 w-6 items-center justify-center rounded border border-emerald-300 bg-emerald-50 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50"
+            className="inline-flex h-6 w-6 items-center justify-center rounded border border-emerald-500/40 bg-emerald-500/15 text-[11px] font-bold text-emerald-300 transition hover:bg-emerald-500/20 disabled:opacity-50"
             title="Save mapping"
           >
             {busy ? "…" : "✓"}
@@ -67,7 +67,7 @@ export function EnumValueReplacementPicker({
             type="button"
             disabled={busy}
             onClick={() => setEditing(false)}
-            className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-[11px] font-bold text-slate-500 transition hover:bg-slate-50 disabled:opacity-50"
+            className="inline-flex h-6 w-6 items-center justify-center rounded border border-border bg-card text-[11px] font-bold text-muted-foreground transition hover:bg-background disabled:opacity-50"
             title="Cancel"
           >
             ✕
@@ -78,11 +78,11 @@ export function EnumValueReplacementPicker({
 
     return (
       <span className="inline-flex flex-wrap items-center gap-1.5">
-        <span className="inline-flex items-center divide-x divide-emerald-200 overflow-hidden rounded-md border border-emerald-200">
-          <span className="flex items-center gap-1 bg-emerald-50 px-2 py-1 font-mono text-[10px] font-semibold">
+        <span className="inline-flex items-center divide-x divide-emerald-200 overflow-hidden rounded-md border border-emerald-500/30">
+          <span className="flex items-center gap-1 bg-emerald-500/15 px-2 py-1 font-mono text-[10px] font-semibold">
             <span className="line-through text-red-400">{removedValue}</span>
             <span className="text-emerald-400">→</span>
-            <span className="text-emerald-700">{warning.replacementValue ?? "—"}</span>
+            <span className="text-emerald-300">{warning.replacementValue ?? "—"}</span>
           </span>
           {onRemap && availableValues.length > 0 && (
             <button
@@ -91,7 +91,7 @@ export function EnumValueReplacementPicker({
                 setEditSelected(warning.replacementValue ?? availableValues[0] ?? "");
                 setEditing(true);
               }}
-              className="flex items-center bg-white px-2 py-1 text-[10px] font-semibold text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
+              className="flex items-center bg-card px-2 py-1 text-[10px] font-semibold text-muted-foreground transition hover:bg-background hover:text-foreground"
               title="Edit mapping"
             >
               Edit
@@ -107,7 +107,7 @@ export function EnumValueReplacementPicker({
                 setBusy(false);
               }}
               title="Undo approval"
-              className="flex items-center bg-white px-2 py-1 text-[10px] font-bold text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+              className="flex items-center bg-card px-2 py-1 text-[10px] font-bold text-muted-foreground transition hover:bg-red-500/15 hover:text-red-300 disabled:opacity-50"
             >
               {busy ? "…" : "✗"}
             </button>
@@ -121,17 +121,17 @@ export function EnumValueReplacementPicker({
 
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
-      <span className="rounded border border-red-200 bg-red-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-red-500 line-through">
+      <span className="rounded border border-red-500/30 bg-red-500/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-red-500 line-through">
         {removedValue}
       </span>
-      <span className="text-[10px] font-semibold text-slate-400">→</span>
+      <span className="text-[10px] font-semibold text-muted-foreground">→</span>
       {canConfirm ? (
         <>
           <select
             value={selected}
             onChange={(e) => setSelected(e.target.value)}
             disabled={busy}
-            className="h-6 rounded border border-amber-300 bg-white px-1 font-mono text-[11px] font-semibold text-slate-800 outline-none focus:border-amber-500 disabled:opacity-50"
+            className="h-6 rounded border border-amber-500/40 bg-card px-1 font-mono text-[11px] font-semibold text-foreground outline-none focus:border-amber-500 disabled:opacity-50"
           >
             {availableValues.map((v) => (
               <option key={v} value={v}>{v}</option>
@@ -145,7 +145,7 @@ export function EnumValueReplacementPicker({
               await onApprove(warning.id, selected);
               setBusy(false);
             }}
-            className="inline-flex items-center gap-0.5 rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-0.5 rounded border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-300 transition hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? "…" : "✓ Map"}
           </button>
@@ -159,7 +159,7 @@ export function EnumValueReplacementPicker({
             await onApprove(warning.id, "");
             setBusy(false);
           }}
-          className="inline-flex items-center gap-0.5 rounded border border-slate-300 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500 transition hover:bg-slate-50 disabled:opacity-50"
+          className="inline-flex items-center gap-0.5 rounded border border-border bg-card px-2 py-0.5 text-[10px] font-semibold text-muted-foreground transition hover:bg-background disabled:opacity-50"
           title="No replacement values available — acknowledge data loss"
         >
           {busy ? "…" : "✓ Acknowledge"}

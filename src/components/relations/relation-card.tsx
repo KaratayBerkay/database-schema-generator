@@ -33,20 +33,20 @@ export function RelationCard({
   isNewRelation, isDeleting, onEdit, onDelete, onShowFkDetail,
   onNavigateToTable,
 }: RelationCardProps) {
-  const cardBorder = hasFkTypeMismatch ? "border-red-300"
-    : isNewRelation ? "border-sky-300"
-    : fksMissing ? "border-amber-300"
-    : "border-slate-200";
+  const cardBorder = hasFkTypeMismatch ? "border-red-500/40"
+    : isNewRelation ? "border-sky-500/40"
+    : fksMissing ? "border-amber-500/40"
+    : "border-border";
 
   // Target model badge colours
   const targetCls = activeRelationTab === "references"
-    ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
-    : "border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100";
+    ? "border-amber-500/40 bg-amber-500/15 text-amber-200 hover:bg-amber-500/20"
+    : "border-violet-500/40 bg-violet-500/15 text-violet-200 hover:bg-violet-500/20";
 
   return (
     <div
       id={`relation-card-${relation.key}`}
-      className={classNames("rounded-xl border bg-white p-4 shadow-sm transition", cardBorder)}
+      className={classNames("rounded-xl border bg-card p-4 shadow-sm transition", cardBorder)}
     >
       {/* ── Row 1: kind → name → target + status badges + actions ─────── */}
       <div className="flex items-start justify-between gap-3">
@@ -59,10 +59,10 @@ export function RelationCard({
           </span>
 
           {/* Relation name */}
-          <span className="font-semibold text-slate-700">{relation.name}</span>
+          <span className="font-semibold text-foreground">{relation.name}</span>
 
           {/* Directional arrow */}
-          <span className="text-sm font-bold text-slate-300">
+          <span className="text-sm font-bold text-muted-foreground">
             {activeRelationTab === "references" ? "←" : "→"}
           </span>
 
@@ -81,7 +81,7 @@ export function RelationCard({
 
           {/* Back-reference name */}
           {activeRelationTab === "relations" && relation.backReferenceName && (
-            <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+            <span className="rounded-md border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">
               ↩ {relation.backReferenceName}
             </span>
           )}
@@ -101,7 +101,7 @@ export function RelationCard({
           {fksMissing && (
             <span
               title={`FK column "${relation.fields.find((f) => !modelCascadeHints?.has(f))}" not found on ${selectedModelName}`}
-              className="rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700"
+              className="rounded border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-300"
             >
               FK missing
             </span>
@@ -109,11 +109,11 @@ export function RelationCard({
           {activeRelationTab === "relations" && (
             <>
               <button type="button" onClick={onEdit} title="Edit"
-                className="flex h-7 w-7 items-center justify-center rounded-md border border-violet-200 bg-white text-violet-600 transition hover:bg-violet-50">
+                className="flex h-7 w-7 items-center justify-center rounded-md border border-violet-500/30 bg-card text-violet-300 transition hover:bg-violet-500/15">
                 <IconPencil size={13} stroke={2} />
               </button>
               <button type="button" onClick={onDelete} disabled={isDeleting} title="Delete"
-                className="flex h-7 w-7 items-center justify-center rounded-md border border-rose-200 bg-white text-rose-500 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:text-slate-400">
+                className="flex h-7 w-7 items-center justify-center rounded-md border border-rose-500/30 bg-card text-rose-500 transition hover:bg-rose-500/15 disabled:cursor-not-allowed disabled:text-muted-foreground">
                 <IconTrash size={13} stroke={2} />
               </button>
             </>
@@ -122,7 +122,7 @@ export function RelationCard({
       </div>
 
       {/* ── Row 2: FK mapping + cardinality + cascade ──────────────────── */}
-      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 border-t border-slate-100 pt-3">
+      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 border-t border-border pt-3">
         {/* FK field → reference field */}
         <div className="flex flex-wrap items-center gap-1">
           {relation.fields.length > 0 ? (
@@ -132,37 +132,37 @@ export function RelationCard({
                 <span key={f}
                   title={mismatch ? `Update to ${mismatch.toType} — ${mismatch.targetTableName} PK changed from ${mismatch.fromType}` : undefined}
                   className={classNames("rounded-md border px-2 py-0.5 text-xs font-semibold",
-                    mismatch ? "border-red-300 bg-red-50 text-red-700" : "border-transparent bg-slate-100 text-slate-600")}>
+                    mismatch ? "border-red-500/40 bg-red-500/15 text-red-300" : "border-transparent bg-muted text-muted-foreground")}>
                   {f}
                 </span>
               );
             })
           ) : (
-            <span className="text-xs text-slate-400">implicit</span>
+            <span className="text-xs text-muted-foreground">implicit</span>
           )}
-          <span className="text-xs font-semibold text-slate-300">→</span>
+          <span className="text-xs font-semibold text-muted-foreground">→</span>
           {relation.references.length > 0 ? (
             relation.references.map((r) => (
-              <span key={r} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">{r}</span>
+              <span key={r} className="rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{r}</span>
             ))
           ) : (
-            <span className="text-xs text-slate-400">managed</span>
+            <span className="text-xs text-muted-foreground">managed</span>
           )}
         </div>
 
         {/* Cardinality */}
-        <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+        <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
           {relation.isArray ? "List" : relation.nullable ? "Optional" : "Required"}
         </span>
 
         {/* Cascade rules */}
         {relation.onDelete && (
-          <span className="rounded-md bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">
+          <span className="rounded-md bg-rose-500/15 px-2 py-0.5 text-xs font-semibold text-rose-300">
             onDelete: {relation.onDelete}
           </span>
         )}
         {relation.onUpdate && (
-          <span className="rounded-md bg-cyan-50 px-2 py-0.5 text-xs font-semibold text-cyan-700">
+          <span className="rounded-md bg-cyan-500/15 px-2 py-0.5 text-xs font-semibold text-cyan-300">
             onUpdate: {relation.onUpdate}
           </span>
         )}
@@ -170,7 +170,7 @@ export function RelationCard({
 
       {/* ── Row 3: collapsible Prisma preview ──────────────────────────── */}
       <details className="group mt-3">
-        <summary className="flex cursor-pointer select-none items-center gap-1 text-xs font-semibold text-slate-400 hover:text-slate-600">
+        <summary className="flex cursor-pointer select-none items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-muted-foreground">
           <IconChevronDown size={11} className="-rotate-90 transition-transform group-open:rotate-0" />
           Prisma preview
         </summary>

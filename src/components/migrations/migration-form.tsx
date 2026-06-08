@@ -1,7 +1,7 @@
 "use client";
 
 export function MigrationLabel({ children }: { children: React.ReactNode }) {
-  return <label className="block text-xs font-semibold text-slate-600">{children}</label>;
+  return <label className="block text-xs font-semibold text-muted-foreground">{children}</label>;
 }
 
 export function MigrationInput({
@@ -17,7 +17,7 @@ export function MigrationInput({
       onBlur={onBlur}
       placeholder={placeholder}
       autoComplete="off"
-      className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-slate-500"
+      className="h-9 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-slate-500"
     />
   );
 }

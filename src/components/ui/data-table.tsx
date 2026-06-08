@@ -40,15 +40,15 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className={cn("overflow-x-auto rounded-lg border border-slate-200", className)}>
+    <div className={cn("overflow-x-auto rounded-lg border border-border", className)}>
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id} className="bg-slate-50 hover:bg-slate-50">
+            <TableRow key={headerGroup.id} className="bg-background hover:bg-background">
               {headerGroup.headers.map((header) => (
                 <TableHead
                   key={header.id}
-                  className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500"
+                  className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
                 >
                   {header.isPlaceholder
                     ? null
@@ -73,7 +73,7 @@ export function DataTable<TData, TValue>({
             <TableRow>
               <TableCell
                 colSpan={columns.length}
-                className="h-24 px-4 text-center text-sm font-medium text-slate-500"
+                className="h-24 px-4 text-center text-sm font-medium text-muted-foreground"
               >
                 {emptyText}
               </TableCell>

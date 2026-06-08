@@ -55,30 +55,30 @@ export function DiffWarningsPanel({ warnings }: { warnings: DiffWarning[] }) {
   const warns  = warnings.filter((w) => w.severity === "warning");
 
   return (
-    <div className={cn("rounded-md border text-xs", errors.length > 0 ? "border-rose-200 bg-rose-50" : "border-amber-200 bg-amber-50")}>
+    <div className={cn("rounded-md border text-xs", errors.length > 0 ? "border-rose-500/30 bg-rose-500/15" : "border-amber-500/30 bg-amber-500/15")}>
       <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center gap-2 px-3 py-2 text-left">
         <svg viewBox="0 0 16 16" fill="none" strokeWidth={2} stroke="currentColor"
           className={cn("h-3.5 w-3.5 shrink-0 transition-transform duration-150", open ? "rotate-90" : "")}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 4l4 4-4 4" />
         </svg>
-        <span className={cn("font-semibold", errors.length > 0 ? "text-rose-700" : "text-amber-700")}>
+        <span className={cn("font-semibold", errors.length > 0 ? "text-rose-300" : "text-amber-300")}>
           {errors.length > 0 && `${errors.length} data-loss risk${errors.length !== 1 ? "s" : ""}`}
           {errors.length > 0 && warns.length > 0 && " · "}
           {warns.length > 0 && `${warns.length} warning${warns.length !== 1 ? "s" : ""}`}
         </span>
-        <span className="ml-auto text-[10px] text-slate-400">click to {open ? "collapse" : "expand"}</span>
+        <span className="ml-auto text-[10px] text-muted-foreground">click to {open ? "collapse" : "expand"}</span>
       </button>
       {open && (
         <div className="divide-y border-t border-inherit">
           {warnings.map((w, i) => (
             <div key={i} className="flex items-start gap-2 px-3 py-1.5">
               <span className={cn("mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase",
-                w.severity === "error" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700")}>
+                w.severity === "error" ? "bg-rose-500/20 text-rose-300" : "bg-amber-500/20 text-amber-300")}>
                 {w.severity === "error" ? "risk" : "warn"}
               </span>
               <div className="min-w-0">
-                <span className="font-mono font-semibold text-slate-700">{w.model}{w.field ? `.${w.field}` : ""}</span>
-                <span className="ml-2 text-slate-500">{w.message}</span>
+                <span className="font-mono font-semibold text-foreground">{w.model}{w.field ? `.${w.field}` : ""}</span>
+                <span className="ml-2 text-muted-foreground">{w.message}</span>
               </div>
             </div>
           ))}

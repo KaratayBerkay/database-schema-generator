@@ -10,14 +10,14 @@ export function WarningCellContent({ w }: { w: SchemaWarning }) {
     if (w.approvedAt && w.replacementValue) {
       return (
         <span className="flex items-center gap-1 text-xs">
-          <code className="font-mono text-slate-400 line-through">{removedValue}</code>
-          <span className="text-slate-400">→</span>
-          <code className="rounded bg-emerald-100 px-1 font-mono text-emerald-700">{w.replacementValue}</code>
+          <code className="font-mono text-muted-foreground line-through">{removedValue}</code>
+          <span className="text-muted-foreground">→</span>
+          <code className="rounded bg-emerald-500/20 px-1 font-mono text-emerald-300">{w.replacementValue}</code>
         </span>
       );
     }
     return (
-      <span className="text-xs text-amber-600 font-medium">
+      <span className="text-xs text-amber-300 font-medium">
         ⚠ No mapping — <code className="font-mono">{removedValue}</code> has no replacement
       </span>
     );
@@ -30,21 +30,21 @@ export function WarningCellContent({ w }: { w: SchemaWarning }) {
   ) {
     if (w.approvedAt && w.replacementValue) {
       return (
-        <code className="rounded bg-emerald-100 px-1.5 py-0.5 font-mono text-xs text-emerald-700">
+        <code className="rounded bg-emerald-500/20 px-1.5 py-0.5 font-mono text-xs text-emerald-300">
           ✓ &quot;{w.replacementValue}&quot;
         </code>
       );
     }
     if (w.approvedAt && !w.replacementValue) {
       return isNullable
-        ? <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">→ NULL</span>
+        ? <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">→ NULL</span>
         : <span className="text-xs font-medium text-rose-500">⚠ No default — auto-generated placeholder</span>;
     }
     return isNullable
-      ? <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">will be NULL</span>
-      : <span className="text-xs text-amber-600">auto-generated placeholder</span>;
+      ? <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">will be NULL</span>
+      : <span className="text-xs text-amber-300">auto-generated placeholder</span>;
   }
 
-  if (w.approvedAt) return <span className="text-[10px] font-semibold text-emerald-600">✓ Acknowledged</span>;
-  return <span className="text-[10px] text-slate-400">—</span>;
+  if (w.approvedAt) return <span className="text-[10px] font-semibold text-emerald-300">✓ Acknowledged</span>;
+  return <span className="text-[10px] text-muted-foreground">—</span>;
 }

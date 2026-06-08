@@ -91,34 +91,34 @@ export function SchemaPageContent() {
   return (
     <div className="space-y-5">
       {!hasProject ? (
-        <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
-          <p className="text-slate-600">Select a project to manage schema fields.</p>
+        <div className="rounded-lg border border-border bg-card p-8 text-center">
+          <p className="text-muted-foreground">Select a project to manage schema fields.</p>
           <button type="button" onClick={() => setIsTemplatesOpen(true)}
-            className="mt-4 h-9 rounded-md border border-emerald-300 bg-white px-5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
+            className="mt-4 h-9 rounded-md border border-emerald-500/40 bg-card px-5 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/15">
             Field Templates
           </button>
         </div>
       ) : (
-        <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-5 py-4">
+        <section className="rounded-lg border border-border bg-card shadow-sm">
+          <div className="border-b border-border px-5 py-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Main Window</p>
-                <h3 className="mt-1 text-xl font-semibold text-slate-950">Schema workspace</h3>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Main Window</p>
+                <h3 className="mt-1 text-xl font-semibold text-foreground">Schema workspace</h3>
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-400">{projectName}-{version}.prisma</span>
-                  <span className="text-slate-300">·</span>
-                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Table:</span>
-                  <span className="text-base font-bold text-cyan-700">{selectedModel ? selectedModel.name : "—"}</span>
+                  <span className="text-xs font-medium text-muted-foreground">{projectName}-{version}.prisma</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Table:</span>
+                  <span className="text-base font-bold text-cyan-300">{selectedModel ? selectedModel.name : "—"}</span>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <button type="button" onClick={() => setIsTemplatesOpen(true)}
-                  className="h-9 min-w-32 rounded-md border border-emerald-300 bg-white px-4 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
+                  className="h-9 min-w-32 rounded-md border border-emerald-500/40 bg-card px-4 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/15">
                   Templates
                 </button>
                 <button type="button" onClick={() => setIsTableSelectorOpen(true)}
-                  className="h-9 min-w-36 rounded-md border border-cyan-300 bg-white px-5 text-xs font-semibold text-cyan-700 transition hover:bg-cyan-50">
+                  className="h-9 min-w-36 rounded-md border border-cyan-500/40 bg-card px-5 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-500/15">
                   Select Table
                 </button>
                 {selectedModelName ? (
@@ -149,9 +149,9 @@ export function SchemaPageContent() {
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                     {/* Left: label + name + diff badge */}
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Selected Table</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Selected Table</p>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <h4 className="text-xl font-bold text-slate-950">{selectedModelName}</h4>
+                        <h4 className="text-xl font-bold text-foreground">{selectedModelName}</h4>
                         {(() => {
                           const td = selectedModelKey ? diffByTableKey.get(selectedModelKey) : null;
                           return td ? <VersionDiffBadge severity={td.severity} title={td.message} /> : null;
@@ -161,23 +161,23 @@ export function SchemaPageContent() {
 
                     {/* Right: type filter + count + legend */}
                     <div className="flex flex-wrap items-center gap-3">
-                      <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                      <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                         Type
                         <select value={editor.fieldTypeFilter} onChange={(e) => editor.setFieldTypeFilter(e.target.value)}
-                          className="h-9 min-w-36 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold normal-case tracking-normal text-slate-700 outline-none transition focus:border-cyan-600">
+                          className="h-9 min-w-36 rounded-md border border-border bg-card px-3 text-sm font-semibold normal-case tracking-normal text-foreground outline-none transition focus:border-cyan-600">
                           <option value="All">All fields</option>
                           {editor.fieldFilterOptions.map((type) => <option key={type} value={type}>{type}</option>)}
                         </select>
                       </label>
-                      <span className="text-xs font-semibold text-slate-400">
+                      <span className="text-xs font-semibold text-muted-foreground">
                         {editor.filteredFields.length} shown · {editor.editableFields.length} editable · {editor.preservedFieldCount} preserved
                       </span>
                       <button type="button" onClick={() => setIsFieldLegendOpen((o) => !o)}
                         className={classNames(
                           "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold transition",
                           isFieldLegendOpen
-                            ? "border-cyan-300 bg-cyan-50 text-cyan-700"
-                            : "border-slate-300 bg-white text-slate-500 hover:border-cyan-200 hover:text-cyan-600",
+                            ? "border-cyan-500/40 bg-cyan-500/15 text-cyan-300"
+                            : "border-border bg-card text-muted-foreground hover:border-cyan-500/30 hover:text-cyan-300",
                         )}
                         title="Field legend">?</button>
                     </div>
@@ -190,18 +190,18 @@ export function SchemaPageContent() {
                     return (
                       <Link
                         href="/tracking?resolve=schema"
-                        className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-5 py-3.5 transition hover:bg-amber-100 hover:border-amber-400 active:scale-[0.99]"
+                        className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-500/15 px-5 py-3.5 transition hover:bg-amber-500/20 hover:border-amber-400 active:scale-[0.99]"
                       >
                         <div className="flex items-center gap-3">
                           <span className="text-xl">⚠</span>
                           <div>
-                            <p className="text-sm font-bold text-amber-800">Schema changes need review</p>
-                            <p className="mt-0.5 text-xs text-amber-600">
+                            <p className="text-sm font-bold text-amber-200">Schema changes need review</p>
+                            <p className="mt-0.5 text-xs text-amber-300">
                               Some fields have type, nullability, or naming changes. Approve them in the Tracking workflow before running a migration.
                             </p>
                           </div>
                         </div>
-                        <span className="shrink-0 rounded-lg border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-700 shadow-sm">
+                        <span className="shrink-0 rounded-lg border border-amber-500/40 bg-card px-4 py-2 text-sm font-semibold text-amber-300 shadow-sm">
                           Resolve in Tracking →
                         </span>
                       </Link>
@@ -237,9 +237,9 @@ export function SchemaPageContent() {
                             (draft.comment ?? "") !== (field.comment ?? "");
                           const fieldDiff = diffByFieldKey.get(field.key);
                           const cardBorder = fieldDiff
-                            ? fieldDiff.severity === "breaking" ? "border-red-300"
-                              : fieldDiff.severity === "warning" ? "border-amber-300" : "border-sky-300"
-                            : "border-slate-200";
+                            ? fieldDiff.severity === "breaking" ? "border-red-500/40"
+                              : fieldDiff.severity === "warning" ? "border-amber-500/40" : "border-sky-500/40"
+                            : "border-border";
                           return (
                             <FieldCard key={field.key} field={field} draft={draft} hasChanges={hasChanges}
                               fieldDiff={fieldDiff} cardBorder={cardBorder}

@@ -27,25 +27,25 @@ export function ExportedCodeDialog({ dialog, copied, onCopy, onDownload, onClose
   if (!dialog) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-3">
-      <div className="flex max-h-[92vh] w-[96vw] max-w-[1400px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl">
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-4">
+      <div className="flex max-h-[92vh] w-[96vw] max-w-[1400px] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Exported Code</p>
-            <h3 className="mt-1 text-lg font-semibold text-slate-950">{dialog.fileName}</h3>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Exported Code</p>
+            <h3 className="mt-1 text-lg font-semibold text-foreground">{dialog.fileName}</h3>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {dialog.lang === "ts" ? (
                 <>
-                  <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+                  <span className="rounded-md bg-emerald-500/15 px-2 py-1 text-xs font-semibold text-emerald-300">
                     {dialog.tableCount} {dialog.tableCount === 1 ? "table" : "tables"}
                   </span>
                   {dialog.enumCount > 0 && (
-                    <span className="rounded-md bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700">
+                    <span className="rounded-md bg-indigo-500/15 px-2 py-1 text-xs font-semibold text-indigo-300">
                       {dialog.enumCount} {dialog.enumCount === 1 ? "enum" : "enums"}
                     </span>
                   )}
                 </>
               ) : (
-                <span className="rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">Prisma Schema</span>
+                <span className="rounded-md bg-blue-500/15 px-2 py-1 text-xs font-semibold text-blue-300">Prisma Schema</span>
               )}
             </div>
           </div>
@@ -57,8 +57,8 @@ export function ExportedCodeDialog({ dialog, copied, onCopy, onDownload, onClose
               className={classNames(
                 "flex h-9 w-9 items-center justify-center rounded-md border transition",
                 copied
-                  ? "border-emerald-300 bg-emerald-50 text-emerald-600"
-                  : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
+                  ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
+                  : "border-border bg-card text-foreground hover:bg-background",
               )}
             >
               {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
@@ -67,7 +67,7 @@ export function ExportedCodeDialog({ dialog, copied, onCopy, onDownload, onClose
               type="button"
               onClick={onDownload}
               title="Download file"
-              className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50"
+              className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-foreground transition hover:bg-background"
             >
               <IconDownload size={16} />
             </button>
@@ -75,14 +75,14 @@ export function ExportedCodeDialog({ dialog, copied, onCopy, onDownload, onClose
               type="button"
               onClick={onClose}
               title="Close"
-              className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50"
+              className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-foreground transition hover:bg-background"
             >
               <IconX size={16} />
             </button>
           </div>
         </div>
         <div className="flex-1 overflow-auto p-5">
-          <div className="min-w-max rounded-md border border-slate-200 bg-white px-4 py-4 font-mono text-xs">
+          <div className="min-w-max rounded-md border border-border bg-card px-4 py-4 font-mono text-xs">
             {highlightCode(dialog.code, dialog.lang)}
           </div>
         </div>

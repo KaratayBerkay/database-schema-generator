@@ -30,31 +30,31 @@ export function EditTablePanel({
   onModelNameChange, onPkNameChange, onPkTypeChange, onSave, onCancel, onDelete,
 }: EditTablePanelProps) {
   return (
-    <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">Edit Table</p>
+    <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/15 p-5">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-300">Edit Table</p>
 
-      <label htmlFor="edit-table-name" className="mt-4 block text-sm font-semibold text-slate-700">Model name</label>
+      <label htmlFor="edit-table-name" className="mt-4 block text-sm font-semibold text-foreground">Model name</label>
       <input
         id="edit-table-name"
         value={editModelName}
         onChange={(e) => onModelNameChange(e.target.value)}
-        className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition focus:border-cyan-600"
+        className="mt-2 h-11 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition focus:border-cyan-600"
       />
 
-      <label htmlFor="edit-pk-name" className="mt-4 block text-sm font-semibold text-slate-700">Primary Key Name</label>
+      <label htmlFor="edit-pk-name" className="mt-4 block text-sm font-semibold text-foreground">Primary Key Name</label>
       <input
         id="edit-pk-name"
         value={editPkName}
         onChange={(e) => onPkNameChange(e.target.value)}
-        className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition focus:border-cyan-600"
+        className="mt-2 h-11 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition focus:border-cyan-600"
       />
 
-      <label htmlFor="edit-pk-type" className="mt-4 block text-sm font-semibold text-slate-700">Primary Key Type</label>
+      <label htmlFor="edit-pk-type" className="mt-4 block text-sm font-semibold text-foreground">Primary Key Type</label>
       <select
         id="edit-pk-type"
         value={editPkType}
         onChange={(e) => onPkTypeChange(e.target.value)}
-        className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition focus:border-cyan-600"
+        className="mt-2 h-11 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition focus:border-cyan-600"
       >
         {!pkTypes.some((t) => t.value === editPkType) && (
           <option value={editPkType}>{editPkType} (current)</option>
@@ -63,24 +63,24 @@ export function EditTablePanel({
           <option key={type.value} value={type.value}>{type.label}</option>
         ))}
       </select>
-      <div className="mt-3 rounded-md border border-cyan-200 bg-white/70 p-3">
+      <div className="mt-3 rounded-md border border-cyan-500/30 bg-card p-3">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-cyan-700">{providerDisplay}</span>
-          <span className="text-xs font-medium text-slate-500">{selectedEditPkSummary}</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-cyan-300">{providerDisplay}</span>
+          <span className="text-xs font-medium text-muted-foreground">{selectedEditPkSummary}</span>
         </div>
-        <code className="mt-2 block overflow-x-auto whitespace-nowrap rounded bg-white px-2 py-2 font-mono text-xs text-slate-700">
+        <code className="mt-2 block overflow-x-auto whitespace-nowrap rounded bg-card px-2 py-2 font-mono text-xs text-foreground">
           {pkExampleLine(editPkName, editPkType, activeProvider)}
         </code>
       </div>
 
-      {updateError && <p className="mt-3 text-sm font-semibold text-rose-600">{updateError}</p>}
+      {updateError && <p className="mt-3 text-sm font-semibold text-rose-300">{updateError}</p>}
 
       <div className="mt-5 flex gap-2">
         <button
           type="button"
           onClick={onSave}
           disabled={isSaving || isDeleting}
-          className="h-10 rounded-md border border-cyan-300 bg-white px-4 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:text-slate-400"
+          className="h-10 rounded-md border border-cyan-500/40 bg-card px-4 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-500/15 disabled:cursor-not-allowed disabled:text-muted-foreground"
         >
           {isSaving ? "Saving..." : "Save"}
         </button>
@@ -88,7 +88,7 @@ export function EditTablePanel({
           type="button"
           onClick={onCancel}
           disabled={isSaving || isDeleting}
-          className="h-10 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
+          className="h-10 rounded-md border border-border bg-card px-4 text-sm font-semibold text-foreground transition hover:bg-background disabled:cursor-not-allowed disabled:text-muted-foreground"
         >
           Cancel
         </button>
@@ -96,7 +96,7 @@ export function EditTablePanel({
           type="button"
           onClick={onDelete}
           disabled={isSaving || isDeleting}
-          className="ml-auto inline-flex h-10 items-center gap-2 rounded-md border border-rose-200 bg-white px-4 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:text-slate-400"
+          className="ml-auto inline-flex h-10 items-center gap-2 rounded-md border border-rose-500/30 bg-card px-4 text-sm font-semibold text-rose-300 transition hover:border-rose-500/40 hover:bg-rose-500/15 disabled:cursor-not-allowed disabled:text-muted-foreground"
         >
           <Trash2 className="h-4 w-4" aria-hidden="true" />
           {isDeleting ? "Deleting..." : "Delete"}

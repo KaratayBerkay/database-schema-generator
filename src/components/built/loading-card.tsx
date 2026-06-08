@@ -14,7 +14,7 @@ export function LoadingCard({
 }) {
   if (!bordered) {
     return (
-      <div className={cn("py-8 text-center text-sm font-medium text-slate-500", className)}>
+      <div className={cn("py-8 text-center text-sm font-medium text-muted-foreground", className)}>
         {message}
       </div>
     );
@@ -22,7 +22,7 @@ export function LoadingCard({
   return (
     <div
       className={cn(
-        "rounded-lg border border-slate-200 bg-slate-50 p-8 text-center text-sm font-medium text-slate-500",
+        "rounded-lg border border-border bg-background p-8 text-center text-sm font-medium text-muted-foreground",
         className,
       )}
     >

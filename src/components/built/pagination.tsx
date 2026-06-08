@@ -22,19 +22,19 @@ export function Pagination({
         type="button"
         onClick={() => onPageChange(Math.max(1, page - 1))}
         disabled={page === 1}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition hover:border-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         aria-label="Previous page"
       >
         <IconChevronLeft size={15} stroke={2} />
       </button>
-      <span className="text-sm font-semibold text-slate-600">
+      <span className="text-sm font-semibold text-muted-foreground">
         {page} / {pageCount}
       </span>
       <button
         type="button"
         onClick={() => onPageChange(Math.min(pageCount, page + 1))}
         disabled={page === pageCount}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition hover:border-border hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         aria-label="Next page"
       >
         <IconChevronRight size={15} stroke={2} />

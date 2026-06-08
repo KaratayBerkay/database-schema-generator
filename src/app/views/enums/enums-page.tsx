@@ -56,8 +56,8 @@ export function EnumsPageContent() {
 
   if (!hasProject) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
-        <p className="text-slate-600">Select a project to manage enums.</p>
+      <div className="rounded-lg border border-border bg-card p-8 text-center">
+        <p className="text-muted-foreground">Select a project to manage enums.</p>
       </div>
     );
   }
@@ -65,30 +65,30 @@ export function EnumsPageContent() {
   return (
     <div className="space-y-4">
       {isSQLite && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
-          <p className="text-sm font-semibold text-amber-800">SQLite does not support native enum types</p>
-          <p className="mt-1 text-xs leading-5 text-amber-700">
-            Prisma maps enum fields to plain <code className="rounded bg-amber-100 px-1 font-mono">String</code> columns on SQLite — the enum constraint is enforced at the Prisma Client layer only, not in the database.
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/15 px-4 py-3">
+          <p className="text-sm font-semibold text-amber-200">SQLite does not support native enum types</p>
+          <p className="mt-1 text-xs leading-5 text-amber-300">
+            Prisma maps enum fields to plain <code className="rounded bg-amber-500/20 px-1 font-mono">String</code> columns on SQLite — the enum constraint is enforced at the Prisma Client layer only, not in the database.
             Enums defined here will appear in the schema but have no effect on the SQLite schema itself.
           </p>
         </div>
       )}
-      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-5 py-4">
+      <section className="rounded-lg border border-border bg-card shadow-sm">
+        <div className="border-b border-border px-5 py-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Main Window
               </p>
-              <h3 className="mt-1 text-xl font-semibold text-slate-950">
+              <h3 className="mt-1 text-xl font-semibold text-foreground">
                 Enums workspace
               </h3>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-muted-foreground">
                 {projectName}-{version}.prisma
               </span>
-              <span className="rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700">
+              <span className="rounded-md border border-indigo-500/30 bg-indigo-500/15 px-3 py-1.5 text-xs font-semibold text-indigo-300">
                 {enums.length} {enums.length === 1 ? "enum" : "enums"}
               </span>
             </div>
@@ -96,72 +96,72 @@ export function EnumsPageContent() {
         </div>
 
         <div className="grid gap-0 lg:grid-cols-[360px_minmax(0,1fr)]">
-          <form onSubmit={submitCreate} className="border-b border-slate-200 p-5 lg:border-b-0 lg:border-r">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+          <form onSubmit={submitCreate} className="border-b border-border p-5 lg:border-b-0 lg:border-r">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Add Enum
             </p>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-1 text-sm text-muted-foreground">
               Define a custom enum type for use in model fields.
             </p>
 
-            <label htmlFor="enum-name" className="mt-5 block text-sm font-semibold text-slate-700">
+            <label htmlFor="enum-name" className="mt-5 block text-sm font-semibold text-foreground">
               Enum name
             </label>
             <input
               id="enum-name"
               value={enumName}
               onChange={(e) => { setEnumName(e.target.value); setCreateError(""); }}
-              className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-indigo-600"
+              className="mt-2 h-11 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-indigo-600"
               placeholder="OrderStatus"
             />
-            <p className="mt-2 text-xs leading-5 text-slate-500">
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
               Use PascalCase. e.g.{" "}
-              <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[11px] text-slate-700">
+              <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px] text-foreground">
                 OrderStatus
               </code>
               ,{" "}
-              <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[11px] text-slate-700">
+              <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px] text-foreground">
                 UserRole
               </code>
             </p>
 
             {createError ? (
-              <p className="mt-3 text-sm font-semibold text-rose-600">{createError}</p>
+              <p className="mt-3 text-sm font-semibold text-rose-300">{createError}</p>
             ) : null}
 
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="mt-5 h-10 w-full rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="mt-5 h-10 w-full rounded-md bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-muted"
             >
               {createMutation.isPending ? "Creating…" : "Add Enum"}
             </button>
 
-            <div className="mt-5 rounded-md border border-slate-200 bg-slate-50 p-4 text-xs leading-5 text-slate-500 space-y-2">
-              <p className="font-semibold text-slate-700">Naming rules</p>
+            <div className="mt-5 rounded-md border border-border bg-background p-4 text-xs leading-5 text-muted-foreground space-y-2">
+              <p className="font-semibold text-foreground">Naming rules</p>
               <ul className="space-y-1 list-none">
                 <li>
-                  <span className="font-semibold text-slate-600">Allowed:</span>{" "}
-                  letters <code className="rounded bg-white px-1 font-mono text-slate-700">a–z A–Z</code>,
-                  digits <code className="rounded bg-white px-1 font-mono text-slate-700">0–9</code>,
-                  underscores <code className="rounded bg-white px-1 font-mono text-slate-700">_</code>
+                  <span className="font-semibold text-muted-foreground">Allowed:</span>{" "}
+                  letters <code className="rounded bg-card px-1 font-mono text-foreground">a–z A–Z</code>,
+                  digits <code className="rounded bg-card px-1 font-mono text-foreground">0–9</code>,
+                  underscores <code className="rounded bg-card px-1 font-mono text-foreground">_</code>
                 </li>
                 <li>
-                  <span className="font-semibold text-slate-600">Must start with</span> a letter — not a digit or underscore
+                  <span className="font-semibold text-muted-foreground">Must start with</span> a letter — not a digit or underscore
                 </li>
                 <li>
-                  <span className="font-semibold text-slate-600">Not allowed:</span>{" "}
-                  spaces, hyphens <code className="rounded bg-white px-1 font-mono text-slate-700">-</code>,
-                  dots <code className="rounded bg-white px-1 font-mono text-slate-700">.</code>,
+                  <span className="font-semibold text-muted-foreground">Not allowed:</span>{" "}
+                  spaces, hyphens <code className="rounded bg-card px-1 font-mono text-foreground">-</code>,
+                  dots <code className="rounded bg-card px-1 font-mono text-foreground">.</code>,
                   quotes, or any other special characters
                 </li>
                 <li>
-                  <span className="font-semibold text-slate-600">Max 63 characters</span> — PostgreSQL NAMEDATALEN limit
+                  <span className="font-semibold text-muted-foreground">Max 63 characters</span> — PostgreSQL NAMEDATALEN limit
                 </li>
               </ul>
-              <p className="pt-1 border-t border-slate-200">
-                Convention: enum type names in <code className="rounded bg-white px-1 font-mono text-slate-700">PascalCase</code>, values in{" "}
-                <code className="rounded bg-white px-1 font-mono text-slate-700">SCREAMING_SNAKE_CASE</code>
+              <p className="pt-1 border-t border-border">
+                Convention: enum type names in <code className="rounded bg-card px-1 font-mono text-foreground">PascalCase</code>, values in{" "}
+                <code className="rounded bg-card px-1 font-mono text-foreground">SCREAMING_SNAKE_CASE</code>
               </p>
             </div>
           </form>
@@ -186,31 +186,31 @@ export function EnumsPageContent() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search enums…"
-                    className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-indigo-600"
+                    className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-indigo-600"
                   />
                 </div>
 
                 {removedEnumDiffs.length > 0 && (
-                  <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                  <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/15 px-4 py-3">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-sm font-semibold text-red-800">
+                        <p className="text-sm font-semibold text-red-200">
                           {removedEnumDiffs.length} enum{removedEnumDiffs.length > 1 ? "s" : ""} removed since {versionDiff?.fromVersion}
                         </p>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {removedEnumDiffs.map((d) => (
-                            <span key={d.enumId} className="rounded border border-red-300 bg-white px-2 py-0.5 font-mono text-[11px] font-semibold text-red-700 line-through">
+                            <span key={d.enumId} className="rounded border border-red-500/40 bg-card px-2 py-0.5 font-mono text-[11px] font-semibold text-red-300 line-through">
                               {d.enumName}
                             </span>
                           ))}
                         </div>
-                        <p className="mt-2 text-xs text-red-600">
+                        <p className="mt-2 text-xs text-red-300">
                           Review and approve these changes in the Tracking workflow before running a migration.
                         </p>
                       </div>
                       <Link
                         href="/tracking?resolve=enums"
-                        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-2 text-xs font-semibold text-red-700 shadow-sm transition hover:bg-red-50 hover:border-red-400"
+                        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-red-500/40 bg-card px-3 py-2 text-xs font-semibold text-red-300 shadow-sm transition hover:bg-red-500/15 hover:border-red-400"
                       >
                         Go to Tracking →
                       </Link>
@@ -228,17 +228,17 @@ export function EnumsPageContent() {
                       const removedValueNames = enumDiff?.removedValues ?? [];
                       const cardBorder = enumDiff
                         ? enumDiff.severity === "breaking"
-                          ? "border-red-300"
+                          ? "border-red-500/40"
                           : enumDiff.severity === "warning"
-                            ? "border-amber-300"
-                            : "border-sky-300"
-                        : "border-slate-200";
+                            ? "border-amber-500/40"
+                            : "border-sky-500/40"
+                        : "border-border";
 
                       const cardBg = enumDiff
-                        ? enumDiff.severity === "breaking" ? "bg-rose-50/40"
-                          : enumDiff.severity === "warning" ? "bg-amber-50/40"
-                          : "bg-sky-50/30"
-                        : "bg-white";
+                        ? enumDiff.severity === "breaking" ? "bg-rose-500/15"
+                          : enumDiff.severity === "warning" ? "bg-amber-500/15"
+                          : "bg-sky-500/15"
+                        : "bg-card";
 
                       // Badge severity — only for breaking/warning (not new enums)
                       const showBadge = !!enumDiff && enumDiff.severity !== "info";
@@ -255,7 +255,7 @@ export function EnumsPageContent() {
                       return (
                       <div
                         key={enumEntry.name}
-                        className={`relative rounded-lg border transition hover:border-indigo-200 ${cardBorder} ${cardBg} ${showBadge ? "px-4 pb-4 pt-6" : "p-4"}`}
+                        className={`relative rounded-lg border transition hover:border-indigo-500/30 ${cardBorder} ${cardBg} ${showBadge ? "px-4 pb-4 pt-6" : "p-4"}`}
                       >
                         {/* Warning badge — top-left corner, only on badge hover */}
                         {showBadge && (
@@ -264,7 +264,7 @@ export function EnumsPageContent() {
                               <span className="select-none text-[18px] font-black leading-none text-white">!</span>
                             </div>
                             <div className="pointer-events-none absolute left-0 top-full z-30 mt-2 w-[420px] opacity-0 transition-opacity duration-150 group-hover/badge:opacity-100">
-                              <div className={`rounded-xl border px-5 py-4 shadow-xl bg-white ${enumDiff!.severity === "breaking" ? "border-rose-200 text-rose-700" : "border-amber-200 text-amber-700"}`}>
+                              <div className={`rounded-xl border px-5 py-4 shadow-xl bg-card ${enumDiff!.severity === "breaking" ? "border-rose-500/30 text-rose-300" : "border-amber-500/30 text-amber-300"}`}>
                                 <p className="text-[10px] font-bold uppercase tracking-wider opacity-40">
                                   {enumDiff!.severity === "breaking" ? "Breaking Change" : "Warning"}
                                 </p>
@@ -281,11 +281,11 @@ export function EnumsPageContent() {
                         )}
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <span className="block truncate font-semibold text-slate-950">
+                            <span className="block truncate font-semibold text-foreground">
                               {enumEntry.name}
                             </span>
                             <div className="mt-1 flex flex-wrap items-center gap-1">
-                              <span className="inline-flex items-center rounded border border-indigo-200 bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700">
+                              <span className="inline-flex items-center rounded border border-indigo-500/30 bg-indigo-500/15 px-1.5 py-0.5 text-[10px] font-bold text-indigo-300">
                                 {enumEntry.values.length}{" "}
                                 {enumEntry.values.length === 1 ? "value" : "values"}
                               </span>
@@ -304,7 +304,7 @@ export function EnumsPageContent() {
                             <button
                               type="button"
                               onClick={() => setEditingEnum(enumEntry)}
-                              className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition hover:border-indigo-200 hover:text-indigo-700"
+                              className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition hover:border-indigo-500/30 hover:text-indigo-300"
                               aria-label={`Edit ${enumEntry.name}`}
                             >
                               <IconPencil size={14} stroke={1.8} />
@@ -312,7 +312,7 @@ export function EnumsPageContent() {
                             <button
                               type="button"
                               onClick={() => setConfirmDeleteName(enumEntry.name)}
-                              className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition hover:border-rose-200 hover:text-rose-600"
+                              className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition hover:border-rose-500/30 hover:text-rose-300"
                               aria-label={`Delete ${enumEntry.name}`}
                             >
                               <IconTrash size={14} stroke={1.8} />
@@ -328,15 +328,15 @@ export function EnumsPageContent() {
                                   key={v.valueId}
                                   className={
                                     addedValueNames.has(v.name)
-                                      ? "rounded border border-sky-200 bg-sky-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-sky-700"
-                                      : "rounded border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-slate-700"
+                                      ? "rounded border border-sky-500/30 bg-sky-500/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-sky-300"
+                                      : "rounded border border-border bg-background px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground"
                                   }
                                 >
                                   {v.name}
                                 </span>
                               ))}
                               {enumEntry.values.length > 6 && (
-                                <span className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-500">
+                                <span className="rounded border border-border bg-background px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                                   +{enumEntry.values.length - 6} more
                                 </span>
                               )}
@@ -346,7 +346,7 @@ export function EnumsPageContent() {
                                 {removedValueNames.map((v) => (
                                   <span
                                     key={v}
-                                    className="rounded border border-rose-200 bg-rose-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-rose-500 line-through"
+                                    className="rounded border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-rose-500 line-through"
                                     title={`"${v}" was removed — remap it in the Tracking workflow`}
                                   >
                                     {v}
@@ -359,7 +359,7 @@ export function EnumsPageContent() {
                           <button
                             type="button"
                             onClick={() => setEditingEnum(enumEntry)}
-                            className="mt-2 w-full rounded border border-dashed border-indigo-200 px-3 py-2 text-xs font-medium text-indigo-400 transition hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-600"
+                            className="mt-2 w-full rounded border border-dashed border-indigo-500/30 px-3 py-2 text-xs font-medium text-indigo-400 transition hover:border-indigo-400 hover:bg-indigo-500/15 hover:text-indigo-300"
                           >
                             + Add values
                           </button>
@@ -380,24 +380,24 @@ export function EnumsPageContent() {
           onClick={() => setConfirmDeleteName("")}
         >
           <div
-            className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-xl"
+            className="w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-base font-semibold text-slate-950">
+            <p className="text-base font-semibold text-foreground">
               Are you sure you want to remove enum{" "}
-              <code className="rounded bg-indigo-50 px-1.5 py-0.5 font-mono text-sm text-indigo-700">
+              <code className="rounded bg-indigo-500/15 px-1.5 py-0.5 font-mono text-sm text-indigo-300">
                 {confirmDeleteName}
               </code>
               ?
             </p>
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-muted-foreground">
               This cannot be undone. Fields typed as this enum will retain their type name but the enum definition will be gone.
             </p>
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setConfirmDeleteName("")}
-                className="h-9 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="h-9 rounded-md border border-border bg-card px-4 text-sm font-semibold text-foreground transition hover:bg-background"
               >
                 Cancel
               </button>

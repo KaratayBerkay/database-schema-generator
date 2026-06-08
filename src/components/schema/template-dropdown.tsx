@@ -51,7 +51,7 @@ export function TemplateDropdown({
       <button
         type="button"
         onClick={onAddNewField}
-        className="flex h-9 items-center gap-1.5 rounded-l-md border border-r-0 border-cyan-300 bg-white px-3 text-xs font-semibold text-cyan-600 transition hover:bg-cyan-50"
+        className="flex h-9 items-center gap-1.5 rounded-l-md border border-r-0 border-cyan-500/40 bg-card px-3 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-500/15"
       >
         <IconPlus size={14} stroke={2} />
         New Field
@@ -59,27 +59,27 @@ export function TemplateDropdown({
       <button
         type="button"
         onClick={() => { setIsOpen((o) => !o); setSearch(""); }}
-        className="flex h-9 items-center rounded-r-md border border-cyan-300 bg-white px-2 text-cyan-600 transition hover:bg-cyan-50"
+        className="flex h-9 items-center rounded-r-md border border-cyan-500/40 bg-card px-2 text-cyan-300 transition hover:bg-cyan-500/15"
         title="Add from template"
       >
         <IconChevronDown size={14} stroke={2} />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-30 mt-1 w-72 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
-          <div className="border-b border-slate-100 p-2">
+        <div className="absolute right-0 top-full z-30 mt-1 w-72 overflow-hidden rounded-lg border border-border bg-card shadow-lg">
+          <div className="border-b border-border p-2">
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search templates..."
               autoFocus
-              className="h-8 w-full rounded-md border border-slate-300 bg-white px-2.5 text-xs font-medium text-slate-950 outline-none placeholder:text-slate-400 focus:border-cyan-600"
+              className="h-8 w-full rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground outline-none placeholder:text-muted-foreground focus:border-cyan-600"
             />
           </div>
           <div className="max-h-64 overflow-y-auto">
             {filtered.length === 0 ? (
-              <div className="px-3 py-5 text-center text-xs font-medium text-slate-500">
+              <div className="px-3 py-5 text-center text-xs font-medium text-muted-foreground">
                 {baseTemplates.length === 0 ? "No templates yet." : "No matches."}
               </div>
             ) : (
@@ -95,9 +95,9 @@ export function TemplateDropdown({
                       onAddTemplate(template);
                     }}
                     disabled={isBusy}
-                    className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left transition hover:bg-slate-50 disabled:opacity-40"
+                    className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left transition hover:bg-background disabled:opacity-40"
                   >
-                    <span className="min-w-0 truncate text-xs font-semibold text-slate-950">
+                    <span className="min-w-0 truncate text-xs font-semibold text-foreground">
                       {template.name}
                     </span>
                     <span className={classNames("shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold", typeBadgeClass(template.type))}>
@@ -108,11 +108,11 @@ export function TemplateDropdown({
               })
             )}
           </div>
-          <div className="border-t border-slate-100 px-3 py-2">
+          <div className="border-t border-border px-3 py-2">
             <button
               type="button"
               onClick={() => { setIsOpen(false); onOpenFullTemplates(); }}
-              className="text-xs font-semibold text-emerald-600 transition hover:underline"
+              className="text-xs font-semibold text-emerald-300 transition hover:underline"
             >
               Open full Templates →
             </button>

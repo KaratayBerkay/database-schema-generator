@@ -308,22 +308,22 @@ export function ValidationPageContent() {
 
   if (!hasProject) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
-        <p className="text-slate-600">Select a project to generate validation schemas.</p>
+      <div className="rounded-lg border border-border bg-card p-8 text-center">
+        <p className="text-muted-foreground">Select a project to generate validation schemas.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
-      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-5 py-4">
+      <section className="rounded-lg border border-border bg-card shadow-sm">
+        <div className="border-b border-border px-5 py-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
             <div className="shrink-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Saved Schemas
               </p>
-              <h3 className="mt-1 text-xl font-semibold text-slate-950">
+              <h3 className="mt-1 text-xl font-semibold text-foreground">
                 Generated Schemas
               </h3>
             </div>
@@ -335,10 +335,10 @@ export function ValidationPageContent() {
                 localStorage.setItem("zod-default-path", e.target.value);
               }}
               placeholder="Default project path (e.g. /home/user/myapp/src/validators)"
-              className="h-10 flex-1 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-amber-500"
+              className="h-10 flex-1 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-amber-500"
             />
             <div className="flex shrink-0 items-center gap-2">
-              <span className="rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+              <span className="rounded-md border border-amber-500/30 bg-amber-500/15 px-3 py-1.5 text-xs font-semibold text-amber-300">
                 {selectedModelName
                   ? `${zodSchemas.filter((s) => s.modelName === selectedModelName).length} of ${zodSchemas.length}`
                   : `${zodSchemas.length} ${zodSchemas.length === 1 ? "schema" : "schemas"}`}
@@ -347,7 +347,7 @@ export function ValidationPageContent() {
                 <button
                   type="button"
                   onClick={() => { setClearConfirmOpen(true); setClearConfirmInput(""); }}
-                  className="h-9 rounded-md border border-rose-200 bg-white px-4 text-xs font-semibold text-rose-600 transition hover:bg-rose-50"
+                  className="h-9 rounded-md border border-rose-500/30 bg-card px-4 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/15"
                 >
                   Clear All
                 </button>
@@ -362,7 +362,7 @@ export function ValidationPageContent() {
           ) : zodSchemas.length === 0 ? (
             <EmptyState message="No schemas generated yet for this version." />
           ) : (
-            <div className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
+            <div className="divide-y divide-slate-100 rounded-lg border border-border bg-card">
               {zodSchemas.filter((s) => !selectedModelName || s.modelName === selectedModelName).map((schema) => {
                 const fullPath = resolvedPath(schema);
                 const isCopied = copiedRowPath === schema.modelName;
@@ -372,37 +372,37 @@ export function ValidationPageContent() {
                 const isDuplicate = duplicateSchema?.id === schema.id;
 
                 return (
-                  <div key={schema.id} className={classNames("px-4 py-3 space-y-2 transition-colors", isBeingEdited ? "bg-amber-50/50" : "", isDuplicate ? "animate-pulse bg-amber-50" : "")}>
+                  <div key={schema.id} className={classNames("px-4 py-3 space-y-2 transition-colors", isBeingEdited ? "bg-amber-500/15" : "", isDuplicate ? "animate-pulse bg-amber-500/15" : "")}>
                     <div className="flex items-center gap-3">
                       <div className="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold text-slate-950 shrink-0">
+                        <span className="text-sm font-semibold text-foreground shrink-0">
                           {schema.schemaName}
                         </span>
                         {isBeingEdited && (
-                          <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700">
+                          <span className="shrink-0 rounded bg-amber-500/20 px-1.5 py-0.5 text-[11px] font-semibold text-amber-300">
                             editing
                           </span>
                         )}
                         {schema.schemaName !== schema.modelName && (
-                          <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-500">
+                          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                             {schema.modelName}
                           </span>
                         )}
-                        <span className="shrink-0 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                        <span className="shrink-0 rounded-md border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
                           v{schema.generatedAt.slice(0, 10)}
                         </span>
                         {schema.schemaCount > 0 && (
-                          <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                          <span className="shrink-0 rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                             {schema.schemaCount} schema{schema.schemaCount !== 1 ? "s" : ""}
                             {schema.enumCount > 0 ? ` · ${schema.enumCount} enum${schema.enumCount !== 1 ? "s" : ""}` : ""}
                           </span>
                         )}
                         {fullPath ? (
-                          <span className="min-w-0 truncate text-xs font-medium text-slate-500" title={fullPath}>
+                          <span className="min-w-0 truncate text-xs font-medium text-muted-foreground" title={fullPath}>
                             {fullPath}
                           </span>
                         ) : (
-                          <span className="shrink-0 text-xs font-medium text-slate-400 italic">
+                          <span className="shrink-0 text-xs font-medium text-muted-foreground italic">
                             No path set
                           </span>
                         )}
@@ -414,10 +414,10 @@ export function ValidationPageContent() {
                           onClick={() => handleCopyRowPath(schema)}
                           disabled={!fullPath}
                           title={fullPath ? "Copy resolved path" : "Set a project path first"}
-                          className="flex h-7 w-7 items-center justify-center rounded border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="flex h-7 w-7 items-center justify-center rounded border border-border bg-card text-muted-foreground transition hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           {isCopied ? (
-                            <IconCheck size={14} stroke={2.5} className="text-emerald-600" />
+                            <IconCheck size={14} stroke={2.5} className="text-emerald-300" />
                           ) : (
                             <IconCopy size={14} stroke={2} />
                           )}
@@ -427,7 +427,7 @@ export function ValidationPageContent() {
                           onClick={() => setViewingSchemaId(schema.id)}
                           disabled={isViewing}
                           title="View code"
-                          className="flex h-7 w-7 items-center justify-center rounded border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 disabled:cursor-wait"
+                          className="flex h-7 w-7 items-center justify-center rounded border border-border bg-card text-muted-foreground transition hover:bg-background hover:text-foreground disabled:cursor-wait"
                         >
                           <IconEye size={14} stroke={2} />
                         </button>
@@ -435,7 +435,7 @@ export function ValidationPageContent() {
                           type="button"
                           title="Re-generate this schema"
                           onClick={() => handleEditSchema(schema)}
-                          className="flex h-7 w-7 items-center justify-center rounded border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+                          className="flex h-7 w-7 items-center justify-center rounded border border-border bg-card text-muted-foreground transition hover:bg-background hover:text-foreground"
                         >
                           <IconPencil size={14} stroke={2} />
                         </button>
@@ -452,10 +452,10 @@ export function ValidationPageContent() {
                             }
                           }}
                           className={classNames(
-                            "flex h-7 w-7 items-center justify-center rounded border bg-white transition",
+                            "flex h-7 w-7 items-center justify-center rounded border bg-card transition",
                             isEditing || schema.targetPath
-                              ? "border-amber-300 text-amber-600 hover:bg-amber-50"
-                              : "border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700",
+                              ? "border-amber-500/40 text-amber-300 hover:bg-amber-500/15"
+                              : "border-border text-muted-foreground hover:bg-background hover:text-foreground",
                           )}
                         >
                           <IconSettings2 size={14} stroke={2} />
@@ -465,7 +465,7 @@ export function ValidationPageContent() {
                           title="Delete this schema"
                           onClick={() => deleteMutation.mutate({ id: schema.id }, { onSuccess: (_, vars) => { void invalidateZodSchemas(); if (editingSchemaId === vars.id) setEditingSchemaId(null); if (viewingSchemaId === vars.id) setViewingSchemaId(null); } })}
                           disabled={deleteMutation.isPending}
-                          className="flex h-7 w-7 items-center justify-center rounded border border-slate-200 bg-white text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-wait"
+                          className="flex h-7 w-7 items-center justify-center rounded border border-border bg-card text-muted-foreground transition hover:border-rose-500/30 hover:bg-rose-500/15 hover:text-rose-300 disabled:cursor-wait"
                         >
                           <IconTrash size={14} stroke={2} />
                         </button>
@@ -473,10 +473,10 @@ export function ValidationPageContent() {
                     </div>
 
                     {isEditing && (
-                      <div className="rounded-lg border border-amber-200 bg-amber-50/30 p-3 space-y-3">
+                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/15 p-3 space-y-3">
                         <div className="grid gap-3 sm:grid-cols-2">
                           <div>
-                            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                               Schema label
                             </label>
                             <input
@@ -486,11 +486,11 @@ export function ValidationPageContent() {
                               onChange={(e) => setEditingName(e.target.value)}
                               onKeyDown={(e) => { if (e.key === "Escape") setEditingId(null); }}
                               placeholder={schema.modelName}
-                              className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-950 outline-none placeholder:text-slate-400 focus:border-amber-500"
+                              className="h-9 w-full rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground outline-none placeholder:text-muted-foreground focus:border-amber-500"
                             />
                           </div>
                           <div>
-                            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                               Path in your project
                             </label>
                             <input
@@ -499,20 +499,20 @@ export function ValidationPageContent() {
                               onChange={(e) => setEditingPath(e.target.value)}
                               onKeyDown={(e) => { if (e.key === "Escape") setEditingId(null); }}
                               placeholder="/home/user/myapp/src/validators"
-                              className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-950 outline-none placeholder:text-slate-400 focus:border-amber-500"
+                              className="h-9 w-full rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground outline-none placeholder:text-muted-foreground focus:border-amber-500"
                             />
                           </div>
                         </div>
                         {editingPath.trim() && (
-                          <p className="text-[11px] text-slate-500">
-                            Resolves to: <span className="font-medium text-slate-700">{editingPath.trim().replace(/\/+$/, "")}/{(editingName.trim() || schema.schemaName).toLowerCase().replace(/\s+/g, "-")}.ts</span>
+                          <p className="text-[11px] text-muted-foreground">
+                            Resolves to: <span className="font-medium text-foreground">{editingPath.trim().replace(/\/+$/, "")}/{(editingName.trim() || schema.schemaName).toLowerCase().replace(/\s+/g, "-")}.ts</span>
                           </p>
                         )}
                         <div className="flex items-center justify-end gap-2">
                           <button
                             type="button"
                             onClick={() => setEditingId(null)}
-                            className="h-8 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                            className="h-8 rounded-md border border-border bg-card px-3 text-xs font-semibold text-foreground transition hover:bg-background"
                           >
                             Cancel
                           </button>
@@ -543,21 +543,21 @@ export function ValidationPageContent() {
 
       {clearConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
-          <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white shadow-2xl">
-            <div className="border-b border-slate-200 px-5 py-4">
+          <div className="w-full max-w-md rounded-lg border border-border bg-card shadow-2xl">
+            <div className="border-b border-border px-5 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-rose-500">
                 Destructive Action
               </p>
-              <h3 className="mt-1 text-lg font-semibold text-slate-950">
+              <h3 className="mt-1 text-lg font-semibold text-foreground">
                 Clear All Generated Schemas
               </h3>
             </div>
             <div className="px-5 py-4 space-y-3">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-muted-foreground">
                 This will permanently remove all <span className="font-semibold">{zodSchemas.length} Zod schema{zodSchemas.length !== 1 ? "s" : ""}</span> for version <span className="font-semibold">{version}</span> from the database. This cannot be undone.
               </p>
-              <p className="text-sm text-slate-600">
-                To confirm, type the project name: <span className="font-mono font-semibold text-slate-950">{projectName}</span>
+              <p className="text-sm text-muted-foreground">
+                To confirm, type the project name: <span className="font-mono font-semibold text-foreground">{projectName}</span>
               </p>
               <input
                 autoFocus
@@ -570,14 +570,14 @@ export function ValidationPageContent() {
                   }
                 }}
                 placeholder={projectName}
-                className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-rose-400"
+                className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-rose-400"
               />
             </div>
-            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+            <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-4">
               <button
                 type="button"
                 onClick={() => { setClearConfirmOpen(false); setClearConfirmInput(""); }}
-                className="h-9 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="h-9 rounded-md border border-border bg-card px-4 text-xs font-semibold text-foreground transition hover:bg-background"
               >
                 Cancel
               </button>
@@ -585,7 +585,7 @@ export function ValidationPageContent() {
                 type="button"
                 onClick={() => clearMutation.mutate({ projectName, version })}
                 disabled={clearConfirmInput !== projectName || clearMutation.isPending}
-                className="h-9 rounded-md bg-rose-600 px-5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="h-9 rounded-md bg-rose-600 px-5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-muted"
               >
                 {clearMutation.isPending ? "Removing..." : "Remove All"}
               </button>
@@ -594,28 +594,28 @@ export function ValidationPageContent() {
         </div>
       )}
 
-      <section ref={generatorRef} className="rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-5 py-4">
+      <section ref={generatorRef} className="rounded-lg border border-border bg-card shadow-sm">
+        <div className="border-b border-border px-5 py-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Main Window
               </p>
-              <h3 className="mt-1 text-xl font-semibold text-slate-950">
+              <h3 className="mt-1 text-xl font-semibold text-foreground">
                 Zod Schema Generator
               </h3>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-muted-foreground">
                 {projectName}-{version}
               </span>
-              <span className="rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+              <span className="rounded-md border border-amber-500/30 bg-amber-500/15 px-3 py-1.5 text-xs font-semibold text-amber-300">
                 {selectedModel ? selectedModel.name : "No table selected"}
               </span>
               <button
                 type="button"
                 onClick={() => setIsTableSelectorOpen(true)}
-                className="h-9 min-w-36 rounded-md border border-amber-300 bg-white px-5 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
+                className="h-9 min-w-36 rounded-md border border-amber-500/40 bg-card px-5 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/15"
               >
                 Select Table
               </button>
@@ -635,39 +635,39 @@ export function ValidationPageContent() {
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-sm font-semibold text-slate-950">{selectedModelName}</span>
-                  <span className="text-xs font-medium text-slate-400">
+                  <span className="text-sm font-semibold text-foreground">{selectedModelName}</span>
+                  <span className="text-xs font-medium text-muted-foreground">
                     {fields.filter((f) => !f.isBackReference).length} fields
                     {enumTypes.length > 0 ? ` · ${enumTypes.length} enum${enumTypes.length !== 1 ? "s" : ""}` : ""}
                   </span>
                 </div>
-                <div className="h-4 w-px bg-slate-200 shrink-0" />
+                <div className="h-4 w-px bg-muted shrink-0" />
                 <button
                   type="button"
                   onClick={selectAll}
-                  className="shrink-0 h-8 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="shrink-0 h-8 rounded-md border border-border bg-card px-3 text-xs font-semibold text-foreground transition hover:bg-background"
                 >
                   Select All
                 </button>
                 <button
                   type="button"
                   onClick={clearAll}
-                  className="shrink-0 h-8 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="shrink-0 h-8 rounded-md border border-border bg-card px-3 text-xs font-semibold text-foreground transition hover:bg-background"
                 >
                   Clear
                 </button>
-                <div className="h-4 w-px bg-slate-200 shrink-0" />
+                <div className="h-4 w-px bg-muted shrink-0" />
                 <input
                   type="text"
                   value={fieldSearch}
                   onChange={(event) => setFieldSearch(event.target.value)}
                   placeholder="Search fields..."
-                  className="h-8 min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-amber-600"
+                  className="h-8 min-w-0 flex-1 rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-amber-600"
                 />
                 <select
                   value={fieldTypeFilter}
                   onChange={(event) => setFieldTypeFilter(event.target.value)}
-                  className="shrink-0 h-8 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-950 outline-none transition focus:border-amber-600"
+                  className="shrink-0 h-8 rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground outline-none transition focus:border-amber-600"
                 >
                   <option value="all">All Types</option>
                   {fieldTypes.map((type) => (
@@ -676,9 +676,9 @@ export function ValidationPageContent() {
                 </select>
               </div>
 
-              <div className="flex-1 grid grid-cols-2 gap-2 overflow-y-auto rounded-md border border-slate-200 bg-white p-2 sm:grid-cols-3 lg:grid-cols-4">
+              <div className="flex-1 grid grid-cols-2 gap-2 overflow-y-auto rounded-md border border-border bg-card p-2 sm:grid-cols-3 lg:grid-cols-4">
                 {selectableFields.length === 0 ? (
-                  <div className="col-span-full py-8 text-center text-sm font-medium text-slate-500">
+                  <div className="col-span-full py-8 text-center text-sm font-medium text-muted-foreground">
                     {fieldSearch ? "No fields match your search." : "No fields available."}
                   </div>
                 ) : (
@@ -694,12 +694,12 @@ export function ValidationPageContent() {
                         className={classNames(
                           "cursor-pointer rounded-md border p-3 transition",
                           isSelected
-                            ? "border-amber-400 bg-amber-50"
-                            : "border-slate-200 bg-white hover:border-amber-300 hover:bg-amber-50/50",
+                            ? "border-amber-400 bg-amber-500/15"
+                            : "border-border bg-card hover:border-amber-500/40 hover:bg-amber-500/15",
                         )}
                       >
                         <div className="min-w-0">
-                          <span className="block truncate text-sm font-semibold text-slate-950">
+                          <span className="block truncate text-sm font-semibold text-foreground">
                             {field.name}
                           </span>
                           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -712,22 +712,22 @@ export function ValidationPageContent() {
                               {displayFieldType}
                             </span>
                             {field.nullable && (
-                              <span className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">
+                              <span className="inline-flex rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                                 nullable
                               </span>
                             )}
                             {field.isArray && (
-                              <span className="inline-flex rounded-md bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
+                              <span className="inline-flex rounded-md bg-violet-500/20 px-2 py-0.5 text-[11px] font-semibold text-violet-300">
                                 array
                               </span>
                             )}
                             {isEnum && (
-                              <span className="inline-flex rounded-md bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">
+                              <span className="inline-flex rounded-md bg-indigo-500/20 px-2 py-0.5 text-[11px] font-semibold text-indigo-300">
                                 enum
                               </span>
                             )}
                             {field.isRelation && (
-                              <span className="inline-flex rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                              <span className="inline-flex rounded-md bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">
                                 relation
                               </span>
                             )}
@@ -744,18 +744,18 @@ export function ValidationPageContent() {
                     type="button"
                     onClick={() => setFieldPage((p) => Math.max(1, p - 1))}
                     disabled={fieldPage === 1}
-                    className="h-9 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100"
+                    className="h-9 rounded-md border border-border bg-card px-4 text-xs font-semibold text-foreground transition hover:bg-background disabled:cursor-not-allowed disabled:bg-muted"
                   >
                     Previous
                   </button>
-                  <span className="text-sm font-medium text-slate-600">
+                  <span className="text-sm font-medium text-muted-foreground">
                     Page {fieldPage} of {totalFieldPages}
                   </span>
                   <button
                     type="button"
                     onClick={() => setFieldPage((p) => Math.min(totalFieldPages, p + 1))}
                     disabled={fieldPage === totalFieldPages}
-                    className="h-9 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100"
+                    className="h-9 rounded-md border border-border bg-card px-4 text-xs font-semibold text-foreground transition hover:bg-background disabled:cursor-not-allowed disabled:bg-muted"
                   >
                     Next
                   </button>
@@ -765,7 +765,7 @@ export function ValidationPageContent() {
               <InlineError message={generateError} />
 
               {duplicateSchema && (
-                <div className="flex items-start justify-between gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                <div className="flex items-start justify-between gap-2 rounded-md border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-sm text-amber-200">
                   <span>
                     <span className="font-semibold">Duplicate detected</span> — this exact field set was already generated as{" "}
                     <span className="font-semibold">{duplicateSchema.schemaName}</span>. Change the field selection to convert.
@@ -773,7 +773,7 @@ export function ValidationPageContent() {
                   <button
                     type="button"
                     onClick={() => setDismissedHash(selectionHash)}
-                    className="shrink-0 rounded p-0.5 text-amber-600 hover:bg-amber-100 hover:text-amber-800"
+                    className="shrink-0 rounded p-0.5 text-amber-300 hover:bg-amber-500/20 hover:text-amber-200"
                     title="Dismiss"
                   >
                     <IconX size={14} stroke={2} />
@@ -782,7 +782,7 @@ export function ValidationPageContent() {
               )}
 
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-slate-500">
+                <p className="text-sm font-medium text-muted-foreground">
                   {selectedFieldKeys.size} of {fields.filter((f) => !f.isBackReference).length} fields selected
                 </p>
                 <button
@@ -793,7 +793,7 @@ export function ValidationPageContent() {
                     selectedFieldKeys.size === 0 ||
                     hasDuplicate
                   }
-                  className="h-10 min-w-36 rounded-md bg-amber-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="h-10 min-w-36 rounded-md bg-amber-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-muted"
                 >
                   {generateMutation.isPending ? "Generating..." : "Generate Schema"}
                 </button>

@@ -14,26 +14,26 @@ export const defaultFieldTypes = [
 ] as const;
 
 export function typeBadgeClass(type: string): string {
-  if (type === "Int") return "bg-blue-50 text-blue-700";
-  if (type === "String") return "bg-green-50 text-green-700";
-  if (type === "DateTime") return "bg-orange-50 text-orange-700";
-  if (type === "Uuid") return "bg-purple-50 text-purple-700";
-  if (type === "BigInt") return "bg-rose-50 text-rose-700";
-  return "bg-slate-100 text-slate-600";
+  if (type === "Int") return "bg-blue-500/15 text-blue-300";
+  if (type === "String") return "bg-green-500/15 text-green-300";
+  if (type === "DateTime") return "bg-orange-500/15 text-orange-300";
+  if (type === "Uuid") return "bg-purple-500/15 text-purple-300";
+  if (type === "BigInt") return "bg-rose-500/15 text-rose-300";
+  return "bg-muted text-muted-foreground";
 }
 
 export function typeSelectClass(type: string): string {
-  if (type === "Int")                         return "border-blue-200 bg-blue-50 text-blue-800";
-  if (type === "BigInt")                      return "border-rose-200 bg-rose-50 text-rose-800";
-  if (type === "Float" || type === "Decimal") return "border-sky-200 bg-sky-50 text-sky-800";
-  if (type === "String")                      return "border-green-200 bg-green-50 text-green-800";
-  if (type === "Boolean")                     return "border-amber-200 bg-amber-50 text-amber-800";
-  if (type === "DateTime")                    return "border-orange-200 bg-orange-50 text-orange-800";
-  if (type === "Timestamp")                   return "border-orange-200 bg-orange-50 text-orange-800";
-  if (type === "Json")                        return "border-violet-200 bg-violet-50 text-violet-800";
-  if (type === "Uuid")                        return "border-purple-200 bg-purple-50 text-purple-800";
-  if (type === "Bytes")                       return "border-slate-200 bg-slate-100 text-slate-600";
-  return "border-slate-300 bg-white text-slate-950";
+  if (type === "Int")                         return "border-blue-500/30 bg-blue-500/15 text-blue-200";
+  if (type === "BigInt")                      return "border-rose-500/30 bg-rose-500/15 text-rose-200";
+  if (type === "Float" || type === "Decimal") return "border-sky-500/30 bg-sky-500/15 text-sky-200";
+  if (type === "String")                      return "border-green-500/30 bg-green-500/15 text-green-200";
+  if (type === "Boolean")                     return "border-amber-500/30 bg-amber-500/15 text-amber-200";
+  if (type === "DateTime")                    return "border-orange-500/30 bg-orange-500/15 text-orange-200";
+  if (type === "Timestamp")                   return "border-orange-500/30 bg-orange-500/15 text-orange-200";
+  if (type === "Json")                        return "border-violet-500/30 bg-violet-500/15 text-violet-200";
+  if (type === "Uuid")                        return "border-purple-500/30 bg-purple-500/15 text-purple-200";
+  if (type === "Bytes")                       return "border-border bg-muted text-muted-foreground";
+  return "border-border bg-card text-foreground";
 }
 
 export const fieldLegendItems = [

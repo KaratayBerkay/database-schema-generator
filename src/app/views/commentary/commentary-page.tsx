@@ -88,39 +88,39 @@ export function CommentaryPageContent() {
 
   if (!hasProject) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
-        <p className="text-slate-600">Select a project to add GraphQL comments.</p>
+      <div className="rounded-lg border border-border bg-card p-8 text-center">
+        <p className="text-muted-foreground">Select a project to add GraphQL comments.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
-      <section className="rounded-lg border border-slate-200 bg-white shadow-sm min-h-[calc(100vh-140px)]">
-        <div className="border-b border-slate-200 px-5 py-4">
+      <section className="rounded-lg border border-border bg-card shadow-sm min-h-[calc(100vh-140px)]">
+        <div className="border-b border-border px-5 py-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Main Window
               </p>
-              <h3 className="mt-1 text-xl font-semibold text-slate-950">
+              <h3 className="mt-1 text-xl font-semibold text-foreground">
                 Commentary
               </h3>
-              <p className="mt-1 text-sm text-slate-500">
-                Add <code className="rounded bg-slate-100 px-1 text-xs font-mono text-fuchsia-700">{"/// comment"}</code> style annotations to schema fields.
+              <p className="mt-1 text-sm text-muted-foreground">
+                Add <code className="rounded bg-muted px-1 text-xs font-mono text-fuchsia-300">{"/// comment"}</code> style annotations to schema fields.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-muted-foreground">
                 {projectName}-{version}
               </span>
-              <span className="rounded-md border border-fuchsia-200 bg-fuchsia-50 px-3 py-1.5 text-xs font-semibold text-fuchsia-700">
+              <span className="rounded-md border border-fuchsia-500/30 bg-fuchsia-500/15 px-3 py-1.5 text-xs font-semibold text-fuchsia-300">
                 {selectedModel ? selectedModel.name : "No table selected"}
               </span>
               <button
                 type="button"
                 onClick={() => setIsTableSelectorOpen(true)}
-                className="h-9 min-w-36 rounded-md border border-fuchsia-300 bg-white px-5 text-xs font-semibold text-fuchsia-700 transition hover:bg-fuchsia-50"
+                className="h-9 min-w-36 rounded-md border border-fuchsia-500/40 bg-card px-5 text-xs font-semibold text-fuchsia-300 transition hover:bg-fuchsia-500/15"
               >
                 Select Table
               </button>
@@ -140,16 +140,16 @@ export function CommentaryPageContent() {
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                     Selected Table
                   </p>
-                  <h4 className="mt-1 text-lg font-semibold text-slate-950">
+                  <h4 className="mt-1 text-lg font-semibold text-foreground">
                     {selectedModelName}
                   </h4>
-                  <p className="mt-1 text-sm font-medium text-slate-500">
+                  <p className="mt-1 text-sm font-medium text-muted-foreground">
                     {fields.length} fields
                     {dirtyKeys.size > 0 && (
-                      <span className="ml-2 text-fuchsia-600">
+                      <span className="ml-2 text-fuchsia-300">
                         · {dirtyKeys.size} unsaved
                       </span>
                     )}
@@ -161,14 +161,14 @@ export function CommentaryPageContent() {
                     value={fieldSearch}
                     onChange={(e) => setFieldSearch(e.target.value)}
                     placeholder="Search fields..."
-                    className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-fuchsia-500"
+                    className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-fuchsia-500"
                   />
                 </div>
               </div>
 
-              <div className="divide-y divide-slate-100 rounded-md border border-slate-200 bg-white">
+              <div className="divide-y divide-slate-100 rounded-md border border-border bg-card">
                 {visibleFields.length === 0 ? (
-                  <div className="py-10 text-center text-sm font-medium text-slate-500">
+                  <div className="py-10 text-center text-sm font-medium text-muted-foreground">
                     {fieldSearch ? "No fields match your search." : "No fields available."}
                   </div>
                 ) : (
@@ -183,7 +183,7 @@ export function CommentaryPageContent() {
                         className="grid grid-cols-1 items-center gap-3 p-4 lg:grid-cols-[minmax(280px,0.55fr)_minmax(0,1fr)]"
                       >
                         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
-                          <span className="truncate text-sm font-semibold text-slate-950">
+                          <span className="truncate text-sm font-semibold text-foreground">
                             {field.name}
                           </span>
                           <div className="flex shrink-0 items-center gap-1.5">
@@ -196,22 +196,22 @@ export function CommentaryPageContent() {
                               {displayFieldType}
                             </span>
                             {field.isId && (
-                              <span className="inline-flex rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                              <span className="inline-flex rounded-md bg-amber-500/20 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
                                 id
                               </span>
                             )}
                             {field.nullable && (
-                              <span className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">
+                              <span className="inline-flex rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                                 nullable
                               </span>
                             )}
                             {isDirty && (
-                              <span className="inline-flex rounded-full bg-fuchsia-100 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-700">
+                              <span className="inline-flex rounded-full bg-fuchsia-500/20 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-300">
                                 unsaved
                               </span>
                             )}
                             {isSaved && !isDirty && (
-                              <span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                              <span className="inline-flex rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
                                 saved
                               </span>
                             )}
@@ -219,7 +219,7 @@ export function CommentaryPageContent() {
                         </div>
 
                         <div className="flex items-center gap-1.5">
-                          <span className="shrink-0 select-none font-mono text-xs text-slate-400">
+                          <span className="shrink-0 select-none font-mono text-xs text-muted-foreground">
                             {"///"}
                           </span>
                           <input
@@ -230,10 +230,10 @@ export function CommentaryPageContent() {
                             }
                             placeholder="Add a comment for this field…"
                             className={classNames(
-                              "h-9 w-full rounded-md border px-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400",
+                              "h-9 w-full rounded-md border px-3 text-sm font-medium text-foreground outline-none transition placeholder:text-muted-foreground",
                               isDirty
-                                ? "border-fuchsia-300 focus:border-fuchsia-500"
-                                : "border-slate-200 focus:border-fuchsia-400",
+                                ? "border-fuchsia-500/40 focus:border-fuchsia-500"
+                                : "border-border focus:border-fuchsia-400",
                             )}
                           />
                         </div>
@@ -246,7 +246,7 @@ export function CommentaryPageContent() {
               <InlineError message={saveError} />
 
               <div className="flex items-center justify-between gap-4">
-                <p className="shrink-0 text-sm font-medium text-slate-500">
+                <p className="shrink-0 text-sm font-medium text-muted-foreground">
                   {dirtyKeys.size > 0
                     ? `${dirtyKeys.size} field${dirtyKeys.size !== 1 ? "s" : ""} with unsaved changes`
                     : savedKeys.size > 0
@@ -259,18 +259,18 @@ export function CommentaryPageContent() {
                       type="button"
                       onClick={() => setFieldPage((p) => Math.max(1, p - 1))}
                       disabled={fieldPage === 1}
-                      className="h-9 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100"
+                      className="h-9 rounded-md border border-border bg-card px-4 text-xs font-semibold text-foreground transition hover:bg-background disabled:cursor-not-allowed disabled:bg-muted"
                     >
                       Previous
                     </button>
-                    <span className="text-sm font-medium text-slate-600">
+                    <span className="text-sm font-medium text-muted-foreground">
                       Page {fieldPage} of {totalFieldPages}
                     </span>
                     <button
                       type="button"
                       onClick={() => setFieldPage((p) => Math.min(totalFieldPages, p + 1))}
                       disabled={fieldPage === totalFieldPages}
-                      className="h-9 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100"
+                      className="h-9 rounded-md border border-border bg-card px-4 text-xs font-semibold text-foreground transition hover:bg-background disabled:cursor-not-allowed disabled:bg-muted"
                     >
                       Next
                     </button>
@@ -280,7 +280,7 @@ export function CommentaryPageContent() {
                   type="button"
                   onClick={() => handleSave()}
                   disabled={updateCommentsMutation.isPending || dirtyKeys.size === 0}
-                  className="ml-auto h-10 min-w-36 shrink-0 rounded-md bg-fuchsia-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-fuchsia-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="ml-auto h-10 min-w-36 shrink-0 rounded-md bg-fuchsia-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-fuchsia-700 disabled:cursor-not-allowed disabled:bg-muted"
                 >
                   {updateCommentsMutation.isPending ? "Saving…" : "Save"}
                 </button>

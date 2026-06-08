@@ -29,34 +29,34 @@ const toneClasses: Record<SelectorTone, {
   hover: string;
 }> = {
   amber: {
-    count: "border-amber-200 bg-amber-50 text-amber-700",
+    count: "border-amber-500/30 bg-amber-500/15 text-amber-300",
     focus: "focus:border-amber-600",
-    selected: "border-amber-400 bg-amber-50 shadow-sm",
-    hover: "border-slate-200 bg-white hover:border-amber-300",
+    selected: "border-amber-400 bg-amber-500/15 shadow-sm",
+    hover: "border-border bg-card hover:border-amber-500/40",
   },
   cyan: {
-    count: "border-cyan-200 bg-cyan-50 text-cyan-700",
+    count: "border-cyan-500/30 bg-cyan-500/15 text-cyan-300",
     focus: "focus:border-cyan-600",
-    selected: "border-cyan-400 bg-cyan-50 shadow-sm",
-    hover: "border-slate-200 bg-white hover:border-cyan-300",
+    selected: "border-cyan-400 bg-cyan-500/15 shadow-sm",
+    hover: "border-border bg-card hover:border-cyan-500/40",
   },
   fuchsia: {
-    count: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700",
+    count: "border-fuchsia-500/30 bg-fuchsia-500/15 text-fuchsia-300",
     focus: "focus:border-fuchsia-500",
-    selected: "border-fuchsia-400 bg-fuchsia-50 shadow-sm",
-    hover: "border-slate-200 bg-white hover:border-fuchsia-300",
+    selected: "border-fuchsia-400 bg-fuchsia-500/15 shadow-sm",
+    hover: "border-border bg-card hover:border-fuchsia-500/40",
   },
   orange: {
-    count: "border-orange-200 bg-orange-50 text-orange-700",
+    count: "border-orange-500/30 bg-orange-500/15 text-orange-300",
     focus: "focus:border-orange-500",
-    selected: "border-orange-400 bg-orange-50 shadow-sm",
-    hover: "border-slate-200 bg-white hover:border-orange-300",
+    selected: "border-orange-400 bg-orange-500/15 shadow-sm",
+    hover: "border-border bg-card hover:border-orange-500/40",
   },
   violet: {
-    count: "border-violet-200 bg-violet-50 text-violet-700",
+    count: "border-violet-500/30 bg-violet-500/15 text-violet-300",
     focus: "focus:border-violet-600",
-    selected: "border-violet-400 bg-violet-50 shadow-sm",
-    hover: "border-slate-200 bg-white hover:border-violet-300",
+    selected: "border-violet-400 bg-violet-500/15 shadow-sm",
+    hover: "border-border bg-card hover:border-violet-500/40",
   },
 };
 
@@ -92,14 +92,14 @@ export function TableSelectorModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-3">
-      <div className="max-h-[94vh] w-[96vw] max-w-[1500px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl">
-        <div className="border-b border-slate-200 px-5 py-4">
+      <div className="max-h-[94vh] w-[96vw] max-w-[1500px] overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
+        <div className="border-b border-border px-5 py-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Table Selector
               </p>
-              <h3 className="mt-1 text-xl font-semibold text-slate-950">Tables</h3>
+              <h3 className="mt-1 text-xl font-semibold text-foreground">Tables</h3>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <span className={classNames("rounded-md border px-3 py-1.5 text-xs font-semibold", styles.count)}>
@@ -108,7 +108,7 @@ export function TableSelectorModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="h-9 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="h-9 rounded-md border border-border bg-card px-3 text-xs font-semibold text-foreground transition hover:bg-background"
               >
                 Close
               </button>
@@ -128,7 +128,7 @@ export function TableSelectorModal({
               placeholder="Search tables..."
               autoFocus
               className={classNames(
-                "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400",
+                "h-10 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition placeholder:text-muted-foreground",
                 styles.focus,
               )}
             />
@@ -136,11 +136,11 @@ export function TableSelectorModal({
 
           <div className="max-h-[70vh] overflow-y-auto pr-1">
             {isLoading ? (
-              <div className="py-8 text-center text-sm font-medium text-slate-500">
+              <div className="py-8 text-center text-sm font-medium text-muted-foreground">
                 Loading...
               </div>
             ) : filteredModels.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm font-medium text-slate-500">
+              <div className="rounded-lg border border-dashed border-border bg-background p-8 text-center text-sm font-medium text-muted-foreground">
                 No tables found.
               </div>
             ) : (
@@ -159,7 +159,7 @@ export function TableSelectorModal({
                           isSelected ? styles.selected : styles.hover,
                         )}
                       >
-                        <span className="min-w-0 truncate font-semibold text-slate-950">
+                        <span className="min-w-0 truncate font-semibold text-foreground">
                           {model.name}
                         </span>
                         <span
@@ -181,18 +181,18 @@ export function TableSelectorModal({
                       type="button"
                       onClick={() => onPageChange?.(Math.max(1, safePage - 1))}
                       disabled={safePage === 1}
-                      className="h-9 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100"
+                      className="h-9 rounded-md border border-border bg-card px-4 text-xs font-semibold text-foreground transition hover:bg-background disabled:cursor-not-allowed disabled:bg-muted"
                     >
                       Previous
                     </button>
-                    <span className="text-sm font-medium text-slate-600">
+                    <span className="text-sm font-medium text-muted-foreground">
                       Page {safePage} of {totalPages}
                     </span>
                     <button
                       type="button"
                       onClick={() => onPageChange?.(Math.min(totalPages, safePage + 1))}
                       disabled={safePage === totalPages}
-                      className="h-9 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100"
+                      className="h-9 rounded-md border border-border bg-card px-4 text-xs font-semibold text-foreground transition hover:bg-background disabled:cursor-not-allowed disabled:bg-muted"
                     >
                       Next
                     </button>

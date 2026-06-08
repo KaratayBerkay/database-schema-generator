@@ -1,11 +1,11 @@
 export function fieldTypeBadgeClass(type: string): string {
-  if (type === "Int" || type === "integer" || type === "BigInt" || type === "bigint") return "bg-blue-50 text-blue-700";
-  if (type === "String" || type === "string") return "bg-green-50 text-green-700";
-  if (type === "DateTime" || type === "timestamp") return "bg-orange-50 text-orange-700";
-  if (type === "Uuid") return "bg-purple-50 text-purple-700";
-  if (type === "Float" || type === "float" || type === "Decimal" || type === "decimal") return "bg-cyan-50 text-cyan-700";
-  if (type === "Boolean" || type === "boolean") return "bg-emerald-50 text-emerald-700";
-  if (type === "Bytes" || type === "bytes") return "bg-amber-50 text-amber-700";
-  if (type === "Json" || type === "json") return "bg-slate-100 text-slate-600";
-  return "bg-slate-100 text-slate-600";
+  if (type === "Int" || type === "integer" || type === "BigInt" || type === "bigint") return "bg-blue-500/15 text-blue-300";
+  if (type === "String" || type === "string") return "bg-green-500/15 text-green-300";
+  if (type === "DateTime" || type === "timestamp") return "bg-orange-500/15 text-orange-300";
+  if (type === "Uuid") return "bg-purple-500/15 text-purple-300";
+  if (type === "Float" || type === "float" || type === "Decimal" || type === "decimal") return "bg-cyan-500/15 text-cyan-300";
+  if (type === "Boolean" || type === "boolean") return "bg-emerald-500/15 text-emerald-300";
+  if (type === "Bytes" || type === "bytes") return "bg-amber-500/15 text-amber-300";
+  if (type === "Json" || type === "json") return "bg-muted text-muted-foreground";
+  return "bg-muted text-muted-foreground";
 }

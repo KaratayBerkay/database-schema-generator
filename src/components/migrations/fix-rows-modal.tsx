@@ -25,21 +25,21 @@ export function FixRowsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
-      <div className="flex w-full max-w-4xl flex-col rounded-lg border border-slate-200 bg-white shadow-2xl" style={{ maxHeight: "85vh" }}>
-        <div className="shrink-0 border-b border-slate-200 px-5 py-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-rose-600">Validation Failed</p>
-          <h3 className="mt-1 text-lg font-semibold text-slate-950">
+      <div className="flex w-full max-w-4xl flex-col rounded-lg border border-border bg-card shadow-2xl" style={{ maxHeight: "85vh" }}>
+        <div className="shrink-0 border-b border-border px-5 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-rose-300">Validation Failed</p>
+          <h3 className="mt-1 text-lg font-semibold text-foreground">
             {invalidRows.length} row{invalidRows.length !== 1 ? "s" : ""} need to be fixed before migrating
           </h3>
-          <p className="mt-0.5 text-sm text-slate-500">
-            Edit the values below, then click <span className="font-semibold text-slate-700">Re-validate &amp; Run</span>.
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Edit the values below, then click <span className="font-semibold text-foreground">Re-validate &amp; Run</span>.
           </p>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10">
-              <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+              <tr className="border-b border-border bg-background text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                 <th className="px-4 py-2.5 text-left">Model</th>
                 <th className="px-4 py-2.5 text-left">Row</th>
                 <th className="px-4 py-2.5 text-left">Field</th>
@@ -53,10 +53,10 @@ export function FixRowsModal({
                 const patchedValue = rowPatches[patchKey]?.[row.field];
                 const displayValue = patchedValue !== undefined ? patchedValue : String(row.value ?? "");
                 return (
-                  <tr key={idx} className="hover:bg-slate-50">
-                    <td className="px-4 py-2.5 font-mono text-xs font-semibold text-slate-800">{row.table}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-slate-500">{row.rowIndex}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-slate-700">{row.field}</td>
+                  <tr key={idx} className="hover:bg-background">
+                    <td className="px-4 py-2.5 font-mono text-xs font-semibold text-foreground">{row.table}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{row.rowIndex}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-foreground">{row.field}</td>
                     <td className="px-4 py-2.5">
                       <input
                         type="text"
@@ -67,10 +67,10 @@ export function FixRowsModal({
                             [patchKey]: { ...(rowPatches[patchKey] ?? {}), [row.field]: e.target.value },
                           });
                         }}
-                        className="h-7 w-full rounded border border-slate-300 bg-white px-2 font-mono text-xs text-slate-900 outline-none focus:border-slate-500"
+                        className="h-7 w-full rounded border border-border bg-card px-2 font-mono text-xs text-foreground outline-none focus:border-slate-500"
                       />
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-rose-700">{row.error}</td>
+                    <td className="px-4 py-2.5 text-xs text-rose-300">{row.error}</td>
                   </tr>
                 );
               })}
@@ -79,18 +79,18 @@ export function FixRowsModal({
         </div>
 
         {fixModalError && (
-          <div className="shrink-0 border-t border-rose-200 bg-rose-50 px-5 py-3">
-            <p className="font-mono text-xs text-rose-700">{fixModalError}</p>
+          <div className="shrink-0 border-t border-rose-500/30 bg-rose-500/15 px-5 py-3">
+            <p className="font-mono text-xs text-rose-300">{fixModalError}</p>
           </div>
         )}
 
-        <div className="shrink-0 flex items-center justify-between gap-3 border-t border-slate-200 px-5 py-4">
-          <p className="text-xs text-slate-500">
+        <div className="shrink-0 flex items-center justify-between gap-3 border-t border-border px-5 py-4">
+          <p className="text-xs text-muted-foreground">
             {editCount > 0 ? `${editCount} field${editCount !== 1 ? "s" : ""} edited` : "No edits yet"}
           </p>
           <div className="flex items-center gap-3">
             <button type="button" onClick={onCancel}
-              className="h-9 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+              className="h-9 rounded-md border border-border bg-card px-4 text-sm font-semibold text-foreground transition hover:bg-background">
               Cancel
             </button>
             <button type="button" onClick={onFixAndMigrate}
