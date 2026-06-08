@@ -96,8 +96,6 @@ export type ScenarioBlueprint = {
   summary: string;
   /** Short bullet points describing what the schema demonstrates. */
   highlights: string[];
-  /** Where to go next after loading — workflow-relative hrefs. */
-  exploreNext: { label: string; href: string }[];
   /** One entry for basic; multiple (evolving) entries for advanced. */
   versions: ScenarioVersionDef[];
 };
@@ -218,11 +216,6 @@ const blogPlatform: ScenarioBlueprint = {
     "Enums for user roles and post status",
     "Nullable foreign key (Post → Category) with on-delete SetNull",
     "Unique constraints on email, slugs, and tag names",
-  ],
-  exploreNext: [
-    { label: "See the tables", href: "/tables" },
-    { label: "Inspect relations", href: "/relations" },
-    { label: "View dependency order", href: "/hierarchy" },
   ],
   versions: [
     {
@@ -348,11 +341,6 @@ const taskTracker: ScenarioBlueprint = {
     "Composite unique (workspace + project key) plus an index on task status",
     "Optional self-service assignee (nullable FK, SetNull on delete)",
   ],
-  exploreNext: [
-    { label: "Browse the tables", href: "/tables" },
-    { label: "Check restrictions", href: "/restrictions" },
-    { label: "Generate validators", href: "/validation" },
-  ],
   versions: [
     {
       name: V1,
@@ -451,11 +439,6 @@ const ecommerceShop: ScenarioBlueprint = {
     "OrderStatus enum tracking the fulfilment lifecycle",
     "Index on Order.customerId and a unique (order, product) line-item pair",
     "Stock column with a literal default of 0",
-  ],
-  exploreNext: [
-    { label: "Open the tables", href: "/tables" },
-    { label: "Export the schema", href: "/exports" },
-    { label: "Try the SQL workspace", href: "/sql-query" },
   ],
   versions: [
     {
@@ -596,11 +579,6 @@ const saasBilling: ScenarioBlueprint = {
     "v2 adds a Coupon table, a trial date, and a new SubStatus value",
     "v3 makes Account.company required, renames startedAt → activatedAt",
     "v3 drops Invoice.paid for an InvoiceStatus enum — see it in Tracking",
-  ],
-  exploreNext: [
-    { label: "Diff the versions in Tracking", href: "/tracking" },
-    { label: "Browse the timeline", href: "/history" },
-    { label: "Plan a migration", href: "/migrations" },
   ],
   versions: [
     {
@@ -759,11 +737,6 @@ const inventoryControl: ScenarioBlueprint = {
     "Each stock move points at both a warehouse and a product",
     "v2 adds Warehouse.code, Product.reorderLevel, and StockMove.note",
     "v2 adds a TRANSFER value to the MoveType enum",
-  ],
-  exploreNext: [
-    { label: "Diff the versions in Tracking", href: "/tracking" },
-    { label: "See the tables", href: "/tables" },
-    { label: "View dependency order", href: "/hierarchy" },
   ],
   versions: [
     {

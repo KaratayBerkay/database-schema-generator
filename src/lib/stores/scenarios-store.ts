@@ -49,7 +49,6 @@ function summarize(blueprint: ScenarioBlueprint, loaded: ScenarioLoadedInfo | nu
     accent: blueprint.accent,
     summary: blueprint.summary,
     highlights: blueprint.highlights,
-    exploreNext: blueprint.exploreNext,
     tableCount: models.length,
     fieldCount,
     relationCount,
