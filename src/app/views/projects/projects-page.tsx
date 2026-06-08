@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { IconSearch } from "@tabler/icons-react";
 import { useProjectsPageState } from "@/hooks/use-projects-page-state";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -81,6 +83,22 @@ export function ProjectsPageContent() {
   const sourceVersion = activeVersions.at(-1) ?? "";
   const nextVersion = sourceVersion ? incrementVersion(sourceVersion) : "";
   const router = useRouter();
+
+  // ── Search filters ───────────────────────────────────────────────────────────
+  const [projectSearch, setProjectSearch] = useState("");
+  const [versionSearch, setVersionSearch] = useState("");
+
+  const projectQuery = projectSearch.trim().toLowerCase();
+  const filteredProjects = projectQuery
+    ? projects.filter(
+        (p) => p.name.toLowerCase().includes(projectQuery) || p.id.toLowerCase().includes(projectQuery),
+      )
+    : projects;
+
+  const versionQuery = versionSearch.trim().toLowerCase();
+  const filteredVersions = versionQuery
+    ? activeVersions.filter((v) => v.toLowerCase().includes(versionQuery))
+    : activeVersions;
 
   // ── Forms ──────────────────────────────────────────────────────────────────
 
@@ -367,23 +385,39 @@ export function ProjectsPageContent() {
             </div>
           ) : (
             <div className="space-y-3">
-              {projects.map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  isActive={project.id === activeProjectId}
-                  isEditing={editingProjectId === project.id}
-                  isSaving={savingProjectId === project.id}
-                  editForm={editForm}
-                  cfg={pCfg(project.provider)}
-                  onSetActive={() => setActiveProjectId(project.id)}
-                  onNavigate={() => { setActiveProjectId(project.id); router.push("/tables"); }}
-                  onStartEdit={() => startProjectEdit(project)}
-                  onCancelEdit={cancelProjectEdit}
-                  onSaveEdit={saveProjectEdit}
-                  onDelete={() => setDeleteTarget(project)}
+              <div className="relative">
+                <IconSearch size={16} stroke={1.8} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={projectSearch}
+                  onChange={(e) => setProjectSearch(e.target.value)}
+                  placeholder="Search projects by name or ID…"
+                  className="h-10 pl-9"
+                  autoComplete="off"
                 />
-              ))}
+              </div>
+              {filteredProjects.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-border bg-card py-8 text-center text-sm text-muted-foreground">
+                  No projects match “{projectSearch.trim()}”.
+                </p>
+              ) : (
+                filteredProjects.map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    isActive={project.id === activeProjectId}
+                    isEditing={editingProjectId === project.id}
+                    isSaving={savingProjectId === project.id}
+                    editForm={editForm}
+                    cfg={pCfg(project.provider)}
+                    onSetActive={() => setActiveProjectId(project.id)}
+                    onNavigate={() => { setActiveProjectId(project.id); router.push("/tables"); }}
+                    onStartEdit={() => startProjectEdit(project)}
+                    onCancelEdit={cancelProjectEdit}
+                    onSaveEdit={saveProjectEdit}
+                    onDelete={() => setDeleteTarget(project)}
+                  />
+                ))
+              )}
             </div>
           )}
         </TabsContent>
@@ -408,14 +442,28 @@ export function ProjectsPageContent() {
                   </Badge>
                 </div>
                 <Separator className="my-4" />
+                {activeVersions.length > 0 && (
+                  <div className="relative mb-3">
+                    <IconSearch size={16} stroke={1.8} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={versionSearch}
+                      onChange={(e) => setVersionSearch(e.target.value)}
+                      placeholder="Search versions…"
+                      className="h-9 pl-9"
+                      autoComplete="off"
+                    />
+                  </div>
+                )}
                 <div className="space-y-2">
                   {activeVersions.length === 0 ? (
                     <p className="py-4 text-center text-sm text-muted-foreground">No versions available.</p>
+                  ) : filteredVersions.length === 0 ? (
+                    <p className="py-4 text-center text-sm text-muted-foreground">No versions match “{versionSearch.trim()}”.</p>
                   ) : (
-                    activeVersions.map((version, idx) => {
+                    filteredVersions.map((version) => {
                       const locked = isOriginalVersion(version);
                       const isSelected = !locked && version === selectedVersion;
-                      const isLatest = idx === activeVersions.length - 1;
+                      const isLatest = version === activeVersions[activeVersions.length - 1];
                       return (
                         <button
                           key={version}
