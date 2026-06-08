@@ -370,7 +370,7 @@ function ScenarioCard({
             </div>
           ) : isLoaded ? (
             <div className="space-y-2">
-              <div className="space-y-0.5">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 <p className="text-xs text-emerald-300">
                   Loaded as{" "}
                   <button
@@ -381,16 +381,16 @@ function ScenarioCard({
                     {loaded.projectName}
                   </button>
                 </p>
-                <div className="flex items-start gap-1.5">
-                  <p className="break-all font-mono text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="break-all font-mono text-[11px] text-muted-foreground">
                     #{loaded.projectId}
-                  </p>
+                  </span>
                   <button
                     type="button"
                     onClick={copyId}
                     title="Copy project id"
                     aria-label="Copy project id"
-                    className="mt-px flex h-4 w-4 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:text-foreground"
+                    className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:text-foreground"
                   >
                     {copied ? (
                       <IconCheck size={13} stroke={2} className="text-emerald-400" />
@@ -398,7 +398,7 @@ function ScenarioCard({
                       <IconCopy size={13} stroke={1.8} />
                     )}
                   </button>
-                </div>
+                </span>
               </div>
               <button
                 type="button"
