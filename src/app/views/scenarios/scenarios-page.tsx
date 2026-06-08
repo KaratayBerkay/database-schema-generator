@@ -156,7 +156,7 @@ export function ScenariosPageContent() {
             Main Window
           </p>
           <h3 className="mt-1 text-xl font-semibold text-foreground">Scenarios</h3>
-          <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             Spin up a fully-designed example schema in a brand-new project, then walk it through the
             workflows in the sidebar to learn the app by example. <span className="font-semibold text-foreground">Basic</span>{" "}
             scenarios are a single version; <span className="font-semibold text-foreground">advanced</span>{" "}
