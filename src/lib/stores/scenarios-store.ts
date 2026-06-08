@@ -16,26 +16,9 @@ import {
   findBlueprint,
   type ScenarioBlueprint,
 } from "@/lib/scenarios/blueprints";
+import type { ScenarioLoadedInfo, ScenarioSummary, LoadScenarioResult } from "@/types/scenarios";
 
-export type ScenarioLoadedInfo = { projectId: string; projectName: string };
-
-export type ScenarioSummary = {
-  id: string;
-  title: string;
-  category: "basic" | "advanced";
-  provider: string;
-  accent: string;
-  summary: string;
-  highlights: string[];
-  exploreNext: { label: string; href: string }[];
-  tableCount: number;
-  fieldCount: number;
-  relationCount: number;
-  enumCount: number;
-  versionCount: number;
-  /** Non-null when a demo project created from this scenario currently exists. */
-  loaded: ScenarioLoadedInfo | null;
-};
+export type { ScenarioLoadedInfo, ScenarioSummary, LoadScenarioResult };
 
 const prismaToProviderLabel: Record<ScenarioBlueprint["prismaProvider"], string> = {
   postgresql: "PostgreSQL",
@@ -134,13 +117,6 @@ async function buildProject(blueprint: ScenarioBlueprint, requestedName: string)
   await refreshProjectStats(project.name);
   return project;
 }
-
-export type LoadScenarioResult = {
-  projectId: string;
-  projectName: string;
-  /** The version a user lands on — always v1. */
-  version: string;
-};
 
 /** Create a fresh project seeded with a scenario's schema (all versions). */
 export async function loadScenario(

@@ -16,6 +16,9 @@ export { useRestrictionsQuery, useRestrictionMutations } from "./restrictions";
 // Projects
 export { useProjectsQuery, useProjectMutations } from "./projects";
 
+// Scenarios
+export { useScenariosQuery, useScenarioMutations } from "./scenarios";
+
 // Exports
 export { useExportHistoryQuery, useExportMutations } from "./exports";
 
