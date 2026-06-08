@@ -38,6 +38,7 @@ export const menuItemsBase: MenuItem[] = [
   { label: "Exports", href: "/exports", tone: "bg-blue-400", metric: "0 exports" },
   { label: "Imports", href: "/imports", tone: "bg-lime-400", metric: "" },
   { label: "History", href: "/history", tone: "bg-teal-400", metric: "0 saves" },
+  { label: "Scenarios", href: "/scenarios", tone: "bg-purple-400", metric: "" },
 ];
 
 export function computeMenuItems(

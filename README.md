@@ -121,8 +121,8 @@ cp .env.example .env
 # 4. Push the SQLite schema
 pnpm db:push
 
-# 5. Start the dev server
-pnpm dev
+# 5. Build and start the app
+pnpm build && pnpm start
 ```
 
 Open [http://localhost:3000](http://localhost:3000). The app redirects you to **Tables** once you've created your first project.
@@ -165,6 +165,7 @@ src/
 ```bash
 pnpm dev          # Start dev server (Turbopack)
 pnpm build        # Production build
+pnpm start        # Start the production server (after build)
 pnpm lint         # ESLint check
 pnpm db:push      # Push Drizzle schema to SQLite
 pnpm db:studio    # Open Drizzle Studio
