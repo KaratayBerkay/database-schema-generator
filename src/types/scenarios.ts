@@ -10,7 +10,6 @@ export type ScenarioSummary = {
   accent: string;
   summary: string;
   highlights: string[];
-  exploreNext: { label: string; href: string }[];
   tableCount: number;
   fieldCount: number;
   relationCount: number;

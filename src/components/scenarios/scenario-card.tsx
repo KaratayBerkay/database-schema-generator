@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { IconCheck, IconCopy, IconTrash } from "@tabler/icons-react";
+import { IconBookUpload, IconCheck, IconCopy, IconTrash } from "@tabler/icons-react";
 import { classNames } from "@/lib/utils";
 import { InlineError } from "@/components/built";
 import type { ScenarioSummary, ScenarioCardHandlers } from "@/types/scenarios";
@@ -63,6 +63,14 @@ export function ScenarioCard({
             <span className="rounded-md border border-border bg-card px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
               {scenario.provider}
             </span>
+            <Link
+              href={loaded ? `/projects?search=${encodeURIComponent(loaded.projectId)}` : "/projects"}
+              title="Manage in Projects"
+              aria-label="Manage in Projects"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition hover:bg-background hover:text-foreground"
+            >
+              <IconBookUpload size={15} stroke={1.8} />
+            </Link>
             {isLoaded && (
               <button
                 type="button"
@@ -99,21 +107,6 @@ export function ScenarioCard({
         </ul>
 
         <div className="mt-auto space-y-3">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-              After loading
-            </span>
-            {scenario.exploreNext.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-[12px] font-medium text-cyan-400 underline-offset-2 hover:underline"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
           {isLoaded && confirmRemove ? (
             <div className="space-y-2 rounded-md border border-rose-500/30 bg-rose-500/10 p-3">
               <p className="text-xs font-medium text-rose-200">
