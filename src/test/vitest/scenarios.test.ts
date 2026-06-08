@@ -129,6 +129,27 @@ describe("scenarios", () => {
     expect(list.find((s) => s.id === "task-tracker")!.loaded).toBeNull();
   });
 
+  it("keys remove/reload on project id, supporting a custom project name", async () => {
+    // task-tracker was un-loaded by the delete test above, so it's loadable again.
+    const customName = "Totally Custom Name";
+    const loadRes = await caller.scenarios.load({ scenarioId: "task-tracker", projectName: customName });
+    expect(loadRes.projectName).toBe(customName);
+
+    // The loaded mark carries the real project id and the custom name (not the title).
+    const afterLoad = (await caller.scenarios.list()).find((s) => s.id === "task-tracker")!;
+    expect(afterLoad.loaded).toEqual({ projectId: loadRes.projectId, projectName: customName });
+
+    // Re-load preserves the custom name while producing a fresh project id.
+    const reloadRes = await caller.scenarios.reload({ scenarioId: "task-tracker" });
+    expect(reloadRes.projectName).toBe(customName);
+    expect(reloadRes.projectId).not.toBe(loadRes.projectId);
+
+    // Removing by the project id (what the UI passes) clears the mark — name irrelevant.
+    const loadedId = (await caller.scenarios.list()).find((s) => s.id === "task-tracker")!.loaded!.projectId;
+    await caller.projects.delete({ id: loadedId });
+    expect((await caller.scenarios.list()).find((s) => s.id === "task-tracker")!.loaded).toBeNull();
+  });
+
   it("rejects unknown scenario ids on load and reload", async () => {
     await expect(
       caller.scenarios.load({ scenarioId: "does-not-exist", projectName: "Nope Project Name" }),
