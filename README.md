@@ -3,7 +3,7 @@
 A visual, workflow-driven tool for designing and evolving database schemas — without hand-editing `.prisma` files. Lay out your tables, fields, relations, and constraints through a UI, keep a full version history, generate validators and ORM code, and push the result to a real database when you're ready.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-violet.svg)](./LICENSE)
-[![Open Collective](https://img.shields.io/opencollective/all/karatay-lab?label=sponsors)](https://opencollective.com/karatay-lab)
+[![Open Collective](https://img.shields.io/opencollective/all/database-schema-generator?label=sponsors)](https://opencollective.com/database-schema-generator)
 
 ---
 
@@ -180,7 +180,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for version history.
 
 ## Sponsorship
 
-Schema Studio is sponsored via [Open Collective](https://opencollective.com/karatay-lab). If this project saves you time, consider supporting its development.
+Schema Studio is sponsored via [Open Collective](https://opencollective.com/database-schema-generator). If this project saves you time, consider supporting its development.
 
 ## License
 
