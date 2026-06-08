@@ -362,16 +362,21 @@ function ScenarioCard({
             </div>
           ) : isLoaded ? (
             <div className="space-y-2">
-              <p className="text-xs text-emerald-300">
-                Loaded as{" "}
-                <button
-                  type="button"
-                  onClick={() => onOpen(loaded.projectId)}
-                  className="font-semibold underline underline-offset-2 hover:text-emerald-200"
-                >
-                  {loaded.projectName}
-                </button>
-              </p>
+              <div className="space-y-0.5">
+                <p className="text-xs text-emerald-300">
+                  Loaded as{" "}
+                  <button
+                    type="button"
+                    onClick={() => onOpen(loaded.projectId)}
+                    className="font-semibold underline underline-offset-2 hover:text-emerald-200"
+                  >
+                    {loaded.projectName}
+                  </button>
+                </p>
+                <p className="break-all font-mono text-[11px] text-muted-foreground">
+                  #{loaded.projectId}
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => onReload(scenario.id)}
