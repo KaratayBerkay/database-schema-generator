@@ -8,11 +8,13 @@ import {
   prismaClients,
   providers,
 } from "@/constants/projects";
+import { useImportMutations } from "@/queries/imports";
 
 type Tab = "create" | "import";
 
 export default function CreateFirstProject() {
   const router = useRouter();
+  const { importFromDatabase } = useImportMutations();
   const [tab, setTab] = useState<Tab>("create");
 
   // create state
@@ -72,25 +74,8 @@ export default function CreateFirstProject() {
     setImportError("");
 
     try {
-      const formData = new FormData();
-      formData.append("files", importFile!);
-
-      const uploadRes = await fetch("/api/schema-imports", { method: "POST", body: formData });
-      const uploadData = (await uploadRes.json()) as { imported?: { fileName: string }[]; error?: string };
-
-      if (!uploadRes.ok) throw new Error(uploadData.error ?? "Upload failed.");
-
-      const fileName = uploadData.imported?.[0]?.fileName ?? importFile!.name;
-
-      const matchRes = await fetch("/api/schema-imports/match", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileName, projectName: importTrimmed }),
-      });
-      const matchData = (await matchRes.json()) as { error?: string };
-
-      if (!matchRes.ok) throw new Error(matchData.error ?? "Import failed.");
-
+      const content = await importFile!.text();
+      await importFromDatabase.mutateAsync({ projectName: importTrimmed, content });
       router.push("/tables");
     } catch (err) {
       setImportError(err instanceof Error ? err.message : "Import failed.");
