@@ -20,7 +20,19 @@ export const schemaRouter = createTRPCRouter({
     .query(async ({ input }) => {
       try {
         const schemaStats = await getSchemaStats(input.projectName, input.version);
-        return { ...schemaStats, imports: 0 };
+        const project = db
+          .prepare("SELECT id FROM projects WHERE name = ?")
+          .get(input.projectName) as { id: string } | undefined;
+        const validatorCount = project
+          ? (
+              db
+                .prepare(
+                  "SELECT COUNT(*) AS n FROM zod_schemas WHERE project_id = ? AND version = ?",
+                )
+                .get(project.id, input.version) as { n: number }
+            ).n
+          : 0;
+        return { ...schemaStats, validatorCount };
       } catch (err) {
         trpcError(err, "Could not get schema stats.");
       }

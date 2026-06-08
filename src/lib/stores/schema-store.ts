@@ -1223,10 +1223,6 @@ function blockAttributeExtraArgs(attribute: BlockAttribute) {
   });
 }
 
-function fieldTypeName(field: Field) {
-  return typeof field.fieldType === "string" ? field.fieldType : field.fieldType.name;
-}
-
 function relationAttributeName(field: Field) {
   const relationAttribute = findAttribute(field, "relation");
   if (!relationAttribute) return "";
@@ -1348,43 +1344,6 @@ function fieldFromPrismaAst(field: Field): CanonicalField {
           onUpdate: relationAttributeStringArg(field, "onUpdate"),
         }
       : undefined,
-  };
-}
-
-function fieldRestrictionFromPrismaAst(field: Field): CanonicalRestriction | null {
-  const uniqueAttribute = findAttribute(field, "unique");
-
-  if (!uniqueAttribute) {
-    return null;
-  }
-
-  return {
-    key: randomUUID(),
-    type: "UNIQUE",
-    fields: [field.name],
-    dbName: attributeDbName(uniqueAttribute),
-  };
-}
-
-function restrictionFromPrismaAst(
-  attribute: BlockAttribute,
-): CanonicalRestriction | null {
-  if (attribute.name !== "unique" && attribute.name !== "index") {
-    return null;
-  }
-
-  const fields = blockAttributeFields(attribute);
-
-  if (fields.length === 0) {
-    return null;
-  }
-
-  return {
-    key: randomUUID(),
-    type: attribute.name === "unique" ? "UNIQUE" : "INDEX",
-    fields,
-    dbName: attributeDbName(attribute),
-    extraArgs: blockAttributeExtraArgs(attribute),
   };
 }
 

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSchemaStatsQuery } from "@/queries/schema";
+import { useExportHistoryQuery } from "@/queries/exports";
+import { usePendingCountsQuery } from "@/queries/tracking";
 import { useDashboard, useActiveProject } from "./dashboard-context";
 import { ProjectInfoProvider } from "./project-info-context";
 import { Button } from "@/components/ui/button";
@@ -54,9 +56,22 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     fieldCount: statsData?.fieldCount ?? 0,
     relationCount: statsData?.relationCount ?? 0,
     restrictionCount: statsData?.restrictionCount ?? 0,
-    importQueuedCount: statsData?.imports ?? 0,
+    validatorCount: statsData?.validatorCount ?? 0,
     enumCount: statsData?.enumCount ?? 0,
   }), [statsData]);
+
+  // Tracking shows unapproved changes between the selected version and the one
+  // immediately before it; the first version has no prior to diff against.
+  const versionNames = activeProject?.versions.map((v) => v.name) ?? [];
+  const selectedIdx = versionNames.indexOf(selectedVersion);
+  const fromVersion = selectedIdx > 0 ? versionNames[selectedIdx - 1]! : "";
+  const { data: pendingCounts } = usePendingCountsQuery(
+    activeProject?.id ?? "",
+    fromVersion,
+    selectedVersion,
+  );
+
+  const { data: exportHistory } = useExportHistoryQuery(activeProject?.name ?? "");
 
   const activeProjectWithStats = useMemo(
     () =>
@@ -65,7 +80,6 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             ...activeProject,
             tables: schemaStats.tableCount,
             fields: schemaStats.fieldCount,
-            imports: schemaStats.importQueuedCount,
             enums: schemaStats.enumCount,
             relations: schemaStats.relationCount,
             restrictions: schemaStats.restrictionCount,
@@ -74,7 +88,19 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     [activeProject, schemaStats],
   );
 
-  const menuItems = useMemo(() => computeMenuItems(activeProjectWithStats), [activeProjectWithStats]);
+  const menuCounts = useMemo(
+    () => ({
+      validators: schemaStats.validatorCount,
+      exports: exportHistory?.length ?? 0,
+      changes: pendingCounts?.total ?? 0,
+    }),
+    [schemaStats.validatorCount, exportHistory, pendingCounts],
+  );
+
+  const menuItems = useMemo(
+    () => computeMenuItems(activeProjectWithStats, menuCounts),
+    [activeProjectWithStats, menuCounts],
+  );
 
   const activeMenu = useMemo(
     () =>
@@ -84,9 +110,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     [pathname, menuItems],
   );
 
-  const pageTitle = activeMenu.detail
-    ? `${activeMenu.label}: ${activeMenu.detail}`
-    : activeMenu.label;
+  const pageTitle = activeMenu.label;
 
   const projectName = activeProject?.name.trim() || "No project";
   const selectedProvider = activeProject?.provider ?? "No DB";
@@ -171,22 +195,17 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                         )}
                       >
                         <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", item.tone)} />
-                        <span className="min-w-0">
-                          <span className="block truncate font-semibold">{item.label}</span>
-                          {item.detail ? (
-                            <span className={cn("block truncate text-xs", isActive ? "text-slate-500" : "text-slate-400")}>
-                              {item.detail}
-                            </span>
-                          ) : null}
-                        </span>
-                        <span
-                          className={cn(
-                            "rounded-md px-2 py-1 text-[11px] font-bold uppercase",
-                            isActive ? "bg-slate-100 text-slate-600" : "bg-white/8 text-slate-300",
-                          )}
-                        >
-                          {item.metric}
-                        </span>
+                        <span className="block min-w-0 truncate font-semibold">{item.label}</span>
+                        {item.metric ? (
+                          <span
+                            className={cn(
+                              "rounded-md px-2 py-1 text-[11px] font-bold uppercase",
+                              isActive ? "bg-slate-100 text-slate-600" : "bg-white/8 text-slate-300",
+                            )}
+                          >
+                            {item.metric}
+                          </span>
+                        ) : null}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
