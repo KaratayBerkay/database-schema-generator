@@ -14,6 +14,7 @@ import { commentaryRouter } from "./commentary";
 import { exportsRouter } from "./exports";
 import { hierarchyRouter } from "./hierarchy";
 import { trackingRouter } from "./tracking";
+import { scenariosRouter } from "./scenarios";
 
 export const appRouter = createTRPCRouter({
   projects: projectsRouter,
@@ -31,6 +32,7 @@ export const appRouter = createTRPCRouter({
   hierarchy: hierarchyRouter,
   enums: enumsRouter,
   tracking: trackingRouter,
+  scenarios: scenariosRouter,
 });
 
 export type AppRouter = typeof appRouter;
