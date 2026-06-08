@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { IconTrash } from "@tabler/icons-react";
+import { IconCheck, IconCopy, IconTrash } from "@tabler/icons-react";
 import { useScenariosQuery, useScenarioMutations } from "@/queries/scenarios";
 import { useProjectMutations } from "@/queries/projects";
 import { useDashboard } from "../shared/dashboard-context";
@@ -252,9 +252,17 @@ function ScenarioCard({
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState("");
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const loaded = scenario.loaded;
   const isLoaded = loaded !== null;
+
+  const copyId = () => {
+    if (!loaded) return;
+    void navigator.clipboard?.writeText(loaded.projectId);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
+  };
 
   const openForm = () => {
     setFormOpen(true);
@@ -373,9 +381,24 @@ function ScenarioCard({
                     {loaded.projectName}
                   </button>
                 </p>
-                <p className="break-all font-mono text-[11px] text-muted-foreground">
-                  #{loaded.projectId}
-                </p>
+                <div className="flex items-start gap-1.5">
+                  <p className="break-all font-mono text-[11px] text-muted-foreground">
+                    #{loaded.projectId}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={copyId}
+                    title="Copy project id"
+                    aria-label="Copy project id"
+                    className="mt-px flex h-4 w-4 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:text-foreground"
+                  >
+                    {copied ? (
+                      <IconCheck size={13} stroke={2} className="text-emerald-400" />
+                    ) : (
+                      <IconCopy size={13} stroke={1.8} />
+                    )}
+                  </button>
+                </div>
               </div>
               <button
                 type="button"
