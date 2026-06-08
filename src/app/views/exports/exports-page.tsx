@@ -10,6 +10,13 @@ import { EXPORT_OPTIONS, type ExportType } from "@/constants/exports";
 import { ExportedCodeDialog } from "@/components/exports/exported-code-dialog";
 import { PickleConfirmDialog } from "@/components/exports/pickle-confirm-dialog";
 
+// Format chip shown in the code dialog header. Distinguishes formats that share a
+// highlight lang (SQLAlchemy & Django both render as `python`).
+const FORMAT_BADGE: Partial<Record<ExportType, { label: string; className: string }>> = {
+  sqlalchemy: { label: "SQLAlchemy", className: "bg-violet-500/15 text-violet-300" },
+  django: { label: "Django", className: "bg-lime-500/15 text-lime-300" },
+  sql: { label: "SQL", className: "bg-cyan-500/15 text-cyan-300" },
+};
 
 export function ExportsPageContent() {
   const { projectName, version, hasProject } = useProjectInfo();
@@ -43,10 +50,11 @@ export function ExportsPageContent() {
           setActiveExportType(null); return;
         }
         setDialog({ exportId: (data as { id?: string } | undefined)?.id ?? "", code: (data as { code?: string } | undefined)?.code ?? "",
-          fileName: (data as { fileName?: string } | undefined)?.fileName ?? (t === "prisma" ? `${version}.prisma` : "schema.ts"),
-          lang: t === "prisma" ? "prisma" : "ts",
+          fileName: (data as { fileName?: string } | undefined)?.fileName ?? (t === "prisma" ? `${version}.prisma` : t === "sqlalchemy" || t === "django" ? "models.py" : t === "sql" ? "schema.sql" : "schema.ts"),
+          lang: t === "prisma" ? "prisma" : t === "sqlalchemy" || t === "django" ? "python" : t === "sql" ? "sql" : "ts",
           tableCount: (data as { tableCount?: number } | undefined)?.tableCount ?? 0,
           enumCount: (data as { enumCount?: number } | undefined)?.enumCount ?? 0,
+          badge: FORMAT_BADGE[t],
         });
         setActiveExportType(null);
       },
@@ -205,10 +213,16 @@ export function ExportsPageContent() {
                           "rounded px-2 py-0.5 text-[11px] font-bold",
                           row.export_type === "prisma"
                             ? "bg-blue-500/20 text-blue-300"
-                            : "bg-emerald-500/20 text-emerald-300",
+                            : row.export_type === "sqlalchemy"
+                              ? "bg-violet-500/20 text-violet-300"
+                              : row.export_type === "django"
+                                ? "bg-lime-500/20 text-lime-300"
+                                : row.export_type === "sql"
+                                  ? "bg-cyan-500/20 text-cyan-300"
+                                  : "bg-emerald-500/20 text-emerald-300",
                         )}
                       >
-                        {row.export_type === "prisma" ? "Prisma" : "Drizzle"}
+                        {row.export_type === "prisma" ? "Prisma" : row.export_type === "sqlalchemy" ? "SQLAlchemy" : row.export_type === "django" ? "Django" : row.export_type === "sql" ? "SQL" : "Drizzle"}
                       </span>
                     </td>
                     <td className="px-5 py-3 font-mono text-xs text-muted-foreground">
@@ -300,9 +314,15 @@ export function ExportsPageContent() {
                         ? "bg-blue-700 hover:bg-blue-800"
                         : opt.type === "drizzle"
                           ? "bg-emerald-700 hover:bg-emerald-800"
-                          : opt.type === "pickle-version"
-                            ? "bg-amber-700 hover:bg-amber-800"
-                            : "bg-orange-700 hover:bg-orange-800",
+                          : opt.type === "sqlalchemy"
+                            ? "bg-violet-700 hover:bg-violet-800"
+                            : opt.type === "django"
+                              ? "bg-lime-700 hover:bg-lime-800"
+                              : opt.type === "sql"
+                                ? "bg-cyan-700 hover:bg-cyan-800"
+                                : opt.type === "pickle-version"
+                                  ? "bg-amber-700 hover:bg-amber-800"
+                                  : "bg-orange-700 hover:bg-orange-800",
                       isDisabled ? "cursor-not-allowed bg-muted hover:bg-muted" : "",
                     )}
                   >

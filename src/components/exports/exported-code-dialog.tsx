@@ -9,9 +9,10 @@ type DialogState = {
   exportId: string;
   code: string;
   fileName: string;
-  lang: "ts" | "prisma";
+  lang: "ts" | "prisma" | "python" | "sql";
   tableCount: number;
   enumCount: number;
+  badge?: { label: string; className: string };
 };
 
 type ExportedCodeDialogProps = {
@@ -33,8 +34,13 @@ export function ExportedCodeDialog({ dialog, copied, onCopy, onDownload, onClose
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Exported Code</p>
             <h3 className="mt-1 text-lg font-semibold text-foreground">{dialog.fileName}</h3>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              {dialog.lang === "ts" ? (
+              {dialog.lang === "ts" || dialog.lang === "python" || dialog.lang === "sql" ? (
                 <>
+                  {dialog.badge && (
+                    <span className={classNames("rounded-md px-2 py-1 text-xs font-semibold", dialog.badge.className)}>
+                      {dialog.badge.label}
+                    </span>
+                  )}
                   <span className="rounded-md bg-emerald-500/15 px-2 py-1 text-xs font-semibold text-emerald-300">
                     {dialog.tableCount} {dialog.tableCount === 1 ? "table" : "tables"}
                   </span>
