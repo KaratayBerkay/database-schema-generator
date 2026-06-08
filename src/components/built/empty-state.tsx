@@ -24,13 +24,13 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "rounded-lg border border-dashed border-slate-300 bg-slate-50 p-8 text-center",
+        "rounded-lg border border-dashed border-border bg-background p-8 text-center",
         className,
       )}
     >
-      <p className="text-sm font-medium text-slate-500">{message}</p>
+      <p className="text-sm font-medium text-muted-foreground">{message}</p>
       {description && (
-        <p className="mt-1 text-xs text-slate-400">{description}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
       )}
       {action && (
         <button

@@ -31,8 +31,8 @@ export function DeploySchemaCard({
           <div className="flex items-center gap-3">
             <StepBadge n={3} state={pushState} />
             <div>
-              <p className="text-sm font-semibold text-slate-950">Deploy Schema</p>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm font-semibold text-foreground">Deploy Schema</p>
+              <p className="text-xs text-muted-foreground">
                 Deploy Schema applies changes non-destructively. Destroy &amp; Deploy force-resets the entire database.
               </p>
             </div>
@@ -46,34 +46,34 @@ export function DeploySchemaCard({
           <div className="flex flex-col gap-1">
             <Label>Deploy version</Label>
             <select value={newTargetVersion} onChange={(e) => onVersionChange(e.target.value)}
-              className="h-9 min-w-40 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-slate-500">
+              className="h-9 min-w-40 rounded-md border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none transition focus:border-slate-500">
               {versions.map((v) => <option key={v} value={v}>{v}</option>)}
             </select>
           </div>
 
           <button type="button" onClick={onDeploySchema}
             disabled={pushState === "loading" || pushState === "success" || undefined}
-            className="h-9 min-w-40 rounded-md border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+            className="h-9 min-w-40 rounded-md border border-border bg-card px-5 text-sm font-semibold text-foreground shadow-sm transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50">
             {pushState === "loading" && lastPushMode === "safe" ? "Deploying…" : "Deploy Schema"}
           </button>
 
           <button type="button" onClick={onDestroyOpen}
             disabled={pushState === "loading" || pushState === "success" || undefined}
-            className="h-9 min-w-44 rounded-md bg-rose-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+            className="h-9 min-w-44 rounded-md bg-rose-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-muted">
             {pushState === "loading" && lastPushMode === "destroy" ? "Deploying…" : "Destroy & Deploy"}
           </button>
 
           {pushState === "success" && (
             <button type="button" onClick={onDeployAgain}
-              className="h-9 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+              className="h-9 rounded-md border border-border bg-card px-4 text-sm font-semibold text-foreground transition hover:bg-background">
               Deploy Again
             </button>
           )}
         </div>
 
         {pushState === "success" && (
-          <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3">
-            <p className="text-sm font-semibold text-emerald-700">
+          <div className="rounded-md border border-emerald-500/30 bg-emerald-500/15 px-4 py-3">
+            <p className="text-sm font-semibold text-emerald-300">
               ✓ Schema version {newTargetVersion} successfully deployed
               {lastPushMode === "destroy" ? " (database force-reset)" : ""}.
             </p>
@@ -84,7 +84,7 @@ export function DeploySchemaCard({
           <>
             <ErrorBox message={pushError} />
             {lastPushMode === "safe" && /cannot be executed|force.reset/i.test(pushError) && (
-              <p className="text-xs font-semibold text-amber-700">
+              <p className="text-xs font-semibold text-amber-300">
                 The schema has incompatible changes that require a full reset. Use <span className="font-mono">Destroy &amp; Deploy</span> to force-reset the database.
               </p>
             )}

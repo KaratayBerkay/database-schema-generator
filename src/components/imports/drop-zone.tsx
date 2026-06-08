@@ -28,7 +28,7 @@ export function DropZone({
         "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors cursor-pointer",
         dragging
           ? "border-lime-400 bg-lime-50"
-          : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100",
+          : "border-border bg-background hover:border-border hover:bg-muted",
       )}
       onClick={() => inputRef.current?.click()}
       onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -42,15 +42,15 @@ export function DropZone({
         className="hidden"
         onChange={(e) => void handleFiles(e.target.files)}
       />
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
-        <svg className="h-5 w-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-card shadow-sm ring-1 ring-slate-200">
+        <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m-4-4l4 4 4-4" />
         </svg>
       </div>
       <div>
-        <p className="text-sm font-semibold text-slate-700">{label}</p>
-        <p className="mt-0.5 text-xs font-medium text-slate-500">
-          Drag & drop or click to browse — <code className="rounded bg-slate-200 px-1 py-0.5 text-[10px] font-bold text-slate-600">.pickle.json</code>
+        <p className="text-sm font-semibold text-foreground">{label}</p>
+        <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+          Drag & drop or click to browse — <code className="rounded bg-muted px-1 py-0.5 text-[10px] font-bold text-muted-foreground">.pickle.json</code>
         </p>
       </div>
     </div>

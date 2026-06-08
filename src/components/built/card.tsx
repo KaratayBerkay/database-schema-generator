@@ -14,7 +14,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-lg border border-slate-200 bg-white",
+        "rounded-lg border border-border bg-card",
         locked && "pointer-events-none select-none opacity-50",
         className,
       )}
@@ -32,7 +32,7 @@ export function CardHeader({
   className?: string;
 }) {
   return (
-    <div className={cn("border-b border-slate-200 px-5 py-4", className)}>
+    <div className={cn("border-b border-border px-5 py-4", className)}>
       {children}
     </div>
   );

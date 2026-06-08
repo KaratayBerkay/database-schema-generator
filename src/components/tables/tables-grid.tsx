@@ -35,7 +35,7 @@ export function TablesGrid({
           value={searchTerm}
           onChange={(e) => { onSearchChange(e.target.value); onPageChange(1); }}
           placeholder="Search tables..."
-          className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-600"
+          className="h-10 w-full rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition placeholder:text-muted-foreground focus:border-cyan-600"
         />
       </div>
 
@@ -45,10 +45,10 @@ export function TablesGrid({
           return (
             <div
               key={model.key}
-              className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 transition hover:border-cyan-300"
+              className="flex items-center justify-between rounded-lg border border-border bg-card p-4 transition hover:border-cyan-500/40"
             >
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold text-slate-950">{model.name}</span>
+                <span className="font-semibold text-foreground">{model.name}</span>
                 <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${fieldTypeBadgeClass(model.pkType || "String")}`}>
                   {model.pkType || "String"}
                 </span>
@@ -61,7 +61,7 @@ export function TablesGrid({
               <button
                 type="button"
                 onClick={() => onEdit(model)}
-                className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:border-cyan-200 hover:text-cyan-700"
+                className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition hover:border-cyan-500/30 hover:text-cyan-300"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
@@ -78,18 +78,18 @@ export function TablesGrid({
             type="button"
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:border-cyan-200 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition hover:border-cyan-500/30 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
             </svg>
           </button>
-          <span className="text-sm text-slate-600">{currentPage} / {totalPages}</span>
+          <span className="text-sm text-muted-foreground">{currentPage} / {totalPages}</span>
           <button
             type="button"
             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage >= totalPages}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:border-cyan-200 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition hover:border-cyan-500/30 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />

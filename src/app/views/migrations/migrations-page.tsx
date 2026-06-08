@@ -135,8 +135,8 @@ export function MigrationsPageContent() {
 
   if (!hasProject) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
-        <p className="text-slate-600">Select a project to configure migrations.</p>
+      <div className="rounded-lg border border-border bg-card p-8 text-center">
+        <p className="text-muted-foreground">Select a project to configure migrations.</p>
       </div>
     );
   }

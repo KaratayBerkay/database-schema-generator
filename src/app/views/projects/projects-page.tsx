@@ -207,10 +207,10 @@ export function ProjectsPageContent() {
       {/* ── Section header ───────────────────────────────────────────────── */}
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Schema Studio</p>
-          <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Projects</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Schema Studio</p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-foreground">Projects</h2>
         </div>
-        <p className="shrink-0 text-sm text-slate-500">
+        <p className="shrink-0 text-sm text-muted-foreground">
           {projects.length} {projects.length === 1 ? "project" : "projects"}
         </p>
       </div>
@@ -218,24 +218,24 @@ export function ProjectsPageContent() {
       {/* ── Tabs ─────────────────────────────────────────────────────────── */}
       <Tabs defaultValue="projects" className="space-y-0">
         {/* Nav bar with bottom border */}
-        <div className="-mx-5 border-b border-slate-200 px-5 md:-mx-8 md:px-8">
+        <div className="-mx-5 border-b border-border px-5 md:-mx-8 md:px-8">
           <TabsList variant="line" className="h-auto gap-6 rounded-none bg-transparent p-0">
             <TabsTrigger
               value="projects"
-              className="h-11 gap-2 rounded-none bg-transparent px-0 text-sm font-medium text-slate-500 shadow-none hover:text-slate-800 data-active:text-slate-900 data-active:shadow-none"
+              className="h-11 gap-2 rounded-none bg-transparent px-0 text-sm font-medium text-muted-foreground shadow-none hover:text-foreground data-active:text-foreground data-active:shadow-none"
             >
               Projects
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-slate-600">
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground">
                 {projects.length}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="versions"
-              className="h-11 gap-2 rounded-none bg-transparent px-0 text-sm font-medium text-slate-500 shadow-none hover:text-slate-800 data-active:text-slate-900 data-active:shadow-none"
+              className="h-11 gap-2 rounded-none bg-transparent px-0 text-sm font-medium text-muted-foreground shadow-none hover:text-foreground data-active:text-foreground data-active:shadow-none"
             >
               Versions
               {activeProject && (
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-slate-600">
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground">
                   {activeVersions.length}
                 </span>
               )}
@@ -247,13 +247,13 @@ export function ProjectsPageContent() {
         <TabsContent value="projects" className="mt-6 space-y-5">
 
           {/* Create form */}
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-white px-5 py-3">
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+            <div className="border-b border-border bg-gradient-to-r from-emerald-500/10 to-transparent px-5 py-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-600">
                   <DatabaseIcon />
                 </div>
-                <span className="text-sm font-semibold text-slate-700">New Project</span>
+                <span className="text-sm font-semibold text-foreground">New Project</span>
               </div>
             </div>
 
@@ -265,12 +265,12 @@ export function ProjectsPageContent() {
                     name="name"
                     render={({ field }) => (
                       <FormItem className="gap-1">
-                        <FormLabel className="text-xs font-semibold uppercase tracking-widest text-slate-400">Project name</FormLabel>
+                        <FormLabel className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Project name</FormLabel>
                         <FormControl>
                           <Input {...field} className="h-10" placeholder="e.g. Customer Portal" autoComplete="off" />
                         </FormControl>
                         {isNameDuplicate && field.value.trim().length >= 8 && (
-                          <p className="text-[11px] font-medium text-rose-600">Name already exists.</p>
+                          <p className="text-[11px] font-medium text-rose-300">Name already exists.</p>
                         )}
                         <FormMessage />
                       </FormItem>
@@ -281,7 +281,7 @@ export function ProjectsPageContent() {
                     name="provider"
                     render={({ field }) => (
                       <FormItem className="gap-1">
-                        <FormLabel className="text-xs font-semibold uppercase tracking-widest text-slate-400">Provider</FormLabel>
+                        <FormLabel className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Provider</FormLabel>
                         <Select value={field.value} onValueChange={field.onChange}>
                           <FormControl>
                             <SelectTrigger className="h-10 w-full">
@@ -301,7 +301,7 @@ export function ProjectsPageContent() {
                     name="client"
                     render={({ field }) => (
                       <FormItem className="gap-1">
-                        <FormLabel className="text-xs font-semibold uppercase tracking-widest text-slate-400">Prisma client</FormLabel>
+                        <FormLabel className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Prisma client</FormLabel>
                         <Select value={field.value} onValueChange={field.onChange}>
                           <FormControl>
                             <SelectTrigger className="h-10 w-full">
@@ -324,13 +324,13 @@ export function ProjectsPageContent() {
                 </div>
 
                 {/* GraphQL — secondary option, full row */}
-                <div className="mt-3 flex items-center gap-3 border-t border-slate-100 pt-3">
+                <div className="mt-3 flex items-center gap-3 border-t border-border pt-3">
                   <FormField
                     control={createForm.control}
                     name="graphql"
                     render={({ field }) => (
                       <FormItem className="flex items-center gap-3 space-y-0">
-                        <FormLabel className="shrink-0 text-xs font-medium text-slate-400">GraphQL</FormLabel>
+                        <FormLabel className="shrink-0 text-xs font-medium text-muted-foreground">GraphQL</FormLabel>
                         <Select value={field.value} onValueChange={field.onChange}>
                           <FormControl>
                             <SelectTrigger className="h-8 w-64">
@@ -348,7 +348,7 @@ export function ProjectsPageContent() {
                 </div>
 
                 {createForm.formState.errors.root && (
-                  <p className="mt-2 text-sm font-semibold text-rose-600">
+                  <p className="mt-2 text-sm font-semibold text-rose-300">
                     {createForm.formState.errors.root.message}
                   </p>
                 )}
@@ -358,12 +358,12 @@ export function ProjectsPageContent() {
 
           {/* Project list */}
           {projects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white py-20 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-                <DatabaseIcon className="text-slate-400" />
+            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-card py-20 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                <DatabaseIcon className="text-muted-foreground" />
               </div>
-              <p className="mt-4 text-base font-semibold text-slate-700">No projects yet</p>
-              <p className="mt-1 text-sm text-slate-500">Fill in the form above to create your first project.</p>
+              <p className="mt-4 text-base font-semibold text-foreground">No projects yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">Fill in the form above to create your first project.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -390,18 +390,18 @@ export function ProjectsPageContent() {
 
         {/* ── Versions tab ────────────────────────────────────────────────── */}
         <TabsContent value="versions" className="mt-6">
-          <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="rounded-xl border border-border bg-card shadow-sm">
             {!activeProject ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
-                <p className="text-sm font-semibold text-slate-600">No project selected</p>
-                <p className="mt-1 text-xs text-slate-400">Activate a project from the Projects tab to manage its versions.</p>
+                <p className="text-sm font-semibold text-muted-foreground">No project selected</p>
+                <p className="mt-1 text-xs text-muted-foreground">Activate a project from the Projects tab to manage its versions.</p>
               </div>
             ) : (
               <div className="p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Version history</p>
-                    <p className="mt-0.5 text-base font-semibold text-slate-900">{activeProject.name.trim()}</p>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Version history</p>
+                    <p className="mt-0.5 text-base font-semibold text-foreground">{activeProject.name.trim()}</p>
                   </div>
                   <Badge variant="secondary" className="font-mono">
                     {activeVersions.length} {activeVersions.length === 1 ? "version" : "versions"}
@@ -410,7 +410,7 @@ export function ProjectsPageContent() {
                 <Separator className="my-4" />
                 <div className="space-y-2">
                   {activeVersions.length === 0 ? (
-                    <p className="py-4 text-center text-sm text-slate-400">No versions available.</p>
+                    <p className="py-4 text-center text-sm text-muted-foreground">No versions available.</p>
                   ) : (
                     activeVersions.map((version, idx) => {
                       const locked = isOriginalVersion(version);
@@ -425,21 +425,21 @@ export function ProjectsPageContent() {
                           title={locked ? "Read-only original schema — selectable only as a migration source" : undefined}
                           className={classNames(
                             "group flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition",
-                            locked ? "cursor-not-allowed border-slate-200 bg-slate-50/70"
-                            : isSelected ? "border-emerald-300 bg-emerald-50"
-                            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
+                            locked ? "cursor-not-allowed border-border bg-background/70"
+                            : isSelected ? "border-emerald-500/40 bg-emerald-500/15"
+                            : "border-border bg-card hover:border-border hover:bg-background",
                           )}
                         >
                           <div className="flex items-center gap-2.5">
-                            <span className={classNames("h-2 w-2 rounded-full", isSelected ? "bg-emerald-500" : "bg-slate-300")} />
-                            <span className={classNames("font-mono text-sm font-semibold", locked ? "text-slate-400" : isSelected ? "text-emerald-800" : "text-slate-700")}>
+                            <span className={classNames("h-2 w-2 rounded-full", isSelected ? "bg-emerald-500" : "bg-muted")} />
+                            <span className={classNames("font-mono text-sm font-semibold", locked ? "text-muted-foreground" : isSelected ? "text-emerald-200" : "text-foreground")}>
                               {version}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            {locked && <Badge variant="outline" className="border-amber-200 bg-amber-50 text-[10px] text-amber-700">read-only · migration source</Badge>}
-                            {!locked && isLatest && <Badge variant="outline" className="border-slate-200 bg-slate-50 text-[10px] text-slate-500">latest</Badge>}
-                            {isSelected && <Badge variant="outline" className="border-emerald-200 bg-emerald-100 text-[10px] text-emerald-700">viewing</Badge>}
+                            {locked && <Badge variant="outline" className="border-amber-500/30 bg-amber-500/15 text-[10px] text-amber-300">read-only · migration source</Badge>}
+                            {!locked && isLatest && <Badge variant="outline" className="border-border bg-background text-[10px] text-muted-foreground">latest</Badge>}
+                            {isSelected && <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/20 text-[10px] text-emerald-300">viewing</Badge>}
                           </div>
                         </button>
                       );
@@ -462,10 +462,10 @@ export function ProjectsPageContent() {
       </Tabs>
 
       {/* ── Danger zone ──────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50/50 px-5 py-4">
+      <div className="flex items-center justify-between gap-4 rounded-xl border border-rose-500/30 bg-rose-500/15 px-5 py-4">
         <div>
-          <p className="text-sm font-semibold text-rose-700">Danger Zone</p>
-          <p className="mt-0.5 text-xs text-slate-500">Permanently deletes all projects, schemas, and generated artifacts.</p>
+          <p className="text-sm font-semibold text-rose-300">Danger Zone</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Permanently deletes all projects, schemas, and generated artifacts.</p>
         </div>
         <Button variant="destructive" onClick={reset.openReset} className="shrink-0">
           Reset All Data
@@ -486,9 +486,9 @@ export function ProjectsPageContent() {
               <p className="text-xs font-semibold text-muted-foreground">Source</p>
               <p className="mt-0.5 font-mono text-sm font-semibold">{sourceVersion}</p>
             </div>
-            <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3">
-              <p className="text-xs font-semibold text-emerald-600">New version</p>
-              <p className="mt-0.5 font-mono text-sm font-semibold text-emerald-800">{nextVersion}</p>
+            <div className="rounded-md border border-emerald-500/30 bg-emerald-500/15 px-4 py-3">
+              <p className="text-xs font-semibold text-emerald-300">New version</p>
+              <p className="mt-0.5 font-mono text-sm font-semibold text-emerald-200">{nextVersion}</p>
             </div>
           </div>
           <DialogFooter>

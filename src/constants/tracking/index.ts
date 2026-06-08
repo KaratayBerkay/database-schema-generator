@@ -5,10 +5,10 @@ import type { TrackingEntryKind, TrackingChangeKind } from "@/lib/domain/trackin
 export type Severity = "breaking" | "warning" | "info" | "approved";
 
 export const severityConfig: Record<Severity, { row: string; badge: string; label: string; dot: string }> = {
-  breaking: { row: "bg-red-50/60",    badge: "border-red-200 bg-red-50 text-red-700",       label: "Breaking", dot: "bg-red-500"    },
-  warning:  { row: "bg-amber-50/40",  badge: "border-amber-200 bg-amber-50 text-amber-700", label: "Warning",  dot: "bg-amber-500"  },
-  info:     { row: "",                badge: "border-sky-200 bg-sky-50 text-sky-700",        label: "Info",     dot: "bg-sky-400"    },
-  approved: { row: "bg-emerald-50/40",badge: "border-emerald-200 bg-emerald-50 text-emerald-600", label: "Approved", dot: "bg-emerald-400" },
+  breaking: { row: "bg-red-500/15",    badge: "border-red-500/30 bg-red-500/15 text-red-300",       label: "Breaking", dot: "bg-red-500"    },
+  warning:  { row: "bg-amber-500/15",  badge: "border-amber-500/30 bg-amber-500/15 text-amber-300", label: "Warning",  dot: "bg-amber-500"  },
+  info:     { row: "",                badge: "border-sky-500/30 bg-sky-500/15 text-sky-300",        label: "Info",     dot: "bg-sky-400"    },
+  approved: { row: "bg-emerald-500/15",badge: "border-emerald-500/30 bg-emerald-500/15 text-emerald-300", label: "Approved", dot: "bg-emerald-400" },
 };
 
 // ─── Resolution strategy ──────────────────────────────────────────────────────
@@ -26,35 +26,35 @@ export const STRATEGIES_BY_KIND: Record<string, StrategyName[]> = {
 };
 
 export const strategyStyle: Record<StrategyName, { cls: string }> = {
-  "Unique Prefix + UUID": { cls: "border-violet-200 bg-violet-50 text-violet-700"  },
-  "Static Default":       { cls: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-  "Set NULL":             { cls: "border-slate-200 bg-slate-50 text-slate-500"      },
-  "Type Cast":            { cls: "border-sky-200 bg-sky-50 text-sky-700"            },
-  "Remapped":             { cls: "border-amber-200 bg-amber-50 text-amber-700"      },
-  "Data Dropped":         { cls: "border-rose-200 bg-rose-50 text-rose-700"         },
-  "Acknowledged":         { cls: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-  "Pending":              { cls: "border-slate-200 bg-white text-slate-400"         },
+  "Unique Prefix + UUID": { cls: "border-violet-500/30 bg-violet-500/15 text-violet-300"  },
+  "Static Default":       { cls: "border-emerald-500/30 bg-emerald-500/15 text-emerald-300" },
+  "Set NULL":             { cls: "border-border bg-muted text-muted-foreground"           },
+  "Type Cast":            { cls: "border-sky-500/30 bg-sky-500/15 text-sky-300"            },
+  "Remapped":             { cls: "border-amber-500/30 bg-amber-500/15 text-amber-300"      },
+  "Data Dropped":         { cls: "border-rose-500/30 bg-rose-500/15 text-rose-300"         },
+  "Acknowledged":         { cls: "border-emerald-500/30 bg-emerald-500/15 text-emerald-300" },
+  "Pending":              { cls: "border-border bg-card text-muted-foreground"             },
 };
 
 export const VALID_TABS = ["all", "tables", "enums", "schema", "relations", "restrictions"] as const;
 export type TrackingTab = typeof VALID_TABS[number];
 
 export const changeBadge: Record<TrackingChangeKind, { cls: string; label: string }> = {
-  added:         { cls: "border-emerald-200 bg-emerald-50 text-emerald-700",  label: "Added"         },
-  removed:       { cls: "border-red-200 bg-red-50 text-red-700",              label: "Removed"       },
-  changed:       { cls: "border-amber-200 bg-amber-50 text-amber-700",        label: "Changed"       },
-  renamed:       { cls: "border-sky-200 bg-sky-50 text-sky-700",              label: "Renamed"       },
-  value_added:   { cls: "border-emerald-200 bg-emerald-50 text-emerald-700",  label: "Value added"   },
-  value_removed: { cls: "border-red-200 bg-red-50 text-red-700",              label: "Value removed" },
+  added:         { cls: "border-emerald-500/30 bg-emerald-500/15 text-emerald-300",  label: "Added"         },
+  removed:       { cls: "border-red-500/30 bg-red-500/15 text-red-300",              label: "Removed"       },
+  changed:       { cls: "border-amber-500/30 bg-amber-500/15 text-amber-300",        label: "Changed"       },
+  renamed:       { cls: "border-sky-500/30 bg-sky-500/15 text-sky-300",              label: "Renamed"       },
+  value_added:   { cls: "border-emerald-500/30 bg-emerald-500/15 text-emerald-300",  label: "Value added"   },
+  value_removed: { cls: "border-red-500/30 bg-red-500/15 text-red-300",              label: "Value removed" },
 };
 
 export const rowTint: Partial<Record<TrackingChangeKind, string>> = {
-  added:         "bg-emerald-50/40",
-  removed:       "bg-red-50/40",
-  changed:       "bg-amber-50/40",
-  renamed:       "bg-sky-50/40",
-  value_added:   "bg-emerald-50/40",
-  value_removed: "bg-red-50/40",
+  added:         "bg-emerald-500/15",
+  removed:       "bg-red-500/15",
+  changed:       "bg-amber-500/15",
+  renamed:       "bg-sky-500/15",
+  value_added:   "bg-emerald-500/15",
+  value_removed: "bg-red-500/15",
 };
 
 export const kindLabel: Record<TrackingEntryKind, string> = {

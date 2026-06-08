@@ -6,6 +6,6 @@ export function restrictionTypeLabel(type: PrismaRestrictionType): string {
 
 export function restrictionTypeClass(type: PrismaRestrictionType): string {
   return type === "UNIQUE"
-    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-    : "border-violet-200 bg-violet-50 text-violet-700";
+    ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-300"
+    : "border-violet-500/30 bg-violet-500/15 text-violet-300";
 }

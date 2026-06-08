@@ -41,8 +41,8 @@ export function MigrationTypeSelector({
           <div className="flex items-center gap-3">
             <StepBadge n={2} state={stepState} />
             <div>
-              <p className="text-sm font-semibold text-slate-950">Migration Type</p>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm font-semibold text-foreground">Migration Type</p>
+              <p className="text-xs text-muted-foreground">
                 {connectionRequired
                   ? "Connect to a database first."
                   : planSelected
@@ -57,24 +57,24 @@ export function MigrationTypeSelector({
 
       <CardBody>
         {!canDoAnyMigration ? (
-          <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
-            <p className="text-sm font-semibold text-amber-700">At least one project version is required to run a migration.</p>
-            <p className="mt-1 text-xs text-amber-600">Go to the Projects workspace and create a version before continuing.</p>
+          <div className="rounded-md border border-amber-500/30 bg-amber-500/15 px-4 py-3">
+            <p className="text-sm font-semibold text-amber-300">At least one project version is required to run a migration.</p>
+            <p className="mt-1 text-xs text-amber-300">Go to the Projects workspace and create a version before continuing.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <button type="button" onClick={() => onChangePlan("new")}
               className={classNames("rounded-lg border-2 p-4 text-left transition",
-                isNewPlan ? "border-cyan-500 bg-cyan-50" : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50")}>
+                isNewPlan ? "border-cyan-500 bg-cyan-500/15" : "border-border bg-card hover:border-border hover:bg-background")}>
               <div className="flex items-start gap-3">
                 <span className={classNames("mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition",
-                  isNewPlan ? "border-cyan-500 bg-cyan-500" : "border-slate-300")}>
-                  {isNewPlan && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                  isNewPlan ? "border-cyan-500 bg-cyan-500" : "border-border")}>
+                  {isNewPlan && <span className="h-1.5 w-1.5 rounded-full bg-card" />}
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-slate-950">Destroy and Deploy Schema</p>
-                  <p className="mt-0.5 text-xs text-slate-500">Wipe the database and deploy a schema version from scratch. All existing data will be lost.</p>
-                  {dbIsEmpty && <span className="mt-2 inline-block rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-semibold text-cyan-700">Empty DB detected</span>}
+                  <p className="text-sm font-semibold text-foreground">Destroy and Deploy Schema</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">Wipe the database and deploy a schema version from scratch. All existing data will be lost.</p>
+                  {dbIsEmpty && <span className="mt-2 inline-block rounded-full bg-cyan-500/20 px-2 py-0.5 text-[10px] font-semibold text-cyan-300">Empty DB detected</span>}
                 </div>
               </div>
             </button>
@@ -83,19 +83,19 @@ export function MigrationTypeSelector({
               onClick={() => { if (!dbIsEmpty && canVersionMigrate) onChangePlan("version"); }}
               disabled={dbIsEmpty || !canVersionMigrate || undefined}
               className={classNames("rounded-lg border-2 p-4 text-left transition",
-                isVersionPlan ? "border-cyan-500 bg-cyan-50"
-                : dbIsEmpty || !canVersionMigrate ? "cursor-not-allowed border-slate-200 bg-slate-50 opacity-50"
-                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50")}>
+                isVersionPlan ? "border-cyan-500 bg-cyan-500/15"
+                : dbIsEmpty || !canVersionMigrate ? "cursor-not-allowed border-border bg-background opacity-50"
+                : "border-border bg-card hover:border-border hover:bg-background")}>
               <div className="flex items-start gap-3">
                 <span className={classNames("mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition",
-                  isVersionPlan ? "border-cyan-500 bg-cyan-500" : "border-slate-300")}>
-                  {isVersionPlan && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                  isVersionPlan ? "border-cyan-500 bg-cyan-500" : "border-border")}>
+                  {isVersionPlan && <span className="h-1.5 w-1.5 rounded-full bg-card" />}
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-slate-950">Sync and Migrate to Another Version</p>
-                  <p className="mt-0.5 text-xs text-slate-500">Collect existing data, validate, and migrate between schema versions.</p>
-                  {dbIsEmpty && <span className="mt-2 inline-block rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-500">DB is empty — use Destroy and Deploy Schema</span>}
-                  {!canVersionMigrate && !dbIsEmpty && <span className="mt-2 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">Requires 2+ project versions</span>}
+                  <p className="text-sm font-semibold text-foreground">Sync and Migrate to Another Version</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">Collect existing data, validate, and migrate between schema versions.</p>
+                  {dbIsEmpty && <span className="mt-2 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">DB is empty — use Destroy and Deploy Schema</span>}
+                  {!canVersionMigrate && !dbIsEmpty && <span className="mt-2 inline-block rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300">Requires 2+ project versions</span>}
                 </div>
               </div>
             </button>
@@ -103,19 +103,19 @@ export function MigrationTypeSelector({
         )}
 
         {isVersionPlan && (
-          <div className="mt-4 flex flex-wrap items-start gap-3 border-t border-slate-100 pt-4">
+          <div className="mt-4 flex flex-wrap items-start gap-3 border-t border-border pt-4">
             <div className="flex min-w-[220px] flex-1 flex-col gap-1">
               <Label>Database is currently at</Label>
               <select value={syncVersion} onChange={(e) => onSyncVersionChange(e.target.value)}
-                className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-slate-500">
+                className="h-9 w-full rounded-md border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none transition focus:border-slate-500">
                 <option value="" disabled>Select a version…</option>
                 {versions.map((v) => <option key={v} value={v}>{v}</option>)}
               </select>
-              {syncVersion && syncCheckState === "loading" && <p className="text-[11px] text-slate-500">Checking compatibility…</p>}
-              {syncVersion && syncCheckState === "compatible" && <p className="text-[11px] font-semibold text-emerald-600">✓ Schema matches database</p>}
+              {syncVersion && syncCheckState === "loading" && <p className="text-[11px] text-muted-foreground">Checking compatibility…</p>}
+              {syncVersion && syncCheckState === "compatible" && <p className="text-[11px] font-semibold text-emerald-300">✓ Schema matches database</p>}
               {syncVersion && syncCheckState === "incompatible" && (
-                <div className="space-y-1 rounded-md border border-rose-200 bg-rose-50 px-2.5 py-2">
-                  <p className="text-[11px] font-semibold text-rose-600">✗ Schema does not match this database</p>
+                <div className="space-y-1 rounded-md border border-rose-500/30 bg-rose-500/15 px-2.5 py-2">
+                  <p className="text-[11px] font-semibold text-rose-300">✗ Schema does not match this database</p>
                   {syncCheckResult?.error && <p className="text-[11px] text-rose-500">{syncCheckResult.error}</p>}
                   {(syncCheckResult?.missingTables?.length ?? 0) > 0 && (
                     <p className="text-[11px] text-rose-500">Missing tables: <span className="font-mono">{syncCheckResult!.missingTables!.join(", ")}</span></p>
@@ -136,11 +136,11 @@ export function MigrationTypeSelector({
 
             {syncVersion && syncCheckState === "compatible" && (
               <>
-                <span className="mt-6 shrink-0 text-slate-400">→</span>
+                <span className="mt-6 shrink-0 text-muted-foreground">→</span>
                 <div className="flex min-w-[220px] flex-1 flex-col gap-1">
                   <Label>Migrate to</Label>
                   <select value={targetVersion} onChange={(e) => onTargetVersionChange(e.target.value)}
-                    className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-slate-500">
+                    className="h-9 w-full rounded-md border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none transition focus:border-slate-500">
                     <option value="" disabled>Select a version…</option>
                     {versions.filter((_, idx) => idx > versions.indexOf(syncVersion)).map((v) => (
                       <option key={v} value={v}>{v}</option>

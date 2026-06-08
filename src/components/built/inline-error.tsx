@@ -21,7 +21,7 @@ export function InlineError({
   return (
     <p
       className={cn(
-        "rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700",
+        "rounded-md border border-rose-500/30 bg-rose-500/15 px-3 py-2 text-sm font-semibold text-rose-300",
         mono && "whitespace-pre-wrap font-mono text-xs",
         className,
       )}

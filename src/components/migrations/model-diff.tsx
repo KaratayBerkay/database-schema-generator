@@ -18,13 +18,13 @@ type ChangeBadge = "SAME" | "RENAMED" | "MODIFIED" | "ADDED" | "REMOVED" | "RELA
 
 function Badge({ type }: { type: ChangeBadge }) {
   const map: Record<ChangeBadge, string> = {
-    SAME:     "bg-slate-100 text-slate-500",
-    RENAMED:  "bg-amber-100 text-amber-700",
-    MODIFIED: "bg-blue-100 text-blue-700",
-    ADDED:    "bg-emerald-100 text-emerald-700",
-    REMOVED:  "bg-rose-100 text-rose-700",
-    RELATION: "bg-violet-100 text-violet-700",
-    COMMENT:  "bg-sky-100 text-sky-700",
+    SAME:     "bg-muted text-muted-foreground",
+    RENAMED:  "bg-amber-500/20 text-amber-300",
+    MODIFIED: "bg-blue-500/20 text-blue-300",
+    ADDED:    "bg-emerald-500/20 text-emerald-300",
+    REMOVED:  "bg-rose-500/20 text-rose-300",
+    RELATION: "bg-violet-500/20 text-violet-300",
+    COMMENT:  "bg-sky-500/20 text-sky-300",
   };
   return (
     <span className={cn("rounded px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase", map[type])}>
@@ -64,42 +64,42 @@ function Chevron({ open }: { open: boolean }) {
 function FieldRow({ field }: { field: FieldMatchResult }) {
   const badge = fieldBadge(field);
   return (
-    <div className="grid grid-cols-[8rem_1fr_1fr_minmax(0,1.5fr)_7rem] items-start gap-x-4 px-6 py-2 text-xs hover:bg-slate-50">
-      <span className="pt-0.5 font-mono text-[10px] text-slate-400">{field.key.slice(0, 8)}…</span>
+    <div className="grid grid-cols-[8rem_1fr_1fr_minmax(0,1.5fr)_7rem] items-start gap-x-4 px-6 py-2 text-xs hover:bg-background">
+      <span className="pt-0.5 font-mono text-[10px] text-muted-foreground">{field.key.slice(0, 8)}…</span>
       <span className="flex items-center gap-1.5 pt-0.5">
         {field.nameChanged ? (
           <>
-            <span className="text-slate-400 line-through">{field.fromName}</span>
-            <span className="text-slate-300">→</span>
-            <span className="font-semibold text-slate-800">{field.toName}</span>
+            <span className="text-muted-foreground line-through">{field.fromName}</span>
+            <span className="text-muted-foreground">→</span>
+            <span className="font-semibold text-foreground">{field.toName}</span>
           </>
         ) : (
-          <span className="text-slate-700">{field.toName}</span>
+          <span className="text-foreground">{field.toName}</span>
         )}
       </span>
       <span className="flex items-center gap-1.5 pt-0.5">
         {field.typeChanged ? (
           <>
-            <span className="text-slate-400 line-through">{field.fromType}</span>
-            <span className="text-slate-300">→</span>
-            <span className="font-medium text-blue-700">{field.toType}</span>
+            <span className="text-muted-foreground line-through">{field.fromType}</span>
+            <span className="text-muted-foreground">→</span>
+            <span className="font-medium text-blue-300">{field.toType}</span>
           </>
         ) : (
-          <span className="text-slate-500">{field.toType}</span>
+          <span className="text-muted-foreground">{field.toType}</span>
         )}
       </span>
       <span className="pt-0.5">
         {field.commentChanged ? (
           <div className="space-y-0.5">
             {field.fromComment && (
-              <p className="truncate italic text-slate-400 line-through">{field.fromComment}</p>
+              <p className="truncate italic text-muted-foreground line-through">{field.fromComment}</p>
             )}
             {field.toComment && (
-              <p className="truncate italic text-sky-700">{field.toComment}</p>
+              <p className="truncate italic text-sky-300">{field.toComment}</p>
             )}
           </div>
         ) : field.toComment ? (
-          <p className="truncate italic text-slate-400">{field.toComment}</p>
+          <p className="truncate italic text-muted-foreground">{field.toComment}</p>
         ) : null}
       </span>
       <span className="pt-0.5"><Badge type={badge} /></span>
@@ -110,9 +110,9 @@ function FieldRow({ field }: { field: FieldMatchResult }) {
 function AddedFieldRow({ f }: { f: { key: string; name: string; type: string; nullable: boolean } }) {
   return (
     <div className="grid grid-cols-[8rem_1fr_1fr_minmax(0,1.5fr)_7rem] items-center gap-x-4 px-6 py-2 text-xs">
-      <span className="font-mono text-[10px] text-slate-400">{f.key.slice(0, 8)}…</span>
-      <span className="font-semibold text-emerald-700">+ {f.name}</span>
-      <span className="text-slate-500">{f.type}{f.nullable ? "?" : ""}</span>
+      <span className="font-mono text-[10px] text-muted-foreground">{f.key.slice(0, 8)}…</span>
+      <span className="font-semibold text-emerald-300">+ {f.name}</span>
+      <span className="text-muted-foreground">{f.type}{f.nullable ? "?" : ""}</span>
       <span />
       <Badge type="ADDED" />
     </div>
@@ -122,9 +122,9 @@ function AddedFieldRow({ f }: { f: { key: string; name: string; type: string; nu
 function RemovedFieldRow({ f }: { f: { key: string; name: string; type: string; nullable: boolean } }) {
   return (
     <div className="grid grid-cols-[8rem_1fr_1fr_minmax(0,1.5fr)_7rem] items-center gap-x-4 px-6 py-2 text-xs">
-      <span className="font-mono text-[10px] text-slate-400">{f.key.slice(0, 8)}…</span>
-      <span className="text-rose-600 line-through">− {f.name}</span>
-      <span className="text-slate-400">{f.type}</span>
+      <span className="font-mono text-[10px] text-muted-foreground">{f.key.slice(0, 8)}…</span>
+      <span className="text-rose-300 line-through">− {f.name}</span>
+      <span className="text-muted-foreground">{f.type}</span>
       <span />
       <Badge type="REMOVED" />
     </div>
@@ -149,36 +149,36 @@ function ModelRow({
     ).length;
 
   return (
-    <div className="border-b border-slate-100 last:border-0">
+    <div className="border-b border-border last:border-0">
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center gap-3 px-6 py-3 text-left transition hover:bg-slate-50"
+        className="flex w-full items-center gap-3 px-6 py-3 text-left transition hover:bg-background"
       >
         <Chevron open={expanded} />
-        <span className="flex-1 font-mono text-sm font-semibold text-slate-800">
+        <span className="flex-1 font-mono text-sm font-semibold text-foreground">
           {model.nameChanged ? (
             <>
-              <span className="font-normal text-slate-400 line-through">{model.fromName}</span>
-              <span className="mx-1.5 text-slate-300">→</span>
+              <span className="font-normal text-muted-foreground line-through">{model.fromName}</span>
+              <span className="mx-1.5 text-muted-foreground">→</span>
               {model.toName}
             </>
           ) : (
             model.toName
           )}
         </span>
-        <span className="text-[11px] text-slate-400">
+        <span className="text-[11px] text-muted-foreground">
           {model.matchedFields.length + model.addedFields.length + model.removedFields.length} fields
           {fieldChangeCount > 0 && (
-            <span className="ml-1 text-blue-600">· {fieldChangeCount} changed</span>
+            <span className="ml-1 text-blue-300">· {fieldChangeCount} changed</span>
           )}
         </span>
         <Badge type={badge} />
       </button>
 
       {expanded && (
-        <div className="border-t border-slate-100 bg-slate-50/60">
-          <div className="grid grid-cols-[8rem_1fr_1fr_minmax(0,1.5fr)_7rem] gap-x-4 border-b border-slate-100 px-6 py-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+        <div className="border-t border-border bg-background/60">
+          <div className="grid grid-cols-[8rem_1fr_1fr_minmax(0,1.5fr)_7rem] gap-x-4 border-b border-border px-6 py-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
             <span>Key</span>
             <span>Field name</span>
             <span>Type</span>
@@ -193,7 +193,7 @@ function ModelRow({
           {model.matchedFields.filter((f) => f.nameChanged || f.typeChanged || f.nullabilityChanged || f.defaultChanged || f.commentChanged).length === 0
             && model.addedFields.length === 0
             && model.removedFields.length === 0 && (
-            <p className="px-6 py-3 text-xs text-slate-400">Only model name changed.</p>
+            <p className="px-6 py-3 text-xs text-muted-foreground">Only model name changed.</p>
           )}
         </div>
       )}
@@ -203,18 +203,18 @@ function ModelRow({
 
 function StatBadge({ value, label, color }: { value: string; label: string; color: "slate" | "blue" | "emerald" | "rose" | "indigo" }) {
   const chip: Record<string, string> = {
-    slate:   "bg-slate-100 text-slate-700",
-    blue:    "bg-blue-100 text-blue-700",
-    emerald: "bg-emerald-100 text-emerald-700",
-    rose:    "bg-rose-100 text-rose-700",
-    indigo:  "bg-indigo-100 text-indigo-700",
+    slate:   "bg-muted text-foreground",
+    blue:    "bg-blue-500/20 text-blue-300",
+    emerald: "bg-emerald-500/20 text-emerald-300",
+    rose:    "bg-rose-500/20 text-rose-300",
+    indigo:  "bg-indigo-500/20 text-indigo-300",
   };
   return (
     <div className="flex items-center gap-1.5">
       <span className={cn("rounded-md px-1.5 py-0.5 text-[11px] font-bold tabular-nums", chip[color])}>
         {value}
       </span>
-      <span className="text-[11px] text-slate-500">{label}</span>
+      <span className="text-[11px] text-muted-foreground">{label}</span>
     </div>
   );
 }
@@ -348,16 +348,16 @@ export function ModelDiff({
         <div className="flex items-center gap-4">
           {/* Version labels */}
           <div className="flex shrink-0 items-center gap-2 text-sm">
-            <span className="font-semibold text-slate-700">{fromVersion}</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 text-slate-400">
+            <span className="font-semibold text-foreground">{fromVersion}</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 text-muted-foreground">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 7l5 5-5 5" />
             </svg>
-            <span className="font-semibold text-slate-700">{toVersion}</span>
+            <span className="font-semibold text-foreground">{toVersion}</span>
           </div>
 
           {/* Stats — centred in the remaining space */}
           <div className="flex flex-1 items-center justify-center">
-            {compareState === "loading" && <span className="text-xs text-slate-400">Comparing…</span>}
+            {compareState === "loading" && <span className="text-xs text-muted-foreground">Comparing…</span>}
             {compareState === "success" && comparison && <SummaryBar c={comparison} />}
           </div>
 
@@ -369,12 +369,12 @@ export function ModelDiff({
                   type="button"
                   disabled={zodState === "loading" || zodState === "success"}
                   onClick={() => void runZodGeneration()}
-                  className="flex h-8 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex h-8 items-center rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted-foreground shadow-sm transition hover:border-border hover:bg-background hover:text-foreground active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {zodState === "loading" ? "Generating…" : zodState === "success" ? "✓ Validators Generated" : "Generate Validators"}
                 </button>
                 {zodState === "error" && zodError && (
-                  <span className="text-xs text-rose-600">{zodError}</span>
+                  <span className="text-xs text-rose-300">{zodError}</span>
                 )}
               </>
             )}
@@ -394,14 +394,14 @@ export function ModelDiff({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white">
-      <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4">
+    <div className="fixed inset-0 z-50 flex flex-col bg-card">
+      <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
         <div className="flex items-center gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Migrations
             </p>
-            <h2 className="mt-0.5 text-xl font-semibold text-slate-950">
+            <h2 className="mt-0.5 text-xl font-semibold text-foreground">
               Model Diff
             </h2>
           </div>
@@ -409,15 +409,15 @@ export function ModelDiff({
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold text-slate-700">{fromVersion}</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 text-slate-400">
+          <span className="text-sm font-semibold text-foreground">{fromVersion}</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 text-muted-foreground">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 7l5 5-5 5" />
           </svg>
-          <span className="text-sm font-semibold text-slate-700">{toVersion}</span>
+          <span className="text-sm font-semibold text-foreground">{toVersion}</span>
           <button
             type="button"
             onClick={onClose}
-            className="ml-2 flex h-8 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.97]"
+            className="ml-2 flex h-8 items-center rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted-foreground shadow-sm transition hover:border-border hover:bg-background hover:text-foreground active:scale-[0.97]"
           >
             Close
           </button>
@@ -425,7 +425,7 @@ export function ModelDiff({
       </div>
 
       {comparison && (
-        <div className="shrink-0 border-b border-slate-200 bg-slate-50 px-6 py-2.5">
+        <div className="shrink-0 border-b border-border bg-background px-6 py-2.5">
           <div className="flex items-center justify-between">
             <SummaryBar c={comparison} />
             <div className="flex items-center gap-3">
@@ -433,13 +433,13 @@ export function ModelDiff({
                 type="button"
                 disabled={zodState === "loading"}
                 onClick={() => void runZodGeneration()}
-                className="flex h-8 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-8 items-center rounded-lg border border-border bg-card px-3 text-xs font-medium text-muted-foreground shadow-sm transition hover:border-border hover:bg-background hover:text-foreground active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {zodState === "loading" ? "Generating…" : "Generate Validators"}
               </button>
               {zodState !== "idle" && <StateChip state={zodState} />}
               {zodState === "success" && zodResult && (
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-muted-foreground">
                   {zodResult.generatedFrom + zodResult.generatedTo} schemas generated
                 </span>
               )}
@@ -450,26 +450,26 @@ export function ModelDiff({
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {compareState === "error" && compareError && (
-          <div className="m-6 rounded-md border border-rose-200 bg-rose-50 px-4 py-3">
-            <p className="whitespace-pre-wrap font-mono text-xs text-rose-700">{compareError}</p>
+          <div className="m-6 rounded-md border border-rose-500/30 bg-rose-500/15 px-4 py-3">
+            <p className="whitespace-pre-wrap font-mono text-xs text-rose-300">{compareError}</p>
           </div>
         )}
 
         {zodState === "error" && zodError && (
-          <div className="mx-6 mt-4 rounded-md border border-rose-200 bg-rose-50 px-4 py-3">
-            <p className="whitespace-pre-wrap font-mono text-xs text-rose-700">{zodError}</p>
+          <div className="mx-6 mt-4 rounded-md border border-rose-500/30 bg-rose-500/15 px-4 py-3">
+            <p className="whitespace-pre-wrap font-mono text-xs text-rose-300">{zodError}</p>
           </div>
         )}
 
         {compareState === "loading" && (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-            <p className="text-sm font-semibold text-slate-500">Comparing versions…</p>
+            <p className="text-sm font-semibold text-muted-foreground">Comparing versions…</p>
           </div>
         )}
 
         {comparison && (
           <div className="divide-y divide-slate-100">
-            <div className="grid grid-cols-[8rem_1fr_1fr_minmax(0,1.5fr)_7rem] gap-x-4 bg-slate-50 px-6 py-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+            <div className="grid grid-cols-[8rem_1fr_1fr_minmax(0,1.5fr)_7rem] gap-x-4 bg-background px-6 py-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
               <span>Key</span>
               <span>Field / Model name</span>
               <span>Type</span>
@@ -489,7 +489,7 @@ export function ModelDiff({
             {comparison.addedModels.map((m) => (
               <div key={m.key} className="flex items-center gap-3 px-6 py-3">
                 <span className="w-4 shrink-0" />
-                <span className="flex-1 font-mono text-sm font-semibold text-emerald-700">+ {m.name}</span>
+                <span className="flex-1 font-mono text-sm font-semibold text-emerald-300">+ {m.name}</span>
                 <Badge type="ADDED" />
               </div>
             ))}
@@ -497,7 +497,7 @@ export function ModelDiff({
             {comparison.removedModels.map((m) => (
               <div key={m.key} className="flex items-center gap-3 px-6 py-3">
                 <span className="w-4 shrink-0" />
-                <span className="flex-1 font-mono text-sm font-semibold text-rose-600 line-through">− {m.name}</span>
+                <span className="flex-1 font-mono text-sm font-semibold text-rose-300 line-through">− {m.name}</span>
                 <Badge type="REMOVED" />
               </div>
             ))}

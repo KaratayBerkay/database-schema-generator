@@ -27,22 +27,22 @@ export function StrategyLegend({
 
   return (
     <div className={`rounded-lg border p-4 ${
-      (pendingCount ?? 0) > 0 ? "border-red-200 bg-red-50/50"
-      : (incompleteCount ?? 0) > 0 ? "border-amber-200 bg-amber-50/50"
-      : "border-slate-200 bg-slate-50"
+      (pendingCount ?? 0) > 0 ? "border-red-500/30 bg-red-500/15"
+      : (incompleteCount ?? 0) > 0 ? "border-amber-500/30 bg-amber-500/15"
+      : "border-border bg-background"
     }`}>
       {title && (
         <div className="mb-3 flex items-start justify-between gap-4">
           <div className="flex items-start gap-2.5">
             {color && <span className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${color}`} />}
             <div>
-              <p className="font-semibold text-slate-950">{title}</p>
-              {description && <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">{description}</p>}
+              <p className="font-semibold text-foreground">{title}</p>
+              {description && <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">{description}</p>}
             </div>
           </div>
           {((pendingCount ?? 0) > 0 || (incompleteCount ?? 0) > 0) && (
             <span className={`shrink-0 rounded-md border px-2.5 py-1 text-xs font-semibold ${
-              (pendingCount ?? 0) > 0 ? "border-red-200 bg-white text-red-700" : "border-amber-200 bg-white text-amber-700"
+              (pendingCount ?? 0) > 0 ? "border-red-500/30 bg-card text-red-300" : "border-amber-500/30 bg-card text-amber-300"
             }`}>
               {(pendingCount ?? 0) > 0
                 ? `${pendingCount} need${pendingCount === 1 ? "s" : ""} approval`
@@ -51,7 +51,7 @@ export function StrategyLegend({
           )}
         </div>
       )}
-      <p className={`${title ? "mt-3 pt-3 border-t border-slate-200/70" : ""} mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400`}>
+      <p className={`${title ? "mt-3 pt-3 border-t border-border/70" : ""} mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground`}>
         Resolution Strategies
       </p>
       <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -60,7 +60,7 @@ export function StrategyLegend({
             <span className={`inline-flex w-fit items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold ${strategyStyle[name].cls}`}>
               {name}
             </span>
-            <p className="text-[10px] text-slate-500 leading-relaxed">{desc}</p>
+            <p className="text-[10px] text-muted-foreground leading-relaxed">{desc}</p>
           </div>
         ))}
       </div>

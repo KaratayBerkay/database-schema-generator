@@ -65,14 +65,14 @@ export function AllChangesTab({
   const reset = () => { setKindFilter("all"); setChangeFilter("all"); setEntityFilter("all"); };
 
   if (isLoading) {
-    return <div className="py-12 text-center text-sm font-medium text-slate-500">Loading…</div>;
+    return <div className="py-12 text-center text-sm font-medium text-muted-foreground">Loading…</div>;
   }
 
   if (allEntries.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
-        <p className="text-sm font-semibold text-slate-600">No schema changes detected for this version.</p>
-        <p className="mt-1 text-xs text-slate-400">
+      <div className="rounded-lg border border-dashed border-border bg-background p-10 text-center">
+        <p className="text-sm font-semibold text-muted-foreground">No schema changes detected for this version.</p>
+        <p className="mt-1 text-xs text-muted-foreground">
           Modify field defaults or enums between {fromVersion} and {toVersion} to see entries here.
         </p>
       </div>
@@ -83,29 +83,29 @@ export function AllChangesTab({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         {counts.field_default > 0 && (
-          <span className="rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+          <span className="rounded-md border border-amber-500/30 bg-amber-500/15 px-3 py-1.5 text-xs font-semibold text-amber-300">
             {counts.field_default} field default{counts.field_default !== 1 ? "s" : ""}
           </span>
         )}
         {counts.enum > 0 && (
-          <span className="rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700">
+          <span className="rounded-md border border-indigo-500/30 bg-indigo-500/15 px-3 py-1.5 text-xs font-semibold text-indigo-300">
             {counts.enum} enum{counts.enum !== 1 ? "s" : ""}
           </span>
         )}
         {counts.enum_value > 0 && (
-          <span className="rounded-md border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700">
+          <span className="rounded-md border border-violet-500/30 bg-violet-500/15 px-3 py-1.5 text-xs font-semibold text-violet-300">
             {counts.enum_value} enum value{counts.enum_value !== 1 ? "s" : ""}
           </span>
         )}
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
+      <div className="rounded-lg border border-border bg-background p-3 space-y-2">
         <div className="flex items-center gap-3">
-          <span className="w-14 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Kind</span>
-          <div className="flex flex-1 divide-x divide-slate-200 overflow-hidden rounded-md border border-slate-200">
+          <span className="w-14 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Kind</span>
+          <div className="flex flex-1 divide-x divide-border overflow-hidden rounded-md border border-border">
             {([ ["all", "All"], ["field_default", "Field defaults"], ["enum", "Enums"], ["enum_value", "Enum values"] ] as [TrackingEntryKind | "all", string][]).map(([v, label]) => (
               <button key={v} type="button" onClick={() => setKindFilter(v)}
-                className={`flex-1 py-1.5 text-xs font-medium transition ${kindFilter === v ? "bg-slate-800 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>
+                className={`flex-1 py-1.5 text-xs font-medium transition ${kindFilter === v ? "bg-slate-800 text-white" : "bg-card text-muted-foreground hover:bg-background"}`}>
                 {label}
               </button>
             ))}
@@ -113,11 +113,11 @@ export function AllChangesTab({
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="w-14 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Change</span>
-          <div className="flex flex-1 divide-x divide-slate-200 overflow-hidden rounded-md border border-slate-200">
+          <span className="w-14 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Change</span>
+          <div className="flex flex-1 divide-x divide-border overflow-hidden rounded-md border border-border">
             {([ ["all","All"], ["added","Added"], ["removed","Removed"], ["changed","Changed"], ["renamed","Renamed"], ["value_added","Val. added"], ["value_removed","Val. removed"] ] as [TrackingChangeKind | "all", string][]).map(([v, label]) => (
               <button key={v} type="button" onClick={() => setChangeFilter(v)}
-                className={`flex-1 py-1.5 text-xs font-medium transition ${changeFilter === v ? "bg-slate-800 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>
+                className={`flex-1 py-1.5 text-xs font-medium transition ${changeFilter === v ? "bg-slate-800 text-white" : "bg-card text-muted-foreground hover:bg-background"}`}>
                 {label}
               </button>
             ))}
@@ -126,11 +126,11 @@ export function AllChangesTab({
 
         {entityNames.length > 1 && (
           <div className="flex items-center gap-3">
-            <span className="w-14 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Entity</span>
-            <div className="flex flex-1 divide-x divide-slate-200 overflow-hidden rounded-md border border-slate-200">
+            <span className="w-14 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Entity</span>
+            <div className="flex flex-1 divide-x divide-border overflow-hidden rounded-md border border-border">
               {(["all", ...entityNames] as string[]).map((v) => (
                 <button key={v} type="button" onClick={() => setEntityFilter(v)}
-                  className={`flex-1 py-1.5 text-xs font-medium transition truncate ${entityFilter === v ? "bg-slate-800 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>
+                  className={`flex-1 py-1.5 text-xs font-medium transition truncate ${entityFilter === v ? "bg-slate-800 text-white" : "bg-card text-muted-foreground hover:bg-background"}`}>
                   {v === "all" ? "All" : v}
                 </button>
               ))}
@@ -140,20 +140,20 @@ export function AllChangesTab({
 
         <div className="flex items-center justify-between pt-0.5">
           {anyFilter
-            ? <button type="button" onClick={reset} className="text-[10px] font-medium text-slate-400 underline underline-offset-2 hover:text-slate-700">Reset filters</button>
+            ? <button type="button" onClick={reset} className="text-[10px] font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground">Reset filters</button>
             : <span />}
-          <span className="text-[10px] font-semibold text-slate-400">{filtered.length} of {allEntries.length} entries</span>
+          <span className="text-[10px] font-semibold text-muted-foreground">{filtered.length} of {allEntries.length} entries</span>
         </div>
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-          <p className="text-sm font-medium text-slate-500">No entries match the current filters.</p>
+        <div className="rounded-lg border border-dashed border-border bg-background p-8 text-center">
+          <p className="text-sm font-medium text-muted-foreground">No entries match the current filters.</p>
         </div>
       ) : (
         <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-muted-foreground">
             {filtered.length} entr{filtered.length !== 1 ? "ies" : "y"} · page {page} of {pageCount}
           </p>
           <Pagination page={page} pageCount={pageCount} onPageChange={setPage} />
@@ -162,9 +162,9 @@ export function AllChangesTab({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200">
+              <tr className="border-b border-border">
                 {(["Entity", "Kind", "Change", "From", "To", "View"] as const).map((h) => (
-                  <th key={h} className="pb-2 pr-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 last:pr-0">{h}</th>
+                  <th key={h} className="pb-2 pr-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground last:pr-0">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -174,16 +174,16 @@ export function AllChangesTab({
                 return (
                   <tr key={idx} className={`${rowTint[entry.changeKind] ?? ""} transition-colors`}>
                     <td className="py-2.5 pr-4 align-middle">
-                      <span className="font-semibold text-slate-800">{entry.entityName}</span>
+                      <span className="font-semibold text-foreground">{entry.entityName}</span>
                       {entry.subName && (
-                        <><span className="mx-1 text-slate-300">·</span><span className="text-slate-600">{entry.subName}</span></>
+                        <><span className="mx-1 text-muted-foreground">·</span><span className="text-muted-foreground">{entry.subName}</span></>
                       )}
                     </td>
                     <td className="py-2.5 pr-4 align-middle">
                       <span className={`inline-flex items-center rounded border px-2 py-0.5 text-xs font-semibold ${
-                        entry.entityKind === "field_default" ? "border-amber-100 bg-amber-50 text-amber-600"
-                        : entry.entityKind === "enum"        ? "border-indigo-100 bg-indigo-50 text-indigo-600"
-                        :                                      "border-violet-100 bg-violet-50 text-violet-600"
+                        entry.entityKind === "field_default" ? "border-amber-500/25 bg-amber-500/15 text-amber-300"
+                        : entry.entityKind === "enum"        ? "border-indigo-500/25 bg-indigo-500/15 text-indigo-300"
+                        :                                      "border-violet-500/25 bg-violet-500/15 text-violet-300"
                       }`}>
                         {kindLabel[entry.entityKind]}
                       </span>
@@ -194,7 +194,7 @@ export function AllChangesTab({
                     <td className="py-2.5 align-middle">
                       <Link
                         href={isField ? `/schema?table=${entry.entityName}` : "/enums"}
-                        className="inline-flex h-7 items-center rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 shadow-sm transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700"
+                        className="inline-flex h-7 items-center rounded-md border border-border bg-card px-3 text-xs font-semibold text-muted-foreground shadow-sm transition hover:border-teal-500/40 hover:bg-teal-500/15 hover:text-teal-300"
                       >
                         View
                       </Link>

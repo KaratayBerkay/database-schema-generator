@@ -34,10 +34,10 @@ export const relationKindLabels: Record<PrismaRelation["kind"], string> = {
 };
 
 export const relationKindClasses: Record<PrismaRelation["kind"], string> = {
-  "one-to-one": "border-cyan-200 bg-cyan-50 text-cyan-700",
-  "one-to-many": "border-emerald-200 bg-emerald-50 text-emerald-700",
-  "many-to-one": "border-violet-200 bg-violet-50 text-violet-700",
-  "many-to-many": "border-amber-200 bg-amber-50 text-amber-700",
+  "one-to-one": "border-cyan-500/30 bg-cyan-500/15 text-cyan-300",
+  "one-to-many": "border-emerald-500/30 bg-emerald-500/15 text-emerald-300",
+  "many-to-one": "border-violet-500/30 bg-violet-500/15 text-violet-300",
+  "many-to-many": "border-amber-500/30 bg-amber-500/15 text-amber-300",
 };
 
 export function relationKindLabel(kind: PrismaRelation["kind"]): string {

@@ -17,27 +17,27 @@ export function PickleConfirmDialog({ pendingPickle, version, projectName, onCon
   if (!pendingPickle) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-3">
-      <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white shadow-2xl">
-        <div className="border-b border-slate-200 px-5 py-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Confirm Export</p>
-          <h3 className="mt-1 text-base font-semibold text-slate-950">
+      <div className="w-full max-w-sm rounded-lg border border-border bg-card shadow-2xl">
+        <div className="border-b border-border px-5 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Confirm Export</p>
+          <h3 className="mt-1 text-base font-semibold text-foreground">
             {pendingPickle === "pickle-version" ? "Version Pickle" : "Project Pickle"}
           </h3>
         </div>
         <div className="px-5 py-4">
-          <p className="text-sm leading-6 text-slate-600">
+          <p className="text-sm leading-6 text-muted-foreground">
             {pendingPickle === "pickle-version" ? (
-              <>You are about to pickle out <span className="font-semibold text-slate-950">{version}</span>. Are you sure?</>
+              <>You are about to pickle out <span className="font-semibold text-foreground">{version}</span>. Are you sure?</>
             ) : (
-              <>You are about to pickle out all versions in <span className="font-semibold text-slate-950">{projectName}</span>. Are you sure?</>
+              <>You are about to pickle out all versions in <span className="font-semibold text-foreground">{projectName}</span>. Are you sure?</>
             )}
           </p>
         </div>
-        <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-3">
+        <div className="flex justify-end gap-2 border-t border-border px-5 py-3">
           <button
             type="button"
             onClick={onCancel}
-            className="h-9 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+            className="h-9 rounded-md border border-border bg-card px-4 text-xs font-semibold text-foreground transition hover:bg-background"
           >
             Cancel
           </button>

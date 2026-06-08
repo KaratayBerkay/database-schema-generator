@@ -31,9 +31,9 @@ export function TabTrigger({
     : meta.dot;
 
   const bgColor = !isResolver ? undefined
-    : allClear      ? "#f0fdf4"
-    : hasPending    ? "#fef2f2"
-    : hasIncomplete ? "#fffbeb"
+    : allClear      ? "#22c55e1f"
+    : hasPending    ? "#ef44441f"
+    : hasIncomplete ? "#f59e0b1f"
     : undefined;
 
   const borderColor = !isResolver ? undefined
@@ -52,9 +52,9 @@ export function TabTrigger({
       className={[
         "flex-1 flex-col justify-center gap-0.5 py-0",
         "rounded-none border-b-2 border-transparent px-2",
-        "text-sm font-medium text-slate-600 shadow-none transition-colors",
+        "text-sm font-medium text-muted-foreground shadow-none transition-colors",
         "hover:brightness-95",
-        "data-active:text-slate-950 data-active:font-semibold data-active:shadow-none",
+        "data-active:text-foreground data-active:font-semibold data-active:shadow-none",
         borderColor
           ? "data-active:[border-bottom-color:var(--tab-accent)]"
           : (tabAccent[value] ?? "data-active:border-slate-700"),

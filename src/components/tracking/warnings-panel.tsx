@@ -164,9 +164,9 @@ export function WarningsPanel({
     return (
       <div className="space-y-4">
         <StrategyLegend {...legendProps} />
-        <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-          <p className="text-sm font-semibold text-slate-600">No warnings for this category.</p>
-          <p className="mt-1 text-xs text-slate-400">
+        <div className="rounded-lg border border-dashed border-border bg-background p-8 text-center">
+          <p className="text-sm font-semibold text-muted-foreground">No warnings for this category.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
             No changes requiring approval were detected between {fromVersion} and {toVersion}.
           </p>
         </div>
@@ -184,44 +184,44 @@ export function WarningsPanel({
       <StrategyLegend {...legendProps} />
 
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-          {pending.length > 0 && <span><span className="font-semibold text-red-600">{pending.length}</span> pending</span>}
-          {pending.length > 0 && approved.length > 0 && <span className="text-slate-300">·</span>}
-          {fullyApproved > 0 && <span><span className="font-semibold text-emerald-600">{fullyApproved}</span> approved</span>}
+        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+          {pending.length > 0 && <span><span className="font-semibold text-red-300">{pending.length}</span> pending</span>}
+          {pending.length > 0 && approved.length > 0 && <span className="text-muted-foreground">·</span>}
+          {fullyApproved > 0 && <span><span className="font-semibold text-emerald-300">{fullyApproved}</span> approved</span>}
           {incomplete.length > 0 && (
-            <><span className="text-slate-300">·</span>
-              <span><span className="font-semibold text-amber-600">{incomplete.length}</span> need{incomplete.length === 1 ? "s" : ""} default value</span></>
+            <><span className="text-muted-foreground">·</span>
+              <span><span className="font-semibold text-amber-300">{incomplete.length}</span> need{incomplete.length === 1 ? "s" : ""} default value</span></>
           )}
         </div>
         <div className="flex items-center gap-2">
           {workerBusy ? (
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/15 px-3 py-1.5 text-xs font-semibold text-amber-300">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
               Workers busy — buttons will re-appear once done
             </span>
           ) : (
             <>
               {bulkMsg && (
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-muted-foreground">
                   {bulkMsg.approved > 0 && (
-                    <span className="font-semibold text-emerald-600">{bulkMsg.approved} approved</span>
+                    <span className="font-semibold text-emerald-300">{bulkMsg.approved} approved</span>
                   )}
                   {bulkMsg.approved > 0 && bulkMsg.skipped > 0 && " · "}
                   {bulkMsg.skipped > 0 && (
-                    <span className="font-semibold text-amber-600">{bulkMsg.skipped} skipped — resolve required</span>
+                    <span className="font-semibold text-amber-300">{bulkMsg.skipped} skipped — resolve required</span>
                   )}
                   {bulkMsg.approved === 0 && bulkMsg.skipped > 0 && " — use Resolve to set values first"}
                 </span>
               )}
               {pending.length > 0 && (
                 <button type="button" disabled={bulkBusy} onClick={approveAll}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50">
+                  className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50">
                   {bulkBusy ? "…" : "✓ Approve all"}
                 </button>
               )}
               {approved.length > 0 && (
                 <button type="button" disabled={bulkBusy} onClick={unapproveAll}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50">
+                  className="inline-flex items-center gap-1.5 rounded-md border border-red-500/30 bg-red-500/15 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50">
                   {bulkBusy ? "…" : "✗ Unapprove all"}
                 </button>
               )}
@@ -232,19 +232,19 @@ export function WarningsPanel({
 
       {/* Pagination above the table */}
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted-foreground">
           {warnings.length} warning{warnings.length !== 1 ? "s" : ""} ·{" "}
           page {page} of {pageCount}
         </p>
         <Pagination page={page} pageCount={pageCount} onPageChange={(p) => setPage(p)} />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
+      <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
+            <tr className="border-b border-border bg-background">
               {TABLE_HEADERS.map((h) => (
-                <th key={h} className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400 first:pl-4 ${h === "Approve" ? "text-center" : "text-left"}`}>
+                <th key={h} className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground first:pl-4 ${h === "Approve" ? "text-center" : "text-left"}`}>
                   {h}
                 </th>
               ))}

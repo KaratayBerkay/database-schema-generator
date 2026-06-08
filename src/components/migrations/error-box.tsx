@@ -4,8 +4,8 @@
 // Kept here for backward compatibility with existing imports.
 export function ErrorBox({ message }: { message: string }) {
   return (
-    <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3">
-      <p className="whitespace-pre-wrap font-mono text-xs text-rose-700">{message}</p>
+    <div className="rounded-md border border-rose-500/30 bg-rose-500/15 px-4 py-3">
+      <p className="whitespace-pre-wrap font-mono text-xs text-rose-300">{message}</p>
     </div>
   );
 }

@@ -99,10 +99,10 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     >
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
       <Sidebar collapsible="offcanvas" className="border-r-0">
-        <SidebarHeader className="gap-0 bg-[#18231f] p-5 text-white">
+        <SidebarHeader className="gap-0 bg-[#1a1234] p-5 text-white">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">
                 Schema Studio
               </p>
               <h1 className="mt-2 text-2xl font-semibold tracking-normal">Generator</h1>
@@ -118,7 +118,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               <Button
                 onClick={() => { router.push("/projects"); }}
                 size="sm"
-                className="border-white/10 px-2 py-1 text-[11px] font-bold text-emerald-200 hover:bg-white/8 hover:text-emerald-200"
+                className="border-white/10 px-2 py-1 text-[11px] font-bold text-violet-300 hover:bg-white/8 hover:text-violet-200"
                 variant="outline"
               >
                 GoTo Projects
@@ -147,7 +147,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           </div>
         </SidebarHeader>
 
-        <SidebarContent className="bg-[#111916]">
+        <SidebarContent className="bg-[#140f22]">
           <SidebarGroup className="p-2">
             <SidebarGroupLabel className="mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
               <span>Workflows</span>
@@ -198,17 +198,17 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       </Sidebar>
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
-      <SidebarInset className="bg-[#f4f7f3]">
-        <header className="border-b border-slate-200 bg-white/90 px-5 py-4 backdrop-blur md:px-8">
+      <SidebarInset className="bg-background">
+        <header className="border-b border-border bg-background/90 px-5 py-4 backdrop-blur md:px-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-2">
-              <SidebarTrigger className="text-slate-700 hover:bg-slate-100" />
+              <SidebarTrigger className="text-foreground hover:bg-muted" />
               <Separator orientation="vertical" className="mx-1 h-5" />
               <div>
-                <p className="text-sm font-medium text-slate-500">
+                <p className="text-sm font-medium text-muted-foreground">
                   {projectName} / {selectedProvider} / {activeMenu.label}
                 </p>
-                <h2 className="mt-1 text-2xl font-semibold tracking-normal text-slate-950 md:text-3xl">
+                <h2 className="mt-1 text-2xl font-semibold tracking-normal text-foreground md:text-3xl">
                   {pageTitle}
                 </h2>
               </div>

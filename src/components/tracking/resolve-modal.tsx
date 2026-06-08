@@ -72,40 +72,40 @@ export function ResolveModal({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
-      <div className="w-full max-w-lg rounded-lg border border-slate-200 bg-white shadow-2xl">
-        <div className="border-b border-slate-200 px-5 py-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Resolve</p>
-          <h3 className="mt-0.5 text-base font-semibold text-slate-950">{warning.entityName}</h3>
+      <div className="w-full max-w-lg rounded-lg border border-border bg-card shadow-2xl">
+        <div className="border-b border-border px-5 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Resolve</p>
+          <h3 className="mt-0.5 text-base font-semibold text-foreground">{warning.entityName}</h3>
         </div>
 
         <div className="space-y-3 px-5 py-4">
-          <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-xs">
+          <div className="space-y-2 rounded-md border border-border bg-background px-4 py-3 text-xs">
             <div className="flex items-center gap-2">
-              <span className="w-16 font-semibold text-slate-500">Change</span>
-              <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-slate-600">{warning.changeKind}</code>
+              <span className="w-16 font-semibold text-muted-foreground">Change</span>
+              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-muted-foreground">{warning.changeKind}</code>
             </div>
             {(warning.fromValue || warning.toValue) && (
               <div className="flex items-center gap-2">
-                <span className="w-16 font-semibold text-slate-500">Type</span>
+                <span className="w-16 font-semibold text-muted-foreground">Type</span>
                 <span className="flex items-center gap-1">
-                  {warning.fromValue && <code className="rounded bg-slate-100 px-1 font-mono text-slate-600">{warning.fromValue}</code>}
-                  {warning.fromValue && warning.toValue && <span className="text-slate-400">→</span>}
-                  {warning.toValue && <code className="rounded bg-slate-100 px-1 font-mono text-slate-600">{warning.toValue}</code>}
+                  {warning.fromValue && <code className="rounded bg-muted px-1 font-mono text-muted-foreground">{warning.fromValue}</code>}
+                  {warning.fromValue && warning.toValue && <span className="text-muted-foreground">→</span>}
+                  {warning.toValue && <code className="rounded bg-muted px-1 font-mono text-muted-foreground">{warning.toValue}</code>}
                 </span>
               </div>
             )}
             {warning.entityKind === "field" && (
               <div className="flex items-center gap-2">
-                <span className="w-16 font-semibold text-slate-500">Field</span>
+                <span className="w-16 font-semibold text-muted-foreground">Field</span>
                 <div className="flex gap-1.5">
                   <span className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
-                    isNullable ? "border-sky-200 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-500"
+                    isNullable ? "border-sky-500/30 bg-sky-500/15 text-sky-300" : "border-border bg-card text-muted-foreground"
                   }`}>
                     {isNullable ? "nullable" : "required"}
                   </span>
                   {warning.targetUnique !== null && (
                     <span className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
-                      isUniqueField ? "border-violet-200 bg-violet-50 text-violet-700" : "border-slate-200 bg-white text-slate-500"
+                      isUniqueField ? "border-violet-500/30 bg-violet-500/15 text-violet-300" : "border-border bg-card text-muted-foreground"
                     }`}>
                       {isUniqueField ? "unique" : "not unique"}
                     </span>
@@ -114,20 +114,20 @@ export function ResolveModal({
               </div>
             )}
             <div className="flex items-start gap-2">
-              <span className="w-16 shrink-0 font-semibold text-slate-500">Message</span>
-              <span className="leading-relaxed text-slate-600">{warning.message}</span>
+              <span className="w-16 shrink-0 font-semibold text-muted-foreground">Message</span>
+              <span className="leading-relaxed text-muted-foreground">{warning.message}</span>
             </div>
           </div>
 
           {isEnumRemoval && (
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-slate-700">
-                Map <code className="rounded bg-red-100 px-1 font-mono text-red-700">{removedValue}</code> to a remaining value
+              <p className="text-sm font-semibold text-foreground">
+                Map <code className="rounded bg-red-500/20 px-1 font-mono text-red-300">{removedValue}</code> to a remaining value
               </p>
               <select
                 value={pendingValue}
                 onChange={(e) => setPendingValue(e.target.value)}
-                className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700 focus:border-slate-500 focus:outline-none"
+                className="h-9 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground focus:border-slate-500 focus:outline-none"
               >
                 <option value="">— select replacement value</option>
                 {enumAvailable.map((v) => <option key={v} value={v}>{v}</option>)}
@@ -138,11 +138,11 @@ export function ResolveModal({
           {isFieldDefault && !isNullable && isUniquePrefix && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-slate-700">
+                <p className="text-sm font-semibold text-foreground">
                   Prefix
                   <span className="ml-1.5 text-[10px] font-normal text-rose-500">required</span>
                 </p>
-                <span className="rounded border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-semibold text-violet-700">
+                <span className="rounded border border-violet-500/30 bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold text-violet-300">
                   unique field — UUID appended per row
                 </span>
               </div>
@@ -152,31 +152,31 @@ export function ResolveModal({
                   onChange={(e) => setPendingValue(e.target.value)}
                   placeholder={fieldName}
                   autoFocus
-                  className="h-9 flex-1 rounded-md border border-slate-300 bg-white px-3 font-mono text-sm text-slate-800 focus:border-slate-500 focus:outline-none"
+                  className="h-9 flex-1 rounded-md border border-border bg-card px-3 font-mono text-sm text-foreground focus:border-slate-500 focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={handleResolveForMe}
                   disabled={busy}
                   title={`Use "${fieldName}" as prefix and approve`}
-                  className="h-9 rounded-md border border-teal-300 bg-teal-50 px-3 text-xs font-semibold text-teal-700 transition hover:bg-teal-100 disabled:opacity-50"
+                  className="h-9 rounded-md border border-teal-500/40 bg-teal-500/15 px-3 text-xs font-semibold text-teal-300 transition hover:bg-teal-500/20 disabled:opacity-50"
                 >
                   {busy ? "Resolving…" : "Resolve it for me"}
                 </button>
               </div>
-              <p className="text-[10px] text-slate-500">
-                Each row will receive: <code className="font-mono text-slate-700">{pendingValue || fieldName}-</code><code className="font-mono text-slate-400">{"{uuid}"}</code>
+              <p className="text-[10px] text-muted-foreground">
+                Each row will receive: <code className="font-mono text-foreground">{pendingValue || fieldName}-</code><code className="font-mono text-muted-foreground">{"{uuid}"}</code>
               </p>
             </div>
           )}
 
           {isFieldDefault && !isNullable && !isUniquePrefix && (
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-slate-700">
+              <p className="text-sm font-semibold text-foreground">
                 Migration default value
                 <span className="ml-1.5 text-[10px] font-normal text-rose-500">required</span>
               </p>
-              <p className="text-[10px] text-slate-500">This value will be set on every existing row.</p>
+              <p className="text-[10px] text-muted-foreground">This value will be set on every existing row.</p>
               {targetType === "Boolean" ? (
                 <div className="flex gap-2">
                   {(["true", "false"] as const).map((val) => (
@@ -187,11 +187,11 @@ export function ResolveModal({
                       className={`flex h-10 flex-1 items-center justify-center rounded-md border font-mono text-sm font-semibold transition ${
                         pendingValue === val
                           ? val === "true"
-                            ? "border-emerald-400 bg-emerald-100 text-emerald-700"
-                            : "border-rose-400 bg-rose-100 text-rose-700"
+                            ? "border-emerald-400 bg-emerald-500/20 text-emerald-300"
+                            : "border-rose-400 bg-rose-500/20 text-rose-300"
                           : val === "true"
-                            ? "border-slate-200 bg-white text-slate-400 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600"
-                            : "border-slate-200 bg-white text-slate-400 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600"
+                            ? "border-border bg-card text-muted-foreground hover:border-emerald-500/40 hover:bg-emerald-500/15 hover:text-emerald-300"
+                            : "border-border bg-card text-muted-foreground hover:border-rose-500/40 hover:bg-rose-500/15 hover:text-rose-300"
                       }`}
                     >
                       {val}
@@ -208,36 +208,36 @@ export function ResolveModal({
                   : "default value"
                 }
                 autoFocus
-                className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 font-mono text-sm text-slate-800 focus:border-slate-500 focus:outline-none"
+                className="h-9 w-full rounded-md border border-border bg-card px-3 font-mono text-sm text-foreground focus:border-slate-500 focus:outline-none"
               />)}
             </div>
           )}
 
           {isFieldDefault && isNullable && (
-            <p className="text-sm text-slate-600">
-              This field is nullable — existing rows will be set to <code className="rounded bg-slate-100 px-1 font-mono text-sm">NULL</code>.
+            <p className="text-sm text-muted-foreground">
+              This field is nullable — existing rows will be set to <code className="rounded bg-muted px-1 font-mono text-sm">NULL</code>.
             </p>
           )}
 
           {isFkCascade && (
-            <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
-              <p className="text-sm font-semibold text-amber-800">Schema update required</p>
-              <p className="mt-1 text-xs text-amber-700">
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/15 px-4 py-3">
+              <p className="text-sm font-semibold text-amber-200">Schema update required</p>
+              <p className="mt-1 text-xs text-amber-300">
                 Clicking <strong>Apply &amp; Approve</strong> will change{" "}
-                <code className="rounded bg-amber-100 px-1 font-mono">{warning.entityName.split(" →")[0]}</code> from{" "}
-                <code className="rounded bg-amber-100 px-1 font-mono">{warning.fromValue}</code> to{" "}
-                <code className="rounded bg-amber-100 px-1 font-mono">{warning.toValue === "Uuid" ? "String @db.Uuid" : warning.toValue}</code>{" "}
+                <code className="rounded bg-amber-500/20 px-1 font-mono">{warning.entityName.split(" →")[0]}</code> from{" "}
+                <code className="rounded bg-amber-500/20 px-1 font-mono">{warning.fromValue}</code> to{" "}
+                <code className="rounded bg-amber-500/20 px-1 font-mono">{warning.toValue === "Uuid" ? "String @db.Uuid" : warning.toValue}</code>{" "}
                 in the schema, then mark this warning approved.
               </p>
             </div>
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
+        <div className="flex items-center justify-end gap-3 border-t border-border px-5 py-4">
           <button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            className="h-9 rounded-md border border-border bg-card px-4 text-sm font-semibold text-foreground transition hover:bg-background"
           >
             Cancel
           </button>
@@ -246,7 +246,7 @@ export function ResolveModal({
               type="button"
               disabled={busy}
               onClick={async () => { setBusy(true); await applyFkType(warning.id); setBusy(false); onClose(); }}
-              className="h-9 min-w-36 rounded-md bg-amber-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="h-9 min-w-36 rounded-md bg-amber-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-muted"
             >
               {busy ? "Applying…" : "Apply & Approve"}
             </button>
@@ -255,7 +255,7 @@ export function ResolveModal({
               type="button"
               disabled={!canApprove || busy}
               onClick={() => handleApprove()}
-              className="h-9 min-w-32 rounded-md bg-emerald-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="h-9 min-w-32 rounded-md bg-emerald-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-muted"
             >
               {busy ? "Saving…" : "Approve"}
             </button>

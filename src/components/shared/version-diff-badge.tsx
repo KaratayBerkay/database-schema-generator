@@ -6,17 +6,17 @@ import type { SchemaWarning } from "@/lib/stores/schema-warnings-store";
 
 const severityStyles: Record<ChangeSeverity, { badge: string; dot: string; label: string }> = {
   breaking: {
-    badge: "bg-red-50 border-red-200 text-red-700",
+    badge: "bg-red-500/15 border-red-500/30 text-red-300",
     dot: "bg-red-500",
     label: "Breaking",
   },
   warning: {
-    badge: "bg-amber-50 border-amber-200 text-amber-700",
+    badge: "bg-amber-500/15 border-amber-500/30 text-amber-300",
     dot: "bg-amber-500",
     label: "Changed",
   },
   info: {
-    badge: "bg-sky-50 border-sky-200 text-sky-700",
+    badge: "bg-sky-500/15 border-sky-500/30 text-sky-300",
     dot: "bg-sky-400",
     label: "New",
   },
@@ -60,8 +60,8 @@ export function ApproveWarningButton({
   if (warning.approvedAt) {
     if (!onUnapprove) return null;
     return (
-      <span className="inline-flex divide-x divide-emerald-200 overflow-hidden rounded-md border border-emerald-200">
-        <span className="flex items-center gap-1 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+      <span className="inline-flex divide-x divide-emerald-200 overflow-hidden rounded-md border border-emerald-500/30">
+        <span className="flex items-center gap-1 bg-emerald-500/15 px-2.5 py-1 text-[10px] font-semibold text-emerald-300">
           <span className="text-emerald-500">✓</span> Approved
         </span>
         <button
@@ -73,7 +73,7 @@ export function ApproveWarningButton({
             setBusy(false);
           }}
           title="Undo approval"
-          className="flex items-center bg-white px-2 py-1 text-[10px] font-bold text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center bg-card px-2 py-1 text-[10px] font-bold text-muted-foreground transition hover:bg-red-500/15 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy ? "…" : "✗"}
         </button>
@@ -90,7 +90,7 @@ export function ApproveWarningButton({
         await onApprove(warning.id);
         setBusy(false);
       }}
-      className="inline-flex h-7 items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-3 text-[10px] font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+      className="inline-flex h-7 items-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/15 px-3 text-[10px] font-semibold text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {busy ? "…" : <><span className="text-emerald-500">✓</span> Approve</>}
     </button>

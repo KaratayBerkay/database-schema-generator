@@ -12,27 +12,27 @@ export const pkTypeDetails: Record<
   String: {
     label: "String (cuid)",
     summary: "App-generated string ID with @default(cuid()).",
-    badgeClass: "bg-green-50 text-green-700",
+    badgeClass: "bg-green-500/15 text-green-300",
   },
   Int: {
     label: "Int (autoincrement)",
     summary: "Database-generated integer ID.",
-    badgeClass: "bg-blue-50 text-blue-700",
+    badgeClass: "bg-blue-500/15 text-blue-300",
   },
   BigInt: {
     label: "BigInt (autoincrement)",
     summary: "Database-generated large integer ID.",
-    badgeClass: "bg-rose-50 text-rose-700",
+    badgeClass: "bg-rose-500/15 text-rose-300",
   },
   DateTime: {
     label: "DateTime (now)",
     summary: "Timestamp ID. Use only for legacy schemas.",
-    badgeClass: "bg-orange-50 text-orange-700",
+    badgeClass: "bg-orange-500/15 text-orange-300",
   },
   Uuid: {
     label: "Uuid",
     summary: "Provider-aware UUID ID.",
-    badgeClass: "bg-purple-50 text-purple-700",
+    badgeClass: "bg-purple-500/15 text-purple-300",
   },
 };
 
@@ -80,5 +80,5 @@ export function pkExampleLine(pkName: string, pkType: string, key: ProviderKey):
 }
 
 export function pkTypeBadgeClass(type: string): string {
-  return pkTypeDetails[type as PkTypeValue]?.badgeClass ?? "bg-slate-100 text-slate-600";
+  return pkTypeDetails[type as PkTypeValue]?.badgeClass ?? "bg-muted text-muted-foreground";
 }

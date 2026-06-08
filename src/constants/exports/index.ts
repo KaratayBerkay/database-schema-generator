@@ -36,8 +36,8 @@ export const EXPORT_OPTIONS: Array<{
     fileLabel: ".prisma",
     description:
       "Export the generated Prisma schema for the selected project version. Includes datasource, generator, models, relations, and constraints.",
-    accent: "border-blue-200 bg-blue-50",
-    badgeClass: "bg-blue-100 text-blue-700",
+    accent: "border-blue-500/25 bg-blue-500/10",
+    badgeClass: "bg-blue-500/20 text-blue-300",
   },
   {
     type: "drizzle",
@@ -45,8 +45,8 @@ export const EXPORT_OPTIONS: Array<{
     fileLabel: ".ts",
     description:
       "Generate a Drizzle ORM TypeScript schema from the canonical model. Includes table definitions, column types, foreign key references, and index helpers.",
-    accent: "border-emerald-200 bg-emerald-50",
-    badgeClass: "bg-emerald-100 text-emerald-700",
+    accent: "border-emerald-500/25 bg-emerald-500/10",
+    badgeClass: "bg-emerald-500/20 text-emerald-300",
   },
   {
     type: "pickle-version",
@@ -54,8 +54,8 @@ export const EXPORT_OPTIONS: Array<{
     fileLabel: ".json",
     description:
       "Download a full JSON backup of the current version's schema — tables, fields, relations, restrictions, and enums. Downloads directly as a file.",
-    accent: "border-amber-200 bg-amber-50",
-    badgeClass: "bg-amber-100 text-amber-700",
+    accent: "border-amber-500/25 bg-amber-500/10",
+    badgeClass: "bg-amber-500/20 text-amber-300",
   },
   {
     type: "pickle-project",
@@ -63,7 +63,7 @@ export const EXPORT_OPTIONS: Array<{
     fileLabel: ".json",
     description:
       "Download a full JSON backup of all versions in this project. Every schema version's complete graph in one file.",
-    accent: "border-orange-200 bg-orange-50",
-    badgeClass: "bg-orange-100 text-orange-700",
+    accent: "border-orange-500/25 bg-orange-500/10",
+    badgeClass: "bg-orange-500/20 text-orange-300",
   },
 ];

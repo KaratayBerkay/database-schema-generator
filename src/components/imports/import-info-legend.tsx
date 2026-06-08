@@ -15,11 +15,11 @@ const items: { label: string; desc: string; mono?: boolean }[] = [
 
 export function ImportInfoLegend() {
   return (
-    <div className="grid grid-cols-1 gap-x-6 gap-y-2 rounded-lg border border-cyan-100 bg-cyan-50/60 px-4 py-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-x-6 gap-y-2 rounded-lg border border-cyan-500/25 bg-cyan-500/15 px-4 py-3 sm:grid-cols-2 lg:grid-cols-3">
       {items.map(({ label, desc, mono }) => (
         <div key={label}>
-          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-cyan-700">{label}</p>
-          <p className={classNames("mt-0.5 text-[11px] leading-relaxed text-slate-600", mono && "font-mono")}>{desc}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-cyan-300">{label}</p>
+          <p className={classNames("mt-0.5 text-[11px] leading-relaxed text-muted-foreground", mono && "font-mono")}>{desc}</p>
         </div>
       ))}
     </div>

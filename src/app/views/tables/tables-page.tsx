@@ -123,24 +123,24 @@ export function TablesPageContent() {
 
   if (!hasProject) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
-        <p className="text-slate-600">Select a project to manage tables.</p>
+      <div className="rounded-lg border border-border bg-card p-8 text-center">
+        <p className="text-muted-foreground">Select a project to manage tables.</p>
       </div>
     );
   }
 
   return (
     <div>
-      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-5 py-4">
+      <section className="rounded-lg border border-border bg-card shadow-sm">
+        <div className="border-b border-border px-5 py-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Main Window</p>
-              <h3 className="mt-1 text-xl font-semibold text-slate-950">Tables workspace</h3>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Main Window</p>
+              <h3 className="mt-1 text-xl font-semibold text-foreground">Tables workspace</h3>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs font-medium text-slate-500">{projectName}-{version}.prisma</span>
-              <span className="rounded-md border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700">
+              <span className="text-xs font-medium text-muted-foreground">{projectName}-{version}.prisma</span>
+              <span className="rounded-md border border-cyan-500/30 bg-cyan-500/15 px-3 py-1.5 text-xs font-semibold text-cyan-300">
                 {models.length} tables
               </span>
             </div>

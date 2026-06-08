@@ -50,12 +50,12 @@ function InlineRenameValue({
         value={input}
         onChange={(e) => { setInput(e.target.value); setError(""); }}
         onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") onCancel(); }}
-        className="h-7 min-w-0 flex-1 rounded border border-indigo-400 bg-white px-2 text-xs font-semibold text-slate-950 outline-none"
+        className="h-7 min-w-0 flex-1 rounded border border-indigo-400 bg-card px-2 text-xs font-semibold text-foreground outline-none"
       />
       <button
         type="button"
         onClick={save}
-        className="flex h-7 w-7 items-center justify-center rounded border border-indigo-300 bg-white text-indigo-700 transition hover:bg-indigo-50"
+        className="flex h-7 w-7 items-center justify-center rounded border border-indigo-500/40 bg-card text-indigo-300 transition hover:bg-indigo-500/15"
         aria-label="Save"
       >
         <IconCheck size={12} stroke={2.5} />
@@ -63,12 +63,12 @@ function InlineRenameValue({
       <button
         type="button"
         onClick={onCancel}
-        className="flex h-7 w-7 items-center justify-center rounded border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50"
+        className="flex h-7 w-7 items-center justify-center rounded border border-border bg-card text-muted-foreground transition hover:bg-background"
         aria-label="Cancel"
       >
         <IconX size={12} stroke={2.5} />
       </button>
-      {error && <span className="text-xs font-semibold text-rose-600">{error}</span>}
+      {error && <span className="text-xs font-semibold text-rose-300">{error}</span>}
     </div>
   );
 }
@@ -110,26 +110,26 @@ function SortableValueRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2"
+      className="flex items-center justify-between rounded-md border border-border bg-card px-3 py-2"
     >
       <div className="flex items-center gap-2 min-w-0">
         <button
           type="button"
           {...attributes}
           {...listeners}
-          className="cursor-grab touch-none text-slate-300 transition hover:text-slate-500 active:cursor-grabbing"
+          className="cursor-grab touch-none text-muted-foreground transition hover:text-muted-foreground active:cursor-grabbing"
           aria-label="Drag to reorder"
           tabIndex={-1}
         >
           <IconGripVertical size={14} stroke={2} />
         </button>
-        <span className="font-mono text-sm font-semibold text-slate-900">{value.name}</span>
+        <span className="font-mono text-sm font-semibold text-foreground">{value.name}</span>
       </div>
       <div className="flex items-center gap-1">
         <button
           type="button"
           onClick={onEdit}
-          className="flex h-7 w-7 items-center justify-center rounded border border-indigo-200 bg-white text-indigo-600 transition hover:bg-indigo-50"
+          className="flex h-7 w-7 items-center justify-center rounded border border-indigo-500/30 bg-card text-indigo-300 transition hover:bg-indigo-500/15"
           aria-label={`Rename ${value.name}`}
         >
           <IconPencil size={12} stroke={2} />
@@ -138,7 +138,7 @@ function SortableValueRow({
           type="button"
           onClick={onDelete}
           disabled={isDeleting}
-          className="flex h-7 w-7 items-center justify-center rounded border border-rose-200 bg-white text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-7 w-7 items-center justify-center rounded border border-rose-500/30 bg-card text-rose-300 transition hover:bg-rose-500/15 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label={`Delete ${value.name}`}
         >
           <IconTrash size={12} stroke={2} />
@@ -241,16 +241,16 @@ export function EnumEditPanel({
   const currentEnumName = renameName.trim() || enumEntry.name;
 
   return (
-    <div className="rounded-lg border border-indigo-200 bg-indigo-50/40 p-5">
+    <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/15 p-5">
       <div className="mb-5 flex items-center justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-300">
           Edit Enum
         </p>
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={onDone}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 bg-white text-rose-400 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-rose-500/30 bg-card text-rose-400 transition hover:border-rose-500/40 hover:bg-rose-500/15 hover:text-rose-300"
             aria-label="Close"
           >
             <IconX size={15} stroke={2} />
@@ -258,7 +258,7 @@ export function EnumEditPanel({
           <button
             type="button"
             onClick={onDone}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-emerald-300 bg-white text-emerald-600 transition hover:bg-emerald-50"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-emerald-500/40 bg-card text-emerald-300 transition hover:bg-emerald-500/15"
             aria-label="Done"
           >
             <IconCheck size={15} stroke={2.5} />
@@ -267,7 +267,7 @@ export function EnumEditPanel({
       </div>
 
       <div>
-        <label htmlFor="edit-enum-name" className="block text-sm font-semibold text-slate-700">
+        <label htmlFor="edit-enum-name" className="block text-sm font-semibold text-foreground">
           Enum name
         </label>
         <div className="mt-2 flex gap-2">
@@ -276,35 +276,35 @@ export function EnumEditPanel({
             value={renameName}
             onChange={(e) => { setRenameName(e.target.value); setRenameError(""); }}
             onKeyDown={(e) => { if (e.key === "Enter") saveRename(); }}
-            className="h-10 flex-1 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition focus:border-indigo-600"
+            className="h-10 flex-1 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition focus:border-indigo-600"
           />
           <button
             type="button"
             onClick={saveRename}
             disabled={renameMutation.isPending || renameName.trim() === enumEntry.name}
-            className="h-10 rounded-md border border-indigo-300 bg-white px-4 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-10 rounded-md border border-indigo-500/40 bg-card px-4 text-sm font-semibold text-indigo-300 transition hover:bg-indigo-500/15 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {renameMutation.isPending ? "Saving…" : "Rename"}
           </button>
         </div>
-        {renameError ? <p className="mt-1.5 text-xs font-semibold text-rose-600">{renameError}</p> : null}
-        <p className="mt-1.5 text-xs text-slate-500">
+        {renameError ? <p className="mt-1.5 text-xs font-semibold text-rose-300">{renameError}</p> : null}
+        <p className="mt-1.5 text-xs text-muted-foreground">
           Renaming updates all fields that use this enum as their type.
         </p>
       </div>
 
       <div className="mt-6">
-        <p className="text-sm font-semibold text-slate-700">
+        <p className="text-sm font-semibold text-foreground">
           Values
           {enumEntry.values.length > 0 && (
-            <span className="ml-2 rounded-md border border-indigo-200 bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">
+            <span className="ml-2 rounded-md border border-indigo-500/30 bg-indigo-500/20 px-2 py-0.5 text-xs font-semibold text-indigo-300">
               {enumEntry.values.length}
             </span>
           )}
         </p>
 
         {enumEntry.values.length === 0 ? (
-          <div className="mt-3 rounded-lg border border-dashed border-indigo-200 bg-white p-4 text-center text-sm text-slate-500">
+          <div className="mt-3 rounded-lg border border-dashed border-indigo-500/30 bg-card p-4 text-center text-sm text-muted-foreground">
             No values yet. Add your first value below.
           </div>
         ) : (
@@ -335,18 +335,18 @@ export function EnumEditPanel({
             value={newValue}
             onChange={(e) => { setNewValue(e.target.value); setAddError(""); }}
             placeholder="PENDING"
-            className="h-9 flex-1 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-950 outline-none transition placeholder:font-mono placeholder:text-slate-400 focus:border-indigo-600"
+            className="h-9 flex-1 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground outline-none transition placeholder:font-mono placeholder:text-muted-foreground focus:border-indigo-600"
           />
           <button
             type="submit"
             disabled={addValueMutation.isPending || !newValue.trim()}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-muted"
           >
             <IconPlus size={14} stroke={2.5} />
             {addValueMutation.isPending ? "Adding…" : "Add"}
           </button>
         </form>
-        {addError ? <p className="mt-1.5 text-xs font-semibold text-rose-600">{addError}</p> : null}
+        {addError ? <p className="mt-1.5 text-xs font-semibold text-rose-300">{addError}</p> : null}
       </div>
     </div>
   );

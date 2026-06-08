@@ -117,36 +117,36 @@ export function RelationsPageContent() {
 
   if (!hasProject) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
-        <p className="text-slate-600">Select a project to inspect table relations.</p>
+      <div className="rounded-lg border border-border bg-card p-8 text-center">
+        <p className="text-muted-foreground">Select a project to inspect table relations.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
-      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-5 py-4">
+      <section className="rounded-lg border border-border bg-card shadow-sm">
+        <div className="border-b border-border px-5 py-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Main Window
               </p>
-              <h3 className="mt-1 text-xl font-semibold text-slate-950">
+              <h3 className="mt-1 text-xl font-semibold text-foreground">
                 Relations workspace
               </h3>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-muted-foreground">
                 {projectName}-{version}.prisma
               </span>
-              <span className="rounded-md border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700">
+              <span className="rounded-md border border-violet-500/30 bg-violet-500/15 px-3 py-1.5 text-xs font-semibold text-violet-300">
                 {selectedModel ? selectedModel.name : "No table selected"}
               </span>
               <button
                 type="button"
                 onClick={() => setIsTableSelectorOpen(true)}
-                className="h-9 min-w-36 rounded-md border border-violet-300 bg-white px-5 text-xs font-semibold text-violet-700 transition hover:bg-violet-50"
+                className="h-9 min-w-36 rounded-md border border-violet-500/40 bg-card px-5 text-xs font-semibold text-violet-300 transition hover:bg-violet-500/15"
               >
                 Select Table
               </button>
@@ -166,10 +166,10 @@ export function RelationsPageContent() {
             <div>
               <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                     Selected Table
                   </p>
-                  <h4 className="mt-1 text-lg font-semibold text-slate-950">
+                  <h4 className="mt-1 text-lg font-semibold text-foreground">
                     {selectedModelName}
                   </h4>
                 </div>
@@ -185,7 +185,7 @@ export function RelationsPageContent() {
               </div>
 
               {removedRelationDiffs.filter((d) => d.sourceTableName === selectedModelName).length > 0 && (
-                <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                <div className="mb-3 rounded-lg border border-red-500/30 bg-red-500/15 px-4 py-3 text-sm font-medium text-red-300">
                   <div className="flex items-center justify-between gap-3">
                     <span>
                       {removedRelationDiffs.filter((d) => d.sourceTableName === selectedModelName).length === 1
@@ -202,7 +202,7 @@ export function RelationsPageContent() {
                       </svg>
                     </Link>
                   </div>
-                  <ul className="mt-1.5 list-disc pl-4 text-xs font-normal text-red-600">
+                  <ul className="mt-1.5 list-disc pl-4 text-xs font-normal text-red-300">
                     {removedRelationDiffs
                       .filter((d) => d.sourceTableName === selectedModelName)
                       .map((d) => (
@@ -212,7 +212,7 @@ export function RelationsPageContent() {
                 </div>
               )}
 
-              <div className="mb-4 flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-1.5 md:flex-row md:items-center md:justify-between">
+              <div className="mb-4 flex flex-col gap-3 rounded-lg border border-border bg-background p-1.5 md:flex-row md:items-center md:justify-between">
                   <div className="flex flex-wrap gap-2">
                     {[
                       ["relations", `Relations (${ownedRelations.length})`],
@@ -222,7 +222,7 @@ export function RelationsPageContent() {
                         onClick={() => filters.changeTab(tab as RelationTab)}
                         className={classNames(
                           "h-9 rounded-md px-4 text-sm font-semibold transition",
-                          filters.activeRelationTab === tab ? "bg-white text-violet-700 shadow-sm" : "text-slate-600 hover:bg-white/70",
+                          filters.activeRelationTab === tab ? "bg-card text-violet-300 shadow-sm" : "text-muted-foreground hover:bg-card",
                         )}>
                         {label}
                       </button>
@@ -230,26 +230,26 @@ export function RelationsPageContent() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    <label className="flex min-w-0 items-center gap-2 px-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    <label className="flex min-w-0 items-center gap-2 px-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                       Related table
                       <select
                         value={filters.relationTargetFilter}
                         onChange={(e) => filters.setRelationTargetFilter(e.target.value)}
                         disabled={filters.relationTargetOptions.length === 0}
-                        className="h-9 min-w-44 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold normal-case tracking-normal text-slate-700 outline-none transition focus:border-violet-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                        className="h-9 min-w-44 rounded-md border border-border bg-card px-3 text-sm font-semibold normal-case tracking-normal text-foreground outline-none transition focus:border-violet-600 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
                       >
                         <option value="">All tables</option>
                         {filters.relationTargetOptions.map((t) => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </label>
 
-                    <label className="flex min-w-0 items-center gap-2 px-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    <label className="flex min-w-0 items-center gap-2 px-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                       Type
                       <select
                         value={filters.relationKindFilter}
                         onChange={(e) => filters.setRelationKindFilter(e.target.value as PrismaRelation["kind"] | "")}
                         disabled={filters.relationKindOptions.length === 0}
-                        className="h-9 min-w-40 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold normal-case tracking-normal text-slate-700 outline-none transition focus:border-violet-600 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                        className="h-9 min-w-40 rounded-md border border-border bg-card px-3 text-sm font-semibold normal-case tracking-normal text-foreground outline-none transition focus:border-violet-600 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
                       >
                         <option value="">All types</option>
                         {filters.relationKindOptions.map((kind) => (

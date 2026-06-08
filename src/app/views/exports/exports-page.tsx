@@ -109,8 +109,8 @@ export function ExportsPageContent() {
 
   if (!hasProject) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
-        <p className="text-slate-600">Select a project to export schemas.</p>
+      <div className="rounded-lg border border-border bg-card p-8 text-center">
+        <p className="text-muted-foreground">Select a project to export schemas.</p>
       </div>
     );
   }
@@ -124,14 +124,14 @@ export function ExportsPageContent() {
     <div className="space-y-5">
 
       {/* Export history */}
-      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-5 py-4">
+      <section className="rounded-lg border border-border bg-card shadow-sm">
+        <div className="border-b border-border px-5 py-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Download History
               </p>
-              <h3 className="mt-1 text-base font-semibold text-slate-950">
+              <h3 className="mt-1 text-base font-semibold text-foreground">
                 Exported Schemas
               </h3>
             </div>
@@ -142,7 +142,7 @@ export function ExportsPageContent() {
                     <button
                       type="button"
                       onClick={() => setResetConfirm(false)}
-                      className="h-8 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                      className="h-8 rounded-md border border-border bg-card px-3 text-xs font-semibold text-muted-foreground transition hover:bg-background"
                     >
                       Cancel
                     </button>
@@ -159,7 +159,7 @@ export function ExportsPageContent() {
                   <button
                     type="button"
                     onClick={() => setResetConfirm(true)}
-                    className="h-8 rounded-md border border-rose-200 bg-rose-50 px-3 text-xs font-semibold text-rose-600 transition hover:bg-rose-100"
+                    className="h-8 rounded-md border border-rose-500/30 bg-rose-500/15 px-3 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/20"
                   >
                     Reset
                   </button>
@@ -171,50 +171,50 @@ export function ExportsPageContent() {
 
         {exportHistory.length === 0 ? (
           <div className="px-5 py-6 text-center">
-            <p className="text-sm text-slate-400">No exports yet for this project.</p>
+            <p className="text-sm text-muted-foreground">No exports yet for this project.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-100 bg-slate-50 text-left">
-                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                <tr className="border-b border-border bg-background text-left">
+                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                     File
                   </th>
-                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                     Type
                   </th>
-                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                     Version
                   </th>
-                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  <th className="px-5 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                     Downloaded
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {pageRows.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-50/50">
+                  <tr key={row.id} className="hover:bg-background/50">
                     <td className="px-5 py-3 font-mono text-xs">
-                      <span className="text-slate-400">~/Downloads/</span>
-                      <span className="font-semibold text-slate-800">{row.file_name}</span>
+                      <span className="text-muted-foreground">~/Downloads/</span>
+                      <span className="font-semibold text-foreground">{row.file_name}</span>
                     </td>
                     <td className="px-5 py-3">
                       <span
                         className={classNames(
                           "rounded px-2 py-0.5 text-[11px] font-bold",
                           row.export_type === "prisma"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-emerald-100 text-emerald-700",
+                            ? "bg-blue-500/20 text-blue-300"
+                            : "bg-emerald-500/20 text-emerald-300",
                         )}
                       >
                         {row.export_type === "prisma" ? "Prisma" : "Drizzle"}
                       </span>
                     </td>
-                    <td className="px-5 py-3 font-mono text-xs text-slate-600">
+                    <td className="px-5 py-3 font-mono text-xs text-muted-foreground">
                       {row.version}
                     </td>
-                    <td className="px-5 py-3 text-xs text-slate-500">
+                    <td className="px-5 py-3 text-xs text-muted-foreground">
                       {new Date(row.exported_at).toLocaleString()}
                     </td>
                   </tr>
@@ -222,8 +222,8 @@ export function ExportsPageContent() {
               </tbody>
             </table>
             {totalPages > 1 ? (
-              <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3">
-                <p className="text-xs text-slate-500">
+              <div className="flex items-center justify-between border-t border-border px-5 py-3">
+                <p className="text-xs text-muted-foreground">
                   {exportHistory.length} {exportHistory.length === 1 ? "export" : "exports"} total
                 </p>
                 <Pagination
@@ -237,19 +237,19 @@ export function ExportsPageContent() {
         )}
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+      <section className="rounded-lg border border-border bg-card shadow-sm">
         {/* Header */}
-        <div className="border-b border-slate-200 px-5 py-4">
+        <div className="border-b border-border px-5 py-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Main Window
               </p>
-              <h3 className="mt-1 text-xl font-semibold text-slate-950">
+              <h3 className="mt-1 text-xl font-semibold text-foreground">
                 Exports workspace
               </h3>
             </div>
-            <span className="w-fit rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+            <span className="w-fit rounded-md border border-blue-500/30 bg-blue-500/15 px-3 py-1.5 text-xs font-semibold text-blue-300">
               {projectName} – {version}
             </span>
           </div>
@@ -273,7 +273,7 @@ export function ExportsPageContent() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h4 className="text-base font-semibold text-slate-950">
+                        <h4 className="text-base font-semibold text-foreground">
                           {opt.label}
                         </h4>
                         <span
@@ -285,7 +285,7 @@ export function ExportsPageContent() {
                           {opt.fileLabel}
                         </span>
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
                         {opt.description}
                       </p>
                     </div>
@@ -297,13 +297,13 @@ export function ExportsPageContent() {
                     className={classNames(
                       "mt-4 h-10 min-w-32 rounded-md px-5 text-sm font-semibold text-white shadow-sm transition",
                       opt.type === "prisma"
-                        ? "bg-blue-600 hover:bg-blue-700"
+                        ? "bg-blue-700 hover:bg-blue-800"
                         : opt.type === "drizzle"
-                          ? "bg-emerald-600 hover:bg-emerald-700"
+                          ? "bg-emerald-700 hover:bg-emerald-800"
                           : opt.type === "pickle-version"
-                            ? "bg-amber-500 hover:bg-amber-600"
-                            : "bg-orange-500 hover:bg-orange-600",
-                      isDisabled ? "cursor-not-allowed bg-slate-300 hover:bg-slate-300" : "",
+                            ? "bg-amber-700 hover:bg-amber-800"
+                            : "bg-orange-700 hover:bg-orange-800",
+                      isDisabled ? "cursor-not-allowed bg-muted hover:bg-muted" : "",
                     )}
                   >
                     {isLoading

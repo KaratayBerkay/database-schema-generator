@@ -19,58 +19,73 @@
 @custom-variant data-placeholder (&[data-placeholder]);
 @custom-variant data-mobile (&[data-mobile]);
 
-/* ─── shadcn design tokens (base-nova / neutral) ─────────────────────────── */
+/* ─── Purple design system ───────────────────────────────────────────────── */
+/* Main palette = shades of purple (violet family). Neutrals are purple-tinted */
+/* so the whole UI reads purple. Semantic colors (success/warning/danger/info) */
+/* stay distinct for usability. Values are OKLCH ≈ Tailwind violet/purple.       */
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.47 0.127 157);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --background: oklch(0.165 0.026 293);        /* deep purple app background */
+  --foreground: oklch(0.965 0.010 293);        /* near-white text */
+  --card: oklch(0.215 0.032 293);              /* lighter purple card surface */
+  --card-foreground: oklch(0.965 0.010 293);
+  --popover: oklch(0.215 0.032 293);
+  --popover-foreground: oklch(0.965 0.010 293);
+  --primary: oklch(0.62 0.24 293);             /* violet-500, vivid on dark */
+  --primary-foreground: oklch(0.99 0.005 293);
+  --secondary: oklch(0.285 0.040 293);
+  --secondary-foreground: oklch(0.965 0.010 293);
+  --muted: oklch(0.260 0.035 293);
+  --muted-foreground: oklch(0.74 0.045 293);   /* dim light-purple muted text */
+  --accent: oklch(0.330 0.060 293);
+  --accent-foreground: oklch(0.97 0.010 293);
+  --destructive: oklch(0.65 0.20 22);          /* rose/red — kept distinct */
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.74 0.17 156);             /* emerald — kept distinct */
+  --warning: oklch(0.83 0.16 80);              /* amber */
+  --info: oklch(0.74 0.14 235);                /* sky */
+  --border: oklch(0.330 0.035 293);            /* visible border on dark */
+  --input: oklch(0.330 0.035 293);
+  --ring: oklch(0.62 0.22 293);                /* violet ring */
   --radius: 0.625rem;
-  /* sidebar */
-  --sidebar: oklch(0.13 0.012 157);
-  --sidebar-foreground: oklch(0.95 0 0);
+  /* sidebar — deep violet */
+  --sidebar: oklch(0.205 0.035 293);
+  --sidebar-foreground: oklch(0.96 0.012 293);
   --sidebar-accent: oklch(1 0 0 / 8%);
-  --sidebar-accent-foreground: oklch(0.95 0 0);
+  --sidebar-accent-foreground: oklch(0.98 0.005 293);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.47 0.127 157);
+  --sidebar-ring: oklch(0.62 0.22 293);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: oklch(0.17 0.022 290);          /* deep purple-black */
+  --foreground: oklch(0.97 0.008 293);
+  --card: oklch(0.215 0.03 291);
+  --card-foreground: oklch(0.97 0.008 293);
+  --popover: oklch(0.215 0.03 291);
+  --popover-foreground: oklch(0.97 0.008 293);
+  --primary: oklch(0.68 0.22 293);              /* violet-400/500 for dark */
+  --primary-foreground: oklch(0.18 0.04 293);
+  --secondary: oklch(0.28 0.04 292);
+  --secondary-foreground: oklch(0.97 0.008 293);
+  --muted: oklch(0.28 0.04 292);
+  --muted-foreground: oklch(0.72 0.04 293);
+  --accent: oklch(0.32 0.06 293);
+  --accent-foreground: oklch(0.97 0.008 293);
+  --destructive: oklch(0.70 0.19 22);
+  --destructive-foreground: oklch(0.98 0 0);
+  --success: oklch(0.72 0.17 156);
+  --warning: oklch(0.82 0.16 80);
+  --info: oklch(0.72 0.14 235);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.62 0.22 293);
+  --sidebar: oklch(0.20 0.03 291);
+  --sidebar-foreground: oklch(0.96 0.012 293);
+  --sidebar-accent: oklch(1 0 0 / 8%);
+  --sidebar-accent-foreground: oklch(0.96 0.012 293);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.62 0.22 293);
 }
 
 @theme inline {
@@ -91,6 +106,9 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -101,20 +119,35 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  /* purple-tinted neutral scale — overrides Tailwind's default `slate` so every
+     existing slate-* utility renders as a readable purple-gray (same lightness as
+     stock slate → contrast preserved; modest chroma → tinted, not saturated).
+     True violet-* utilities stay vivid, so accents still pop against the neutrals. */
+  --color-slate-50:  oklch(0.984 0.006 293);
+  --color-slate-100: oklch(0.968 0.010 293);
+  --color-slate-200: oklch(0.929 0.018 293);
+  --color-slate-300: oklch(0.869 0.027 293);
+  --color-slate-400: oklch(0.704 0.043 293);
+  --color-slate-500: oklch(0.554 0.052 293);
+  --color-slate-600: oklch(0.446 0.052 293);
+  --color-slate-700: oklch(0.372 0.048 293);
+  --color-slate-800: oklch(0.279 0.043 293);
+  --color-slate-900: oklch(0.208 0.043 293);
+  --color-slate-950: oklch(0.129 0.038 293);
   /* radius scale */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   /* typography */
-  --font-sans: Arial, Helvetica, sans-serif;
-  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-sans: var(--font-inter, ui-sans-serif), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", "Roboto Mono", monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
 
 button,
@@ -122,20 +155,21 @@ select {
   font: inherit;
 }
 
+/* purple-tinted scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 24px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f5f3ff; /* violet-50 */
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #94a3b8;
+  background: #c4b5fd; /* violet-300 */
   border-radius: 4px;
-  border: 4px solid #f1f5f9;
+  border: 4px solid #f5f3ff;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #a78bfa; /* violet-400 */
 }
