@@ -1,11 +1,13 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { TS_KEYWORDS, TS_TYPES, PRISMA_KEYWORDS, PRISMA_TYPES } from "@/constants/exports";
+import { TS_KEYWORDS, TS_TYPES, PRISMA_KEYWORDS, PRISMA_TYPES, PYTHON_KEYWORDS, PYTHON_TYPES, SQL_KEYWORDS, SQL_TYPES } from "@/constants/exports";
 
-export function highlightCode(code: string, lang: "ts" | "prisma"): ReactNode {
-  const keywords = lang === "prisma" ? PRISMA_KEYWORDS : TS_KEYWORDS;
-  const types = lang === "prisma" ? PRISMA_TYPES : TS_TYPES;
+export function highlightCode(code: string, lang: "ts" | "prisma" | "python" | "sql"): ReactNode {
+  const keywords =
+    lang === "prisma" ? PRISMA_KEYWORDS : lang === "python" ? PYTHON_KEYWORDS : lang === "sql" ? SQL_KEYWORDS : TS_KEYWORDS;
+  const types =
+    lang === "prisma" ? PRISMA_TYPES : lang === "python" ? PYTHON_TYPES : lang === "sql" ? SQL_TYPES : TS_TYPES;
 
   return code.split("\n").map((line, lineIndex) => {
     const parts: ReactNode[] = [];
@@ -18,7 +20,7 @@ export function highlightCode(code: string, lang: "ts" | "prisma"): ReactNode {
       tokens.push({ start: match.index, end: match.index + match[0].length, kind: "string", text: match[0] });
     }
 
-    const commentRe = /(\/\/.*$)/g;
+    const commentRe = lang === "python" ? /(#.*$)/g : lang === "sql" ? /(--.*$)/g : /(\/\/.*$)/g;
     while ((match = commentRe.exec(line)) !== null) {
       tokens.push({ start: match.index, end: match.index + match[0].length, kind: "comment", text: match[0] });
     }

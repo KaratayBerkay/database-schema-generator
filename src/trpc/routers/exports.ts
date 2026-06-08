@@ -4,6 +4,9 @@ import { z } from "zod";
 import { graphToCanonicalStore, readProjectVersionGraph } from "@/lib/schema-db/graph";
 import { renderPrismaSchemaFromGraph } from "@/lib/schema-renderers/prisma";
 import { generateDrizzleSchema } from "@/lib/schema-renderers/drizzle";
+import { generateSqlAlchemySchema } from "@/lib/schema-renderers/sqlalchemy";
+import { generateSqlSchema } from "@/lib/schema-renderers/sql";
+import { generateDjangoSchema } from "@/lib/schema-renderers/django";
 import { generateVersionPickle, generateProjectPickle, pickleFileName } from "@/lib/schema-renderers/pickle";
 import { db } from "@/lib/db/client";
 import { baseProcedure, createTRPCRouter } from "../init";
@@ -58,7 +61,7 @@ export const exportsRouter = createTRPCRouter({
     .input(z.object({
       projectName: z.string(),
       version: z.string(),
-      type: z.enum(["prisma", "drizzle", "pickle-version", "pickle-project"]),
+      type: z.enum(["prisma", "drizzle", "sqlalchemy", "django", "sql", "pickle-version", "pickle-project"]),
     }))
     .mutation(async ({ input }) => {
       try {
@@ -84,6 +87,46 @@ export const exportsRouter = createTRPCRouter({
         }
 
         const store = graphToCanonicalStore(graph);
+
+        if (input.type === "sqlalchemy") {
+          const code = generateSqlAlchemySchema(store);
+          const fileName = `${uid}-models.py`;
+          const id = recordExport(input.projectName, input.version, input.type, fileName);
+          return {
+            id,
+            code,
+            fileName,
+            tableCount: store.models.length,
+            enumCount: (store.enums ?? []).length,
+          };
+        }
+
+        if (input.type === "django") {
+          const code = generateDjangoSchema(store);
+          const fileName = `${uid}-models.py`;
+          const id = recordExport(input.projectName, input.version, input.type, fileName);
+          return {
+            id,
+            code,
+            fileName,
+            tableCount: store.models.length,
+            enumCount: (store.enums ?? []).length,
+          };
+        }
+
+        if (input.type === "sql") {
+          const code = generateSqlSchema(store);
+          const fileName = `${uid}-schema.sql`;
+          const id = recordExport(input.projectName, input.version, input.type, fileName);
+          return {
+            id,
+            code,
+            fileName,
+            tableCount: store.models.length,
+            enumCount: (store.enums ?? []).length,
+          };
+        }
+
         const code = generateDrizzleSchema(store);
         const fileName = `${uid}-schema.ts`;
         const id = recordExport(input.projectName, input.version, input.type, fileName);
