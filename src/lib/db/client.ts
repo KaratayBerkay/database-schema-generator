@@ -631,6 +631,16 @@ db.exec(`
     records_json     TEXT NOT NULL DEFAULT '[]',
     UNIQUE(snapshot_id, table_name)
   );
+
+  -- Maps a loaded "Scenarios" blueprint to the demo project it created. One row
+  -- per scenario; ON DELETE CASCADE clears the mark when the project is deleted,
+  -- so the scenario becomes loadable again automatically.
+  CREATE TABLE IF NOT EXISTS scenario_loads (
+    scenario_id  TEXT PRIMARY KEY,
+    project_id   TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    project_name TEXT NOT NULL,
+    loaded_at    TEXT NOT NULL
+  );
 `);
 
 // One-time column upgrades for tables that pre-date these columns.

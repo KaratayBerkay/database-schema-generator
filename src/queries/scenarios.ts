@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 
 export function useScenariosQuery() {
@@ -8,7 +8,18 @@ export function useScenariosQuery() {
   return useQuery(trpc.scenarios.list.queryOptions());
 }
 
-export function useLoadScenarioMutation() {
+export function useScenarioMutations() {
   const trpc = useTRPC();
-  return useMutation(trpc.scenarios.load.mutationOptions());
+  const queryClient = useQueryClient();
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({
+      queryKey: trpc.scenarios.list.queryOptions().queryKey,
+    });
+
+  return {
+    invalidate,
+    load: useMutation(trpc.scenarios.load.mutationOptions()),
+    reload: useMutation(trpc.scenarios.reload.mutationOptions()),
+  };
 }

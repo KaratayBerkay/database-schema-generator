@@ -4,84 +4,135 @@ import { caller } from "./helpers";
 import { readProjectVersionGraph } from "@/lib/schema-db/graph";
 import { renderPrismaSchemaFromGraph } from "@/lib/schema-renderers/prisma";
 
+const nameFor = (title: string) => `${title} Demo`;
+
 describe("scenarios", () => {
-  it("lists the authored scenarios with computed counts", async () => {
+  it("lists basic and advanced scenarios with computed counts (none loaded yet)", async () => {
     const list = await caller.scenarios.list();
     const ids = list.map((s) => s.id).sort();
-    expect(ids).toEqual(["blog-platform", "ecommerce-shop", "task-tracker"]);
+    expect(ids).toEqual([
+      "blog-platform",
+      "ecommerce-shop",
+      "inventory-control",
+      "saas-billing",
+      "task-tracker",
+    ]);
+    expect(list.every((s) => s.loaded === null)).toBe(true);
+
+    const basic = list.filter((s) => s.category === "basic").map((s) => s.id).sort();
+    const advanced = list.filter((s) => s.category === "advanced").map((s) => s.id).sort();
+    expect(basic).toEqual(["blog-platform", "ecommerce-shop", "task-tracker"]);
+    expect(advanced).toEqual(["inventory-control", "saas-billing"]);
 
     const blog = list.find((s) => s.id === "blog-platform")!;
     expect(blog.tableCount).toBe(6);
     expect(blog.enumCount).toBe(2);
     expect(blog.relationCount).toBe(6);
-    expect(blog.provider).toBe("PostgreSQL");
+    expect(blog.versionCount).toBe(1);
 
-    const shop = list.find((s) => s.id === "ecommerce-shop")!;
-    expect(shop.provider).toBe("MySQL");
-    expect(shop.tableCount).toBe(5);
+    const saas = list.find((s) => s.id === "saas-billing")!;
+    expect(saas.versionCount).toBe(3);
+    expect(saas.tableCount).toBe(3);
+    expect(saas.relationCount).toBe(2);
+
+    const inventory = list.find((s) => s.id === "inventory-control")!;
+    expect(inventory.versionCount).toBe(2);
   });
 
-  it("loads each scenario into a fresh project with a valid, parseable schema", async () => {
+  it("loads every scenario into a fresh project; all versions render to valid Prisma", async () => {
     const list = await caller.scenarios.list();
 
     for (const scenario of list) {
-      const projectName = `${scenario.title} Demo`;
-      const result = await caller.scenarios.load({
-        scenarioId: scenario.id,
-        projectName,
-      });
+      const projectName = nameFor(scenario.title);
+      const result = await caller.scenarios.load({ scenarioId: scenario.id, projectName });
       expect(result.projectName).toBe(projectName);
+      // Advanced scenarios always land on v1.
+      expect(result.version).toBe("1.0111");
 
-      // The created project must be discoverable through the normal project list.
       const projects = await caller.projects.list();
-      const created = projects.find((p) => p.name === projectName);
-      expect(created).toBeTruthy();
-      expect(created!.id).toBe(result.projectId);
+      const created = projects.find((p) => p.name === projectName)!;
+      expect(created.id).toBe(result.projectId);
+      expect(created.versions.length).toBe(scenario.versionCount);
 
-      const graph = readProjectVersionGraph(projectName, result.version);
-      expect(graph.tables.length).toBe(scenario.tableCount);
-      expect(graph.enums.length).toBe(scenario.enumCount);
-      // Each owner relation produces exactly one relation row.
-      expect(graph.relations.length).toBe(scenario.relationCount);
+      // Every version's schema must render and re-parse cleanly.
+      for (const version of created.versions) {
+        const graph = readProjectVersionGraph(projectName, version.name);
+        const prisma = renderPrismaSchemaFromGraph(graph);
+        expect(() => getSchema(prisma)).not.toThrow();
+        expect(prisma).not.toMatch(/UnknownType/);
+      }
 
-      // Rendering to Prisma and re-parsing it proves every relation, enum, and
-      // type resolved — a mis-wired FK or dangling enum would break parsing.
-      const prisma = renderPrismaSchemaFromGraph(graph);
-      expect(() => getSchema(prisma)).not.toThrow();
-      // No unresolved relation targets leaked into the output.
-      expect(prisma).not.toMatch(/UnknownType|undefined/);
+      // v1 counts match the summary.
+      const v1 = readProjectVersionGraph(projectName, "1.0111");
+      expect(v1.tables.length).toBe(scenario.tableCount);
+      expect(v1.enums.length).toBe(scenario.enumCount);
+      expect(v1.relations.length).toBe(scenario.relationCount);
     }
   });
 
-  it("wires the blog platform relations and enums correctly", async () => {
-    const projectName = "Blog Platform Relations";
-    const result = await caller.scenarios.load({
-      scenarioId: "blog-platform",
-      projectName,
-    });
+  it("marks loaded scenarios and rejects a second load", async () => {
+    const list = await caller.scenarios.list();
+    expect(list.every((s) => s.loaded !== null)).toBe(true);
+    const blog = list.find((s) => s.id === "blog-platform")!;
+    expect(blog.loaded!.projectName).toBe(nameFor("Blog Platform"));
 
-    const graph = readProjectVersionGraph(projectName, result.version);
-    const prisma = renderPrismaSchemaFromGraph(graph);
-
-    // Models present
-    for (const model of ["User", "Post", "Category", "Comment", "Tag", "PostTag"]) {
-      expect(prisma).toContain(`model ${model} {`);
-    }
-    // Enums present and used
-    expect(prisma).toContain("enum PostStatus {");
-    expect(prisma).toContain("enum UserRole {");
-    // The owning FK relation carries fields/references
-    expect(prisma).toMatch(/@relation\([^)]*fields:\s*\[authorId\][^)]*references:\s*\[id\]/);
-    // The many-to-many join table's composite unique survived
-    expect(prisma).toMatch(/@@unique\(\[postId, tagId\]/);
-
-    const unique = await caller.scenarios.load({ scenarioId: "blog-platform", projectName }).catch((e) => e);
-    expect(unique).toBeInstanceOf(Error);
+    await expect(
+      caller.scenarios.load({ scenarioId: "blog-platform", projectName: "Different Name Here" }),
+    ).rejects.toThrow(/already loaded/i);
   });
 
-  it("rejects an unknown scenario id", async () => {
+  it("evolves the SaaS Billing schema across three versions", async () => {
+    const projectName = nameFor("SaaS Billing");
+    const projects = await caller.projects.list();
+    const saas = projects.find((p) => p.name === projectName)!;
+    const versions = saas.versions.map((v) => v.name);
+    expect(versions).toEqual(["1.0111", "1.0112", "1.0113"]);
+
+    const v1 = renderPrismaSchemaFromGraph(readProjectVersionGraph(projectName, "1.0111"));
+    const v2 = renderPrismaSchemaFromGraph(readProjectVersionGraph(projectName, "1.0112"));
+    const v3 = renderPrismaSchemaFromGraph(readProjectVersionGraph(projectName, "1.0113"));
+
+    // v1 has the boolean `paid`; v2 adds Coupon; v3 swaps paid for an enum.
+    expect(v1).toMatch(/paid\s+Boolean/);
+    expect(v1).not.toContain("model Coupon {");
+    expect(v2).toContain("model Coupon {");
+    expect(v3).toContain("enum InvoiceStatus {");
+    expect(v3).not.toMatch(/paid\s+Boolean/);
+    // The renamed Subscription column.
+    expect(v1).toMatch(/startedAt\s+DateTime/);
+    expect(v3).toMatch(/activatedAt\s+DateTime/);
+  });
+
+  it("re-loads a scenario, resetting it under the same name", async () => {
+    const projectName = nameFor("Blog Platform");
+    const before = (await caller.projects.list()).find((p) => p.name === projectName)!;
+
+    const result = await caller.scenarios.reload({ scenarioId: "blog-platform" });
+    expect(result.projectName).toBe(projectName);
+
+    const after = (await caller.projects.list()).find((p) => p.name === projectName)!;
+    // Fresh project (delete + recreate) but same name, and still marked loaded.
+    expect(after.id).toBe(result.projectId);
+    expect(after.id).not.toBe(before.id);
+
+    const list = await caller.scenarios.list();
+    expect(list.find((s) => s.id === "blog-platform")!.loaded!.projectName).toBe(projectName);
+  });
+
+  it("clears the loaded mark when the project is deleted", async () => {
+    const projectName = nameFor("Task Tracker");
+    const project = (await caller.projects.list()).find((p) => p.name === projectName)!;
+
+    await caller.projects.delete({ id: project.id });
+
+    const list = await caller.scenarios.list();
+    expect(list.find((s) => s.id === "task-tracker")!.loaded).toBeNull();
+  });
+
+  it("rejects unknown scenario ids on load and reload", async () => {
     await expect(
       caller.scenarios.load({ scenarioId: "does-not-exist", projectName: "Nope Project Name" }),
     ).rejects.toThrow();
+    await expect(caller.scenarios.reload({ scenarioId: "does-not-exist" })).rejects.toThrow();
   });
 });
