@@ -109,11 +109,30 @@ The timeline for a project. Browse every saved version, see per-version stats (t
 
 ## Prerequisites
 
-- Node.js ≥ 22.13 (Node 24 LTS recommended)
-- pnpm ≥ 11 (enable with `corepack enable`)
+- Node.js **24** (current LTS — also the Docker image's base). See [Installing Node](#installing-node) below.
+- pnpm 11 via Corepack (`corepack enable`)
 - Docker & Docker Compose (optional — only for the containerized setup below)
 
 > The Prisma CLI ships as a dev dependency — it's installed by `pnpm install` and invoked locally (`pnpm prisma …`), so no global install is needed.
+
+### Installing Node
+
+This project targets **Node 24** (the current LTS), pinned in [`.nvmrc`](./.nvmrc). To install or switch to it:
+
+**Using [nvm](https://github.com/nvm-sh/nvm)** (recommended):
+
+```bash
+nvm install 24         # install the latest Node 24.x
+nvm use                # switch to the version in .nvmrc (24) for this repo
+nvm alias default 24   # optional: make Node 24 your shell default
+corepack enable        # enable pnpm 11 for this Node
+```
+
+If you're upgrading from an older Node, re-run `corepack enable` afterward — Corepack (and thus pnpm) is installed per Node version.
+
+**Without nvm:** download the Node 24 LTS installer from [nodejs.org](https://nodejs.org/en/download), or use [fnm](https://github.com/Schniz/fnm) / [Volta](https://volta.sh/), then run `corepack enable`.
+
+Verify with `node -v` (→ `v24.x`) and `pnpm -v` (→ `11.x`).
 
 ## Setup
 

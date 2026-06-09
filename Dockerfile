@@ -7,11 +7,11 @@
 # and runs from /app where process.cwd() resolves the SQLite data dir.
 
 # ---- Base -------------------------------------------------------------------
-# Node 24 on Debian trixie-slim (Debian 13 — fresher base with fewer open CVEs
-# than bookworm; pnpm 11.5.2 needs Node >= 22.13). Native modules (better-sqlite3)
-# are compiled in-image so the ABI matches this Node version, and Prisma's glibc
-# engine runs here. Alpine/musl is deliberately avoided: Prisma's engines and
-# better-sqlite3 are a known source of pain on musl.
+# Node 24 (current LTS) on Debian trixie-slim (Debian 13 — fresh base with fewer
+# open CVEs than bookworm), matching the local toolchain pinned in .nvmrc. Native
+# modules (better-sqlite3) are compiled in-image so the ABI matches this Node
+# version, and Prisma's glibc engine runs here. Alpine/musl is deliberately
+# avoided: Prisma's engines and better-sqlite3 are a known source of pain on musl.
 FROM node:24-trixie-slim AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH

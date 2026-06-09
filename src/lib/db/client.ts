@@ -508,12 +508,13 @@ if (!global._appDb) {
           target_path TEXT,
           selected_field_keys TEXT,
           code TEXT NOT NULL DEFAULT '',
-          schema_name TEXT
+          schema_name TEXT,
+          field_hash TEXT
         )
       `);
       sqlite.exec(`
-        INSERT INTO zod_schemas_new (id, project_id, version, model_name, fs_path, schema_count, enum_count, field_count, generated_at, target_path, selected_field_keys, code, schema_name)
-        SELECT id, project_id, version, model_name, COALESCE(fs_path,''), schema_count, enum_count, field_count, generated_at, target_path, selected_field_keys, COALESCE(code,''), schema_name
+        INSERT INTO zod_schemas_new (id, project_id, version, model_name, fs_path, schema_count, enum_count, field_count, generated_at, target_path, selected_field_keys, code, schema_name, field_hash)
+        SELECT id, project_id, version, model_name, COALESCE(fs_path,''), schema_count, enum_count, field_count, generated_at, target_path, selected_field_keys, COALESCE(code,''), schema_name, field_hash
         FROM zod_schemas
       `);
       sqlite.exec("DROP TABLE zod_schemas");
