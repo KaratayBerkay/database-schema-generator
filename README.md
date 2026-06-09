@@ -143,7 +143,13 @@ corepack enable
 > **Already have nvm but a terminal shows the wrong version / an "Unsupported engine" warning?**
 > You don't need to reinstall or restart — just run `nvm use 24` (or `nvm use` in the repo) in that terminal. `nvm use` only changes the terminal you run it in; new terminals follow the default from step 3.
 
-**Without nvm:** download the **Node 24 LTS** installer from [nodejs.org](https://nodejs.org/en/download) (Windows / macOS / Linux), install it, then run `corepack enable`. On Windows you can also use [nvm-windows](https://github.com/coreybutler/nvm-windows) or [fnm](https://github.com/Schniz/fnm).
+**On Windows** — `nvm` above is macOS/Linux only, so pick one:
+
+- Run everything inside **WSL** (Ubuntu) and use the nvm steps above as-is.
+- Use a Windows-native version manager: **[fnm](https://github.com/Schniz/fnm)** (cross-platform, reads `.nvmrc`) or **[nvm-windows](https://github.com/coreybutler/nvm-windows)** (`nvm install lts` → `nvm use <version>`; note it does **not** read `.nvmrc`).
+- Simplest: install the **[Node 24 LTS installer](https://nodejs.org/en/download)**, then run `corepack enable`.
+
+**No version manager (macOS / Linux):** install the **[Node 24 LTS](https://nodejs.org/en/download)** package, then run `corepack enable`.
 
 **Verify** everything is set:
 
