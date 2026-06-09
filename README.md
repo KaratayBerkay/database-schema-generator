@@ -13,7 +13,7 @@ Designing a database by typing schema files is fiddly and error-prone: it's easy
 
 Each workflow is a focused page that does one job — create tables, wire up relations, add constraints, validate, export, migrate, and so on. You move through them at your own pace, and your work is saved as a versioned history you can roll back to or branch from.
 
-You don't need to know Prisma to use it, but everything it produces is standard, exportable Prisma (and Drizzle) — so you're never locked in.
+You don't need to know Prisma to use it, but everything it produces is standard, exportable code — Prisma, Drizzle, SQLAlchemy, Django, or raw SQL — so you're never locked in.
 
 ### Key ideas
 
@@ -32,6 +32,9 @@ The sidebar is the map of the app. Here's what each stop does and when you'd use
 
 #### 🗂 Projects
 Your starting point. Create a new schema project, pick the database it targets (PostgreSQL, MySQL, or SQLite), and choose generator options. Switch between projects, rename them, or delete them here. Each project keeps an independent version history. Project names must be at least 8 characters and unique — they're used to derive file names and version labels.
+
+#### 📚 Scenarios
+A gallery of ready-made example schemas — **basic** and **advanced** blueprints — that you can load as a demo project in one click. Handy for exploring the app or starting from a realistic template instead of a blank slate. Loading a scenario creates a named project and opens it in Tables; you can reload it to start fresh, or remove it (which frees the scenario to be loaded again). Nothing loads unless you ask, and it never touches your existing projects.
 
 #### 📋 Tables
 Create and edit your tables (in Prisma terms, *models*). Every table gets a primary key, and you choose the key's style to match your database — auto-incrementing integer, UUID, CUID, and so on. This is usually the first thing you build after creating a project. Tables that changed since the previous version are badged so you can see what's new at a glance.
@@ -74,6 +77,9 @@ Take your design to a real database. The workflow walks you through it: **collec
 Generate code and backups from any version:
 - **Prisma Schema** (`.prisma`) — the full schema: datasource, generator, models, relations, and constraints.
 - **Drizzle TypeScript** (`.ts`) — a Drizzle ORM schema with table definitions, column types, FK references, and index helpers.
+- **SQLAlchemy models** (`.py`) — Python SQLAlchemy ORM classes.
+- **Django models** (`.py`) — Python Django ORM models.
+- **SQL DDL** (`.sql`) — raw `CREATE TABLE` / `CREATE TYPE` statements.
 - **Version Pickle** (`.json`) — a complete backup of one version's schema graph.
 - **Project Pickle** (`.json`) — a complete backup of every version in the project, in one file.
 
@@ -92,18 +98,22 @@ The timeline for a project. Browse every saved version, see per-version stats (t
 | Framework | Next.js 16 App Router, React 19 |
 | Styling | Tailwind CSS v4, shadcn/ui |
 | API | tRPC v11 + TanStack Query v5 |
-| Storage | SQLite via `better-sqlite3` + Drizzle ORM |
+| Storage | SQLite via `better-sqlite3` (raw SQL, no ORM) |
 | Schema | `@mrleebo/prisma-ast`, Prisma CLI (dev) |
+| Migration drivers | `pg` (PostgreSQL), `mysql2` (MySQL) |
+| SQL editor | CodeMirror 6 |
 | Validation | Zod v4 |
+| Testing | Vitest |
 | Icons | Tabler Icons |
 | Package manager | pnpm |
 
 ## Prerequisites
 
-- Node.js ≥ 20
-- pnpm ≥ 9
-- Prisma CLI (`pnpm add -g prisma`)
+- Node.js ≥ 22.13 (Node 24 LTS recommended)
+- pnpm ≥ 11 (enable with `corepack enable`)
 - Docker & Docker Compose (optional — only for the containerized setup below)
+
+> The Prisma CLI ships as a dev dependency — it's installed by `pnpm install` and invoked locally (`pnpm prisma …`), so no global install is needed.
 
 ## Setup
 
@@ -119,14 +129,11 @@ pnpm install
 cp .env.example .env
 # Edit .env — only needed if you use the Migrations workflow
 
-# 4. Push the SQLite schema
-pnpm db:push
-
-# 5. Build and start the app
+# 4. Build and start the app
 pnpm build && pnpm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The app redirects you to **Tables** once you've created your first project.
+Open [http://localhost:3000](http://localhost:3000). The SQLite database (`src/database/app.db`) is created and migrated automatically on first run — there's no separate schema-push step. The app redirects you to **Tables** once you've created your first project.
 
 ## Run with Docker
 
@@ -181,13 +188,23 @@ src/
     (workflows)/      # Route pages — one import + one render each
     views/            # All page UI and logic, one folder per workflow
       shared/         # Dashboard shell, context, sidebar nav config
+    api/              # Route handlers (uploads, migrations, SQL Query, …)
+  components/         # Reusable UI components (shadcn/ui + app-specific)
+  hooks/              # React hooks (mostly per-workflow page state)
+  queries/            # TanStack Query hooks over tRPC, one file per workflow
+  constants/          # Shared constants, grouped by workflow
+  features/           # Cross-workflow feature modules (e.g. table-selector)
+  types/              # Shared TypeScript types
   trpc/               # tRPC routers and client setup
   lib/
     stores/           # Core schema engine (models, fields, relations, restrictions)
     schema-db/        # Normalized graph types
-    schema-renderers/ # Prisma & Drizzle renderers
+    schema-renderers/ # Prisma, Drizzle, SQLAlchemy, Django & SQL renderers
     migrations/       # Migration rules engine
-    db/               # SQLite client + Drizzle table definitions
+    db/               # Raw better-sqlite3 client + schema bootstrap
+  solutions/          # Change-resolution engine behind Tracking (backfills, type conversions)
+  scripts/            # Maintenance scripts (e.g. seed field templates)
+  test/               # Vitest test suite
   database/
     app.db            # SQLite — the single source of truth for all app data
     databases/        # Real SQLite files created by the SQL Query workflow
@@ -200,8 +217,8 @@ pnpm dev          # Start dev server (Turbopack)
 pnpm build        # Production build
 pnpm start        # Start the production server (after build)
 pnpm lint         # ESLint check
-pnpm db:push      # Push Drizzle schema to SQLite
-pnpm db:studio    # Open Drizzle Studio
+pnpm test         # Run the test suite (Vitest)
+pnpm test:watch   # Vitest in watch mode
 ```
 
 ## Contributing

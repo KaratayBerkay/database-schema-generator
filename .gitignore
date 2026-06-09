@@ -67,6 +67,7 @@ CLAUDE.md
 
 # Generated Zod validators (runtime artifacts)
 /src/database/zod/
+/archive/*
 
 # Runtime migration artifacts (snapshots, logs, connection files)
 /src/database/migrations/
