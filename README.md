@@ -204,11 +204,10 @@ Open [http://localhost:3000](http://localhost:3000).
 | The app container (over `dsg-net`) | `postgresql://dev:dev@postgres:5432/dev` | `mysql://dev:dev@mysql:3306/dev` |
 | Your host machine | `postgresql://dev:dev@localhost:54321/dev` | `mysql://dev:dev@localhost:54322/dev` |
 
-**Persistence.** The app container bind-mounts three paths from the repo, so your data lives on the host and survives rebuilds:
+**Persistence.** The app container bind-mounts these paths from the repo, so your data lives on the host and survives rebuilds:
 
 - `./src/database` — all app data: `app.db` plus the SQL-Query `.db` files.
-- `./secrets.json` — legacy per-connection key store.
-- `./field-templates.json` — reusable field templates (mounted read-only).
+- `./static` — static seed assets (e.g. `field-templates.json`), mounted read-only.
 
 Because these are **bind mounts** (host paths) rather than named volumes, the data sits in your repo folder, stays in sync with a local `pnpm start`/`pnpm dev` (both read the same `./src/database/app.db`), and is **never removed by `docker compose down -v`** — `-v` only deletes Docker-managed volumes. On a fresh start with no `app.db`, the app self-bootstraps the full schema on first connection. Just don't run the container and a local `pnpm start` against the database at the same time (two writers on one SQLite file). The databases in `database.compose.yaml` persist their rows in named volumes (`postgres-data`, `mysql-data`), so `docker compose -f database.compose.yaml down` followed by `up` keeps your data — but note `down -v` *would* wipe those.
 

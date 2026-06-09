@@ -36,10 +36,8 @@ services:
       # All app data (projects, versions, SQL-Query .db files) — shares the
       # repo's src/database, so the container and host see the same app.db.
       - ./src/database:/app/src/database
-      # Legacy per-connection key store.
-      - ./secrets.json:/app/secrets.json
-      # Reusable field templates (read-only — the app only reads this file).
-      - ./field-templates.json:/app/field-templates.json:ro
+      # Static seed assets (e.g. field-templates.json) — read-only.
+      - ./static:/app/static:ro
       # Persist the credential-encryption master key so saved DB connections
       # survive container recreation. Without it the key regenerates each time
       # and previously-saved connections can no longer be decrypted (they vanish

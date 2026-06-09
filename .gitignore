@@ -51,9 +51,6 @@ yarn-error.log*
 next-env.d.ts
 .cache
 
-# migration encryption secrets — never commit, machine-local only
-/secrets.json
-
 # SQLite database files
 *.db
 *.db-shm

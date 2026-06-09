@@ -25,7 +25,7 @@ function boolInt(value: number | boolean | undefined) {
 }
 
 function seedFieldTemplates(sqlite: InstanceType<typeof Database>) {
-  const seedPath = path.resolve("field-templates.json");
+  const seedPath = path.resolve("static", "field-templates.json");
   let templates: SeedFieldTemplate[] = [];
 
   try {

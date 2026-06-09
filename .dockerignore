@@ -25,7 +25,6 @@ archive
 .env
 .env.*
 !.env.example
-secrets.json
 
 # Runtime data — created inside the container / mounted as volumes
 *.db
@@ -45,10 +44,8 @@ docker-compose.yaml
 database.compose.yaml
 docs
 *.md
-!field-templates.json
 
 # Misc
 .DS_Store
 npm-debug.log*
 pnpm-debug.log*
-example.json

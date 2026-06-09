@@ -37,8 +37,8 @@ COPY . .
 # in src/lib/db/client.ts run exactly once. `next build`'s multi-worker page-data
 # collection would otherwise race on a fresh DB ("duplicate column name").
 # --conditions=react-server resolves the `server-only` import to its empty stub.
-# This build-time DB is discarded — only field-templates.json/.next/public are
-# copied into the runner, and the server creates a fresh app.db on its volume.
+# This build-time DB is discarded — only static/.next/public are copied into the
+# runner, and the server creates a fresh app.db on its volume.
 RUN node --conditions=react-server --experimental-strip-types \
       -e "import('./src/lib/db/client.ts').then(()=>console.log('app.db initialized')).catch((e)=>{console.error(e);process.exit(1)})"
 RUN pnpm build
@@ -70,7 +70,7 @@ COPY --chown=node:node --from=builder /app/pnpm-lock.yaml      ./pnpm-lock.yaml
 COPY --chown=node:node --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --chown=node:node --from=builder /app/.npmrc              ./.npmrc
 COPY --chown=node:node --from=builder /app/next.config.ts      ./next.config.ts
-COPY --chown=node:node --from=builder /app/field-templates.json ./field-templates.json
+COPY --chown=node:node --from=builder /app/static              ./static
 
 # Writable dirs: the SQLite data dir, and the credential-key dir. Both are mounted
 # as volumes in docker-compose.yaml — creating + chowning them here (before USER
