@@ -109,12 +109,26 @@ export function ScenariosPageContent() {
               </code>
               .
             </p>
-            <p className="text-xs leading-relaxed text-amber-200/80">
-              Postgres →{" "}
-              <code className="font-mono text-amber-100">postgresql://dev:dev@localhost:54321/dev</code>{" "}
-              · MySQL →{" "}
-              <code className="font-mono text-amber-100">mysql://dev:dev@localhost:54322/dev</code>
-            </p>
+            <div className="space-y-1 text-xs leading-relaxed text-amber-200/80">
+              <p className="font-semibold text-amber-200">
+                In the connection form, use the host that matches where the app is running:
+              </p>
+              <p>
+                <span className="font-semibold text-amber-200">App in Docker</span> → host{" "}
+                <code className="font-mono text-amber-100">postgres</code> port{" "}
+                <code className="font-mono text-amber-100">5432</code> ·{" "}
+                <code className="font-mono text-amber-100">postgresql://dev:dev@postgres:5432/dev</code>{" "}
+                · MySQL host <code className="font-mono text-amber-100">mysql</code> port{" "}
+                <code className="font-mono text-amber-100">3306</code> ·{" "}
+                <code className="font-mono text-amber-100">mysql://dev:dev@mysql:3306/dev</code>
+              </p>
+              <p>
+                <span className="font-semibold text-amber-200">Host machine / local dev</span> → host{" "}
+                <code className="font-mono text-amber-100">localhost</code> ·{" "}
+                <code className="font-mono text-amber-100">postgresql://dev:dev@localhost:54321/dev</code>{" "}
+                · <code className="font-mono text-amber-100">mysql://dev:dev@localhost:54322/dev</code>
+              </p>
+            </div>
           </div>
         </div>
       </div>
