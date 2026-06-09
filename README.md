@@ -180,23 +180,28 @@ Open [http://localhost:3000](http://localhost:3000). The SQLite database (`src/d
 
 ## Run with Docker
 
-The app ships two Compose files: `docker-compose.yaml` runs the Schema Studio app, and `database.compose.yaml` runs the PostgreSQL + MySQL databases the **Migrations** and **Imports** workflows target. They're separate so you can run the databases on their own (e.g. while developing the app with `pnpm dev`).
+The app ships two Compose files: `docker-compose.yaml` runs the Schema Studio app, and `database.compose.yaml` runs the PostgreSQL + MySQL databases the **Migrations** and **Imports** workflows target. They're separate so you can run the databases on their own (e.g. while developing the app with `pnpm dev`). Both join a **shared external Docker network (`dsg-net`)**, so the app container reaches the databases by service name.
 
 ```bash
-# 1. Start the target databases (only if you'll use Migrations / Imports)
+# 1. Create the shared network (one time)
+docker network create dsg-net
+
+# 2. Start the target databases (only if you'll use Migrations / Imports)
 docker compose -f database.compose.yaml up -d
 
-# 2. Build and run the app
+# 3. Build and run the app
 docker compose up --build
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-**Connecting to the databases.** When entering a connection URL in the Migrations / Imports workflows, the host depends on where you're connecting from:
+> Starting the app may print a warning about **orphan containers** (the postgres/mysql from the other Compose file). That's expected — both files share a project name — and **safe to ignore**. Do **not** add `--remove-orphans`; it would delete the running databases.
+
+**Connecting to the databases.** When entering a connection URL in the Migrations / Imports workflows, the host depends on where you're connecting from — note the app container uses the databases' *internal* ports (5432 / 3306) over `dsg-net`, while the host uses the *published* ports (54321 / 54322):
 
 | From | PostgreSQL | MySQL |
 |---|---|---|
-| The app container | `postgresql://dev:dev@host.docker.internal:54321/dev` | `mysql://dev:dev@host.docker.internal:54322/dev` |
+| The app container (over `dsg-net`) | `postgresql://dev:dev@postgres:5432/dev` | `mysql://dev:dev@mysql:3306/dev` |
 | Your host machine | `postgresql://dev:dev@localhost:54321/dev` | `mysql://dev:dev@localhost:54322/dev` |
 
 **Persistence.** The app container bind-mounts three paths from the repo, so your data lives on the host and survives rebuilds:

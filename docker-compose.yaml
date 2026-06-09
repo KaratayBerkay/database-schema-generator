@@ -1,16 +1,18 @@
 # Application stack: the Schema Studio app only.
 #
 # The PostgreSQL / MySQL databases the Migrations workflow targets live in a
-# separate file (database.compose.yaml) with their own persistence volumes.
-# Start them first, then bring up the app:
+# separate file (database.compose.yaml). Both files join a shared external
+# Docker network (dsg-net) so the app can reach the databases by service name.
 #
-#   docker compose -f database.compose.yaml up -d   # start the target databases
-#   docker compose up --build                        # build + run the app
+# One-time setup, then start the databases, then the app:
 #
-# Connection URLs for the Migrations / Imports workflows. The databases run as
-# their own containers, so the app reaches them through the host gateway:
-#   from the app container : postgresql://dev:dev@host.docker.internal:54321/dev
-#                            mysql://dev:dev@host.docker.internal:54322/dev
+#   docker network create dsg-net                    # once (shared network)
+#   docker compose -f database.compose.yaml up -d    # start the target databases
+#   docker compose up --build                         # build + run the app
+#
+# Connection URLs for the Migrations / Imports workflows:
+#   from the app container : postgresql://dev:dev@postgres:5432/dev
+#                            mysql://dev:dev@mysql:3306/dev
 #   from your host machine : postgresql://dev:dev@localhost:54321/dev
 #                            mysql://dev:dev@localhost:54322/dev
 
@@ -38,8 +40,14 @@ services:
       - ./secrets.json:/app/secrets.json
       # Reusable field templates (read-only — the app only reads this file).
       - ./field-templates.json:/app/field-templates.json:ro
-    # Reach the PostgreSQL / MySQL containers (started from database.compose.yaml)
-    # through the host's mapped ports 54321 / 54322.
-    extra_hosts:
-      - 'host.docker.internal:host-gateway'
+    # Join the shared network so the app resolves the postgres / mysql
+    # containers (from database.compose.yaml) by name — e.g. postgres:5432.
+    networks:
+      - dsg-net
     restart: unless-stopped
+
+# Shared with database.compose.yaml. Create it once: docker network create dsg-net
+networks:
+  dsg-net:
+    external: true
+    name: dsg-net

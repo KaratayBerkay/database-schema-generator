@@ -1,3 +1,10 @@
+# PostgreSQL + MySQL databases that the Migrations / Imports workflows target.
+# Joins the shared external network (dsg-net) so the app container can reach
+# these by service name (postgres:5432 / mysql:3306). Create the network once:
+#
+#   docker network create dsg-net
+#   docker compose -f database.compose.yaml up -d
+
 services:
   postgres:
     image: postgres:17
@@ -9,6 +16,8 @@ services:
       - '54321:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    networks:
+      - dsg-net
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U dev -d dev']
       interval: 5s
@@ -26,6 +35,8 @@ services:
       - '54322:3306'
     volumes:
       - mysql-data:/var/lib/mysql
+    networks:
+      - dsg-net
     healthcheck:
       test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -udev -pdev --silent']
       interval: 5s
@@ -35,3 +46,9 @@ services:
 volumes:
   postgres-data:
   mysql-data:
+
+# Shared with docker-compose.yaml. Create it once: docker network create dsg-net
+networks:
+  dsg-net:
+    external: true
+    name: dsg-net
