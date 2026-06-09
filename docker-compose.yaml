@@ -26,12 +26,12 @@ services:
       - '3000:3000'
     environment:
       NODE_ENV: production
-      # Optional: pin the credential-encryption master key so stored database
-      # connections survive container rebuilds. Generate one with:
-      #   openssl rand -hex 32
-      # Without it (and without persisting /home/node/.database-schema-generator),
-      # saved DB connections must be re-entered after the container is recreated.
-      # CONNECTION_ENCRYPTION_KEY: 'replace-with-64-hex-chars'
+      # Credential-encryption master key, read from the gitignored .env
+      # (CONNECTION_ENCRYPTION_KEY=...; generate with `openssl rand -hex 32`).
+      # Setting the SAME key here and for local `pnpm dev` makes saved database
+      # connections portable between Docker and local. If unset, the app falls
+      # back to a per-container key in the app-keys volume (not portable).
+      CONNECTION_ENCRYPTION_KEY: ${CONNECTION_ENCRYPTION_KEY:-}
     volumes:
       # All app data (projects, versions, SQL-Query .db files) — shares the
       # repo's src/database, so the container and host see the same app.db.
