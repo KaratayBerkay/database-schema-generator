@@ -117,22 +117,40 @@ The timeline for a project. Browse every saved version, see per-version stats (t
 
 ### Installing Node
 
-This project targets **Node 24** (the current LTS), pinned in [`.nvmrc`](./.nvmrc). To install or switch to it:
+This project requires **Node 24** (the current LTS), pinned in [`.nvmrc`](./.nvmrc). New to managing Node versions? Follow these steps exactly.
 
-**Using [nvm](https://github.com/nvm-sh/nvm)** (recommended):
+**Recommended — [nvm](https://github.com/nvm-sh/nvm) (macOS / Linux / WSL):**
 
 ```bash
-nvm install 24         # install the latest Node 24.x
-nvm use                # switch to the version in .nvmrc (24) for this repo
-nvm alias default 24   # optional: make Node 24 your shell default
-corepack enable        # enable pnpm 11 for this Node
+# 1. Install nvm — skip if you already have it.
+#    (Check the nvm repo for the latest version: https://github.com/nvm-sh/nvm#install--update-script)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+#    Then restart your terminal, or reload it now:
+source ~/.bashrc        # (use ~/.zshrc on zsh / macOS default)
+
+# 2. Install Node 24 and switch this terminal to it.
+nvm install 24          # download + install the latest Node 24.x
+nvm use 24              # use Node 24 in this terminal
+#    Inside this repo you can also just run `nvm use` — it reads .nvmrc (→ 24).
+
+# 3. Make Node 24 the default for every new terminal.
+nvm alias default 24
+
+# 4. Enable pnpm (Corepack ships with Node; set it up once per Node version).
+corepack enable
 ```
 
-If you're upgrading from an older Node, re-run `corepack enable` afterward — Corepack (and thus pnpm) is installed per Node version.
+> **Already have nvm but a terminal shows the wrong version / an "Unsupported engine" warning?**
+> You don't need to reinstall or restart — just run `nvm use 24` (or `nvm use` in the repo) in that terminal. `nvm use` only changes the terminal you run it in; new terminals follow the default from step 3.
 
-**Without nvm:** download the Node 24 LTS installer from [nodejs.org](https://nodejs.org/en/download), or use [fnm](https://github.com/Schniz/fnm) / [Volta](https://volta.sh/), then run `corepack enable`.
+**Without nvm:** download the **Node 24 LTS** installer from [nodejs.org](https://nodejs.org/en/download) (Windows / macOS / Linux), install it, then run `corepack enable`. On Windows you can also use [nvm-windows](https://github.com/coreybutler/nvm-windows) or [fnm](https://github.com/Schniz/fnm).
 
-Verify with `node -v` (→ `v24.x`) and `pnpm -v` (→ `11.x`).
+**Verify** everything is set:
+
+```bash
+node -v   # → v24.x
+pnpm -v   # → 11.x
+```
 
 ## Setup
 
