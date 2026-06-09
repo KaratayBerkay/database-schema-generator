@@ -72,9 +72,12 @@ COPY --chown=node:node --from=builder /app/.npmrc              ./.npmrc
 COPY --chown=node:node --from=builder /app/next.config.ts      ./next.config.ts
 COPY --chown=node:node --from=builder /app/field-templates.json ./field-templates.json
 
-# Writable data dir: SQLite app.db + the SQL-Query .db files. Mount a volume here
-# (see docker-compose.yaml) to persist projects across rebuilds.
-RUN mkdir -p /app/src/database && chown -R node:node /app/src
+# Writable dirs: the SQLite data dir, and the credential-key dir. Both are mounted
+# as volumes in docker-compose.yaml — creating + chowning them here (before USER
+# node) makes a freshly-initialized named volume inherit node ownership, so the
+# non-root runtime can write (the app's master key lives in the key dir).
+RUN mkdir -p /app/src/database /home/node/.database-schema-generator \
+    && chown -R node:node /app/src /home/node/.database-schema-generator
 
 USER node
 EXPOSE 3000
