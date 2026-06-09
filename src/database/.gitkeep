@@ -1,0 +1,10 @@
+# Keeps src/database/ present in a fresh clone.
+#
+# docker-compose.yaml bind-mounts ./src/database into the app container. If this
+# directory is missing when `docker compose up` runs, the Docker daemon recreates
+# it as root, and the container's non-root `node` user cannot create app.db
+# (SQLITE_CANTOPEN). Committing this placeholder keeps the dir present (owned by
+# the cloning user) so the bind mount stays writable and the app self-bootstraps
+# a fresh app.db on first start.
+#
+# The actual database files (*.db, *.db-shm, *.db-wal) remain gitignored.

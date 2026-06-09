@@ -103,6 +103,7 @@ The timeline for a project. Browse every saved version, see per-version stats (t
 - Node.js ≥ 20
 - pnpm ≥ 9
 - Prisma CLI (`pnpm add -g prisma`)
+- Docker & Docker Compose (optional — only for the containerized setup below)
 
 ## Setup
 
@@ -127,6 +128,37 @@ pnpm build && pnpm start
 
 Open [http://localhost:3000](http://localhost:3000). The app redirects you to **Tables** once you've created your first project.
 
+## Run with Docker
+
+The app ships two Compose files: `docker-compose.yaml` runs the Schema Studio app, and `database.compose.yaml` runs the PostgreSQL + MySQL databases the **Migrations** and **Imports** workflows target. They're separate so you can run the databases on their own (e.g. while developing the app with `pnpm dev`).
+
+```bash
+# 1. Start the target databases (only if you'll use Migrations / Imports)
+docker compose -f database.compose.yaml up -d
+
+# 2. Build and run the app
+docker compose up --build
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+**Connecting to the databases.** When entering a connection URL in the Migrations / Imports workflows, the host depends on where you're connecting from:
+
+| From | PostgreSQL | MySQL |
+|---|---|---|
+| The app container | `postgresql://dev:dev@host.docker.internal:54321/dev` | `mysql://dev:dev@host.docker.internal:54322/dev` |
+| Your host machine | `postgresql://dev:dev@localhost:54321/dev` | `mysql://dev:dev@localhost:54322/dev` |
+
+**Persistence.** The app container bind-mounts three paths from the repo, so your data lives on the host and survives rebuilds:
+
+- `./src/database` — all app data: `app.db` plus the SQL-Query `.db` files.
+- `./secrets.json` — legacy per-connection key store.
+- `./field-templates.json` — reusable field templates (mounted read-only).
+
+Because these are **bind mounts** (host paths) rather than named volumes, the data sits in your repo folder, stays in sync with a local `pnpm start`/`pnpm dev` (both read the same `./src/database/app.db`), and is **never removed by `docker compose down -v`** — `-v` only deletes Docker-managed volumes. On a fresh start with no `app.db`, the app self-bootstraps the full schema on first connection. Just don't run the container and a local `pnpm start` against the database at the same time (two writers on one SQLite file). The databases in `database.compose.yaml` persist their rows in named volumes (`postgres-data`, `mysql-data`), so `docker compose -f database.compose.yaml down` followed by `up` keeps your data — but note `down -v` *would* wipe those.
+
+**Stored DB credentials.** Database connection credentials are encrypted with a master key generated inside the container. Unless you pin it via the `CONNECTION_ENCRYPTION_KEY` env var (uncomment it in `docker-compose.yaml`; generate one with `openssl rand -hex 32`), saved connections must be re-entered after the container is recreated.
+
 ## Environment Variables
 
 See [`.env.example`](./.env.example) for all available variables.
@@ -135,6 +167,7 @@ See [`.env.example`](./.env.example) for all available variables.
 |---|---|---|
 | `POSTGRES_URL` | No | PostgreSQL connection string for the Migrations workflow |
 | `MYSQL_URL` | No | MySQL connection string for the Migrations workflow |
+| `CONNECTION_ENCRYPTION_KEY` | No | 64-hex-char master key for encrypting stored DB credentials. Pin it (e.g. in Docker) so saved connections survive container rebuilds; otherwise a key is auto-generated under `~/.database-schema-generator/`. |
 
 ## How data is stored
 

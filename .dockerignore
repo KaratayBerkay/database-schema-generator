@@ -1,0 +1,54 @@
+# Dependencies & build output (reinstalled / rebuilt inside the image)
+node_modules
+.next
+out
+build
+coverage
+*.tsbuildinfo
+
+# VCS & CI
+.git
+.gitignore
+.github
+
+# Local hidden workspace / tooling
+app-mech
+archive
+.claude
+.vscode
+.docs
+.agent
+.agents
+.codex
+
+# Env & secrets — never bake into the image
+.env
+.env.*
+!.env.example
+secrets.json
+
+# Runtime data — created inside the container / mounted as volumes
+*.db
+*.db-shm
+*.db-wal
+src/database/app.db
+src/database/databases
+src/database/migrations
+src/database/schemas
+src/database/zod
+src/database/migration-runtime
+
+# Docker & docs (not needed in the build context)
+Dockerfile
+.dockerignore
+docker-compose.yaml
+database.compose.yaml
+docs
+*.md
+!field-templates.json
+
+# Misc
+.DS_Store
+npm-debug.log*
+pnpm-debug.log*
+example.json

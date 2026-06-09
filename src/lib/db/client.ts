@@ -610,6 +610,7 @@ db.exec(`
     resolution TEXT NOT NULL,
     from_value TEXT,
     to_value TEXT,
+    replacement_value TEXT,
     message TEXT NOT NULL,
     approved_at TEXT,
     created_at TEXT NOT NULL,
