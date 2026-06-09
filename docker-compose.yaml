@@ -40,11 +40,22 @@ services:
       - ./secrets.json:/app/secrets.json
       # Reusable field templates (read-only — the app only reads this file).
       - ./field-templates.json:/app/field-templates.json:ro
+      # Persist the credential-encryption master key so saved DB connections
+      # survive container recreation. Without it the key regenerates each time
+      # and previously-saved connections can no longer be decrypted (they vanish
+      # from the list). Pin CONNECTION_ENCRYPTION_KEY above instead if you also
+      # run the app locally and want connections to work in both places.
+      - app-keys:/home/node/.database-schema-generator
     # Join the shared network so the app resolves the postgres / mysql
     # containers (from database.compose.yaml) by name — e.g. postgres:5432.
     networks:
       - dsg-net
     restart: unless-stopped
+
+volumes:
+  # Credential-encryption master key (mounted into the app above). A named volume
+  # so it persists across container recreation; `docker compose down -v` clears it.
+  app-keys:
 
 # Shared with database.compose.yaml. Create it once: docker network create dsg-net
 networks:

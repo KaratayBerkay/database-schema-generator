@@ -133,6 +133,17 @@ export function MigrationsPageContent() {
   // Gate the version-migration steps on a verified connection, not just a selected one.
   const canCollect = connectionStable;
 
+  // A restored connectionId can be stale — the connection was deleted, or its stored
+  // credentials can't be decrypted after the encryption master key changed (e.g. the
+  // Docker container was recreated without persisting the key). Such a connection
+  // silently drops out of the loaded list, so don't trust connectState alone: require
+  // the connection to actually be present before treating step 1 as connected (which
+  // unlocks Deploy). Prevents a phantom green check with no usable database.
+  const effectiveConnectState =
+    conn.connectState === "success" && !conn.activeConnection && !conn.loadingConnections
+      ? "idle"
+      : conn.connectState;
+
   if (!hasProject) {
     return (
       <div className="rounded-lg border border-border bg-card p-8 text-center">
@@ -178,7 +189,7 @@ export function MigrationsPageContent() {
         dbUser={conn.dbUser}
         password={conn.password}
         database={conn.database}
-        connectState={conn.connectState}
+        connectState={effectiveConnectState}
         connectError={conn.connectError}
         isSQLite={isSQLite}
         projectProvider={provider}
@@ -219,7 +230,7 @@ export function MigrationsPageContent() {
 
       <MigrationTypeSelector
         canDoAnyMigration={canDoAnyMigration}
-        connectionRequired={conn.connectState !== "success"}
+        connectionRequired={effectiveConnectState !== "success"}
         isNewPlan={isNewPlan}
         isVersionPlan={isVersionPlan}
         canVersionMigrate={canVersionMigrate}
@@ -236,7 +247,7 @@ export function MigrationsPageContent() {
 
       {isNewPlan && (
         <DeploySchemaCard
-          connectState={conn.connectState}
+          connectState={effectiveConnectState}
           pushState={destroy.pushState}
           pushError={destroy.pushError}
           lastPushMode={destroy.lastPushMode}
