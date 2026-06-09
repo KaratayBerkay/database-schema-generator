@@ -1,0 +1,45 @@
+# Application stack: the Schema Studio app only.
+#
+# The PostgreSQL / MySQL databases the Migrations workflow targets live in a
+# separate file (database.compose.yaml) with their own persistence volumes.
+# Start them first, then bring up the app:
+#
+#   docker compose -f database.compose.yaml up -d   # start the target databases
+#   docker compose up --build                        # build + run the app
+#
+# Connection URLs for the Migrations / Imports workflows. The databases run as
+# their own containers, so the app reaches them through the host gateway:
+#   from the app container : postgresql://dev:dev@host.docker.internal:54321/dev
+#                            mysql://dev:dev@host.docker.internal:54322/dev
+#   from your host machine : postgresql://dev:dev@localhost:54321/dev
+#                            mysql://dev:dev@localhost:54322/dev
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: database-schema-generator
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      # Optional: pin the credential-encryption master key so stored database
+      # connections survive container rebuilds. Generate one with:
+      #   openssl rand -hex 32
+      # Without it (and without persisting /home/node/.database-schema-generator),
+      # saved DB connections must be re-entered after the container is recreated.
+      # CONNECTION_ENCRYPTION_KEY: 'replace-with-64-hex-chars'
+    volumes:
+      # All app data (projects, versions, SQL-Query .db files) — shares the
+      # repo's src/database, so the container and host see the same app.db.
+      - ./src/database:/app/src/database
+      # Legacy per-connection key store.
+      - ./secrets.json:/app/secrets.json
+      # Reusable field templates (read-only — the app only reads this file).
+      - ./field-templates.json:/app/field-templates.json:ro
+    # Reach the PostgreSQL / MySQL containers (started from database.compose.yaml)
+    # through the host's mapped ports 54321 / 54322.
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    restart: unless-stopped
